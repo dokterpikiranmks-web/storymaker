@@ -1,0 +1,21 @@
+{
+  "name": "story-maker-wa-daemon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Story Maker — local WhatsApp Status bridge daemon (Baileys). Polls the Story Maker API and posts due slides to WhatsApp Status.",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs",
+    "dry-run": "DRY_RUN=true node index.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "dotenv": "^18.0.4",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

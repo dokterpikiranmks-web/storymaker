@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+worker/node_modules/
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+worker/.env
+
+# WhatsApp daemon session (NEVER commit — equals full account access)
+auth_info/
+auth_info_baileys/
+worker/auth_info/
+worker/auth_info_baileys/
+contacts.json
+worker/contacts.json
+*.session
+*.session-journal
+
+# misc
+.DS_Store
+npm-debug.log*
