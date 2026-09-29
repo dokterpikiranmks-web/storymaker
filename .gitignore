@@ -28,3 +28,6 @@ worker/contacts.json
 # misc
 .DS_Store
 npm-debug.log*
+
+.vercel
+.env*
