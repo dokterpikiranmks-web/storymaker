@@ -3,6 +3,8 @@ import { Pool } from "pg";
 
 const databaseUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:5432/app_db";
 
+const isLocal = databaseUrl.includes("127.0.0.1") || databaseUrl.includes("localhost");
+
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
 };
@@ -11,6 +13,7 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: databaseUrl,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
   });
 
 if (process.env.NODE_ENV !== "production") {

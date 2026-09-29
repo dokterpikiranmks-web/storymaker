@@ -67,7 +67,10 @@ export function isPublicHttpsUrl(url: string): boolean {
 
 export function getFeatureFlags(): FeatureFlags {
   const tz = getAppTimezone();
+  const dbUrl = process.env.DATABASE_URL?.trim();
+  const isRealDb = Boolean(dbUrl && !dbUrl.includes("127.0.0.1") && !dbUrl.includes("localhost"));
   return {
+    databaseConfigured: isRealDb,
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim()),
     supabaseStorageConfigured: Boolean(
       process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),

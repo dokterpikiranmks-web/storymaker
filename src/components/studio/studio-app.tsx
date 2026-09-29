@@ -242,6 +242,18 @@ export function StudioApp(props: StudioAppProps) {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <main className="flex min-w-0 flex-col gap-6">
+          {!flags.databaseConfigured ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-400" />
+              <div className="flex-1 text-sm">
+                <p className="font-semibold text-white">Database Supabase Belum Terhubung</p>
+                <p className="mt-1 text-xs text-amber-200/90 leading-relaxed">
+                  Variabel <code className="rounded bg-black/40 px-1 py-0.5 font-mono text-amber-300">DATABASE_URL</code> belum dimasukkan di <strong>Vercel Project Settings &gt; Environment Variables</strong>. 
+                  Untuk menyimpan hasil story dan slide, masukkan connection string PostgreSQL Supabase Anda lalu redeploy.
+                </p>
+              </div>
+            </div>
+          ) : null}
           <IdeaDrop
             today={flags.today}
             engine={engine}

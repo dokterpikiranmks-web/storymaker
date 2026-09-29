@@ -31,6 +31,22 @@ export async function readJson(req: Request): Promise<unknown> {
 export function handleRouteError(err: unknown, context: string): Response {
   if (err instanceof NotFoundError) return jsonError(err.message, 404);
   console.error(`[${context}]`, err);
+
+  const msg = err instanceof Error ? err.message : String(err);
+  const cause = (err as { cause?: { code?: string; message?: string } })?.cause;
+  if (
+    cause?.code === "ECONNREFUSED" ||
+    msg.includes("ECONNREFUSED") ||
+    msg.includes("DATABASE_URL") ||
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes("127.0.0.1")
+  ) {
+    return jsonError(
+      "Koneksi database gagal. Pastikan variabel DATABASE_URL (Supabase Postgres) sudah dimasukkan di Vercel Environment Variables.",
+      503
+    );
+  }
+
   return jsonError("Terjadi kesalahan internal. Cek log server.", 500);
 }
 

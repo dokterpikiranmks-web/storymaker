@@ -132,6 +132,7 @@ export interface EngineStatusDTO {
 }
 
 export interface FeatureFlags {
+  databaseConfigured: boolean;
   geminiConfigured: boolean;
   supabaseStorageConfigured: boolean;
   instagramConfigured: boolean;
