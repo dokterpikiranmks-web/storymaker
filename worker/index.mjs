@@ -83,10 +83,13 @@ const phoneToJid = (value) => {
   return digits ? `${digits}@s.whatsapp.net` : null;
 };
 
-function statusAudience(meJid) {
-  const list = CONFIG.audience.length ? CONFIG.audience.map(phoneToJid).filter(Boolean) : [...contacts];
-  if (meJid) list.push(meJid);
-  return [...new Set(list)];
+function statusAudience(customMeJid) {
+  const myJid = sock?.user?.id
+    ? `${sock.user.id.split(":")[0].split("@")[0]}@s.whatsapp.net`
+    : customMeJid || meJid;
+  const recipientJids = CONFIG.audience.length ? CONFIG.audience.map(phoneToJid).filter(Boolean) : [...contacts];
+  const finalRecipients = Array.from(new Set(myJid ? [...recipientJids, myJid] : recipientJids));
+  return finalRecipients;
 }
 
 // ── Story Maker API bridge ─────────────────────────────────────────────────
@@ -106,9 +109,11 @@ async function api(pathname, { method = "GET", body } = {}) {
 }
 
 async function fetchImage(item) {
-  const url = item.imagePath ? `${CONFIG.apiUrl}${item.imagePath}` : item.imageUrl;
+  const rawUrl = item.rendered_image_url || item.renderedImageUrl || item.imagePath || item.imageUrl;
+  if (!rawUrl) throw new Error("URL gambar slide tidak tersedia");
+  const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : `${CONFIG.apiUrl}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(60_000) });
-  if (!res.ok) throw new Error(`Gagal mengambil gambar slide (HTTP ${res.status})`);
+  if (!res.ok) throw new Error(`Gagal mengambil gambar slide (HTTP ${res.status}) dari ${url}`);
   return Buffer.from(await res.arrayBuffer());
 }
 
@@ -255,15 +260,33 @@ async function connect() {
 // ── Dispatch loop ──────────────────────────────────────────────────────────
 async function postWhatsapp(item) {
   try {
-    const image = await fetchImage(item);
-    const audience = statusAudience(meJid);
+    // 2. [PASTIKAN PENGIRIMAN MEDIA MENGGUNAKAN BUFFER & BROADCAST TRUE]
+    const imageBuffer = await fetchImage(item);
+
+    // 1. [INJECT NOMOR SENDIRI KE PENERIMA]
+    const myJid = sock?.user?.id
+      ? `${sock.user.id.split(":")[0].split("@")[0]}@s.whatsapp.net`
+      : (meJid || null);
+    const finalRecipients = statusAudience(myJid);
+    const caption = item.caption || item.body_text || item.bodyText || item.headline || "";
+
     if (CONFIG.dryRun) {
-      log(`🧪 [DRY RUN] ${item.label} → ${audience.length} penerima (${image.length} bytes)`);
+      log(`🧪 [DRY RUN] ${item.label} → ${finalRecipients.length} penerima (${imageBuffer.length} bytes, self: ${myJid || "none"})`);
     } else {
-      await sock.sendMessage("status@broadcast", { image, caption: item.caption }, { broadcast: true, statusJidList: audience });
+      await sock.sendMessage(
+        "status@broadcast",
+        {
+          image: imageBuffer,
+          caption: caption,
+        },
+        {
+          statusJidList: finalRecipients,
+          broadcast: true,
+        },
+      );
     }
     await api("/api/worker/ack", { method: "POST", body: { slideId: item.id, channel: "whatsapp", ok: true } });
-    log(`✅ WA Status terkirim: ${item.label} → ${audience.length} penerima`);
+    log(`✅ WA Status terkirim: ${item.label} → ${finalRecipients.length} penerima (termasuk nomor pengirim: ${myJid || "?"})`);
   } catch (err) {
     log(`✖ WA Status gagal: ${item.label} — ${err.message}`);
     await api("/api/worker/ack", {
