@@ -48,6 +48,8 @@ export interface SlideMeta {
   storagePath?: string;
   renderedAt?: string;
   igContainerId?: string;
+  forcePost?: boolean;
+  forcedAt?: string;
 }
 
 // ── Daily campaign (one per calendar day) ────────────────────────────────

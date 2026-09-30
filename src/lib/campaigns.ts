@@ -296,11 +296,20 @@ export async function scheduleSlides(
       continue;
     }
     if (opts.mode === "now") {
+      const nowTime = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(now);
+
       const [row] = await db
         .update(storySlides)
         .set({
           ...channelSet,
           status: "SCHEDULED",
+          targetTime: nowTime,
           scheduledAt: now,
           waPostedAt: null,
           igPostedAt: null,
@@ -308,6 +317,7 @@ export async function scheduleSlides(
           waLockAt: null,
           igLockAt: null,
           lastError: null,
+          meta: sql`coalesce(${storySlides.meta}, '{}'::jsonb) || ${JSON.stringify({ forcePost: true, forcedAt: now.toISOString() })}::jsonb`,
           updatedAt: now,
         })
         .where(eq(storySlides.id, s.id))
@@ -350,7 +360,13 @@ export async function expireStaleSlides(): Promise<number> {
   const rows = await db
     .update(storySlides)
     .set({ status: "FAILED", lastError: `Kedaluwarsa: tidak terkirim dalam ${hours} jam setelah jadwal`, updatedAt: new Date() })
-    .where(and(eq(storySlides.status, "SCHEDULED"), lt(storySlides.scheduledAt, new Date(Date.now() - hours * 3_600_000))))
+    .where(
+      and(
+        eq(storySlides.status, "SCHEDULED"),
+        lt(storySlides.scheduledAt, new Date(Date.now() - hours * 3_600_000)),
+        or(isNull(sql`${storySlides.meta}->>'forcePost'`), sql`(${storySlides.meta}->>'forcePost')::text != 'true'`),
+      ),
+    )
     .returning({ id: storySlides.id });
   return rows.length;
 }
@@ -360,7 +376,15 @@ export async function getDueSlides(limit = 10): Promise<StorySlide[]> {
   return db
     .select()
     .from(storySlides)
-    .where(and(eq(storySlides.status, "SCHEDULED"), lte(storySlides.scheduledAt, new Date())))
+    .where(
+      and(
+        eq(storySlides.status, "SCHEDULED"),
+        or(
+          lte(storySlides.scheduledAt, new Date()),
+          sql`(${storySlides.meta}->>'forcePost')::text = 'true'`,
+        ),
+      ),
+    )
     .orderBy(asc(storySlides.scheduledAt))
     .limit(limit);
 }
@@ -408,7 +432,12 @@ export async function ackWhatsapp(slideId: string, ok: boolean, error?: string):
   if (ok) {
     await db
       .update(storySlides)
-      .set({ waPostedAt: now, waLockAt: null, updatedAt: now })
+      .set({
+        waPostedAt: now,
+        waLockAt: null,
+        meta: sql`coalesce(${storySlides.meta}, '{}'::jsonb) - 'forcePost'`,
+        updatedAt: now,
+      })
       .where(eq(storySlides.id, slideId));
   } else {
     await db

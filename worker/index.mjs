@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import fs from "fs";
+import gracefulFs from "graceful-fs";
+gracefulFs.gracefulify(fs);
+
 /**
  * ════════════════════════════════════════════════════════════════════════
  *  Story Maker — WhatsApp Status Bridge Daemon  (PRD §3.4 / Task 5.1)
@@ -14,19 +18,22 @@
  * ════════════════════════════════════════════════════════════════════════
  */
 import "dotenv/config";
-import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
 
+const fsp = fs.promises;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const VERSION = "1.0.0";
 const CONFIG = {
-  apiUrl: (process.env.STORY_MAKER_URL || "http://localhost:3000").replace(/\/+$/, ""),
+  apiUrl: (process.env.STORY_MAKER_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, ""),
   secret: process.env.WORKER_SECRET || "",
   pollMs: Math.max(15, Number(process.env.POLL_INTERVAL_SECONDS) || 60) * 1000,
-  authDir: path.resolve(process.env.WA_AUTH_DIR || "./auth_info_baileys"),
-  contactsFile: path.resolve(process.env.WA_CONTACTS_FILE || "./contacts.json"),
+  authDir: path.resolve(process.env.WA_AUTH_DIR || path.join(__dirname, "auth_info_baileys")),
+  contactsFile: path.resolve(process.env.WA_CONTACTS_FILE || path.join(__dirname, "contacts.json")),
   audience: (process.env.WA_STATUS_AUDIENCE || "")
     .split(",")
     .map((s) => s.trim())
@@ -34,6 +41,7 @@ const CONFIG = {
   dispatchInstagram: process.env.DISPATCH_INSTAGRAM !== "false",
   dryRun: process.env.DRY_RUN === "true",
   logLevel: process.env.LOG_LEVEL || "silent",
+  timezone: process.env.APP_TIMEZONE || "Asia/Jakarta",
 };
 
 const log = (...args) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...args);
@@ -49,7 +57,7 @@ let saveTimer = null;
 
 async function loadContacts() {
   try {
-    const raw = JSON.parse(await fs.readFile(CONFIG.contactsFile, "utf8"));
+    const raw = JSON.parse(await fsp.readFile(CONFIG.contactsFile, "utf8"));
     if (Array.isArray(raw)) raw.forEach((jid) => contacts.add(jid));
     log(`📇 ${contacts.size} kontak dimuat dari cache`);
   } catch {
@@ -64,7 +72,7 @@ function addContact(jid) {
   if (contacts.size !== before) {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      fs.writeFile(CONFIG.contactsFile, JSON.stringify([...contacts])).catch(() => undefined);
+      fsp.writeFile(CONFIG.contactsFile, JSON.stringify([...contacts])).catch(() => undefined);
     }, 2_000);
   }
 }
@@ -104,6 +112,84 @@ async function fetchImage(item) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+// ── Auth cache & concurrency limiter (EMFILE protection) ───────────────────
+/**
+ * In-memory cache layer & concurrency limiter for Baileys auth state keys.
+ * Caches sessions, sender-keys, pre-keys, etc. in memory (including nulls for missing files)
+ * and throttles file reads/writes to small batches (default 50) to prevent EMFILE
+ * errors when broadcasting to 7,000+ contacts.
+ */
+function makeCachedAuthState(state, { batchSize = 50 } = {}) {
+  const cache = new Map();
+  const originalGet = state.keys.get.bind(state.keys);
+  const originalSet = state.keys.set.bind(state.keys);
+
+  state.keys = {
+    ...state.keys,
+
+    get: async (type, ids) => {
+      const data = {};
+      const missingIds = [];
+
+      for (const id of ids) {
+        const cacheKey = `${type}:${id}`;
+        if (cache.has(cacheKey)) {
+          const val = cache.get(cacheKey);
+          data[id] = val;
+        } else {
+          missingIds.push(id);
+        }
+      }
+
+      if (missingIds.length > 0) {
+        for (let i = 0; i < missingIds.length; i += batchSize) {
+          const chunk = missingIds.slice(i, i + batchSize);
+          const chunkData = await originalGet(type, chunk);
+          for (const id of chunk) {
+            const val = chunkData[id] ?? null;
+            cache.set(`${type}:${id}`, val);
+            data[id] = val;
+          }
+        }
+      }
+
+      return data;
+    },
+
+    set: async (data) => {
+      // 1. Synchronously update in-memory cache
+      const entries = [];
+      for (const category of Object.keys(data)) {
+        for (const id of Object.keys(data[category])) {
+          const value = data[category][id];
+          cache.set(`${category}:${id}`, value ?? null);
+          entries.push({ category, id, value });
+        }
+      }
+
+      // 2. Persist to disk in bounded batches to prevent EMFILE
+      for (let i = 0; i < entries.length; i += batchSize) {
+        const chunk = entries.slice(i, i + batchSize);
+        const chunkData = {};
+        for (const { category, id, value } of chunk) {
+          if (!chunkData[category]) chunkData[category] = {};
+          chunkData[category][id] = value;
+        }
+        await originalSet(chunkData);
+      }
+    },
+
+    clear: async () => {
+      cache.clear();
+      if (typeof state.keys.clear === "function") {
+        await state.keys.clear();
+      }
+    },
+  };
+
+  return state;
+}
+
 // ── WhatsApp socket ────────────────────────────────────────────────────────
 let sock = null;
 let connected = false;
@@ -112,7 +198,8 @@ let busy = false;
 let reconnectAttempts = 0;
 
 async function connect() {
-  const { state, saveCreds } = await useMultiFileAuthState(CONFIG.authDir);
+  const { state: rawState, saveCreds } = await useMultiFileAuthState(CONFIG.authDir);
+  const state = makeCachedAuthState(rawState, { batchSize: 50 });
   let version;
   try {
     ({ version } = await fetchLatestBaileysVersion());
@@ -148,7 +235,7 @@ async function connect() {
       const code = lastDisconnect?.error?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) {
         log("⚠ Sesi WhatsApp logout — menghapus sesi lama, QR baru akan muncul…");
-        await fs.rm(CONFIG.authDir, { recursive: true, force: true });
+        await fsp.rm(CONFIG.authDir, { recursive: true, force: true });
       }
       const delay = Math.min(30_000, 2_000 * 2 ** reconnectAttempts++);
       log(`↻ Koneksi tertutup (kode ${code ?? "?"}) — reconnect dalam ${Math.round(delay / 1000)} detik`);
@@ -195,6 +282,56 @@ async function postInstagram(item) {
   }
 }
 
+/**
+ * Memeriksa apakah slide siap diposting:
+ * 1. Jika ada instruksi force post (forcePost === true, force === true, atau status === "READY_TO_POST") -> langsung kirim!
+ * 2. Jika status SCHEDULED, periksa waktu:
+ *    - scheduledAt (ISO string UTC) dibandingkan dengan Date.now() (UTC).
+ *    - Fallback targetTime (HH:MM / HH:MM:SS) dibandingkan dengan jam lokal WIB (Asia/Jakarta)
+ *      agar terhindar dari bug pembanding waktu WIB vs UTC.
+ */
+function checkDue(item) {
+  const isForce = Boolean(item.forcePost || item.force || item.status === "READY_TO_POST");
+  if (isForce) {
+    return { due: true, isForce: true, reason: "instruksi force post" };
+  }
+
+  if (item.status && item.status !== "SCHEDULED") {
+    return { due: false, isForce: false, reason: `status: ${item.status}` };
+  }
+
+  // 1. Cek scheduledAt (ISO UTC timestamp)
+  if (item.scheduledAt) {
+    const scheduledTime = new Date(item.scheduledAt).getTime();
+    if (Number.isFinite(scheduledTime)) {
+      if (scheduledTime <= Date.now()) {
+        return { due: true, isForce: false, reason: `jadwal tercapai (${item.scheduledAt})` };
+      }
+      return { due: false, isForce: false, reason: `belum waktu tayang (${item.scheduledAt})` };
+    }
+  }
+
+  // 2. Fallback cek targetTime terhadap jam lokal di zona waktu target (default Asia/Jakarta / WIB)
+  if (item.targetTime) {
+    const tz = CONFIG.timezone || "Asia/Jakarta";
+    const nowTimeStr = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date());
+
+    const target = item.targetTime.length === 5 ? `${item.targetTime}:00` : item.targetTime;
+    if (target <= nowTimeStr) {
+      return { due: true, isForce: false, reason: `targetTime ${target} <= ${nowTimeStr} (${tz})` };
+    }
+    return { due: false, isForce: false, reason: `targetTime ${target} > ${nowTimeStr} (${tz})` };
+  }
+
+  return { due: true, isForce: false, reason: "siap diproses" };
+}
+
 async function tick() {
   if (busy) return;
   busy = true;
@@ -205,10 +342,29 @@ async function tick() {
       version: VERSION,
     });
     const { items = [] } = await api(`/api/worker/queue?${params}`);
-    if (items.length) log(`📬 ${items.length} slide jatuh tempo`);
+    if (items.length) log(`📬 ${items.length} slide diterima dari antrean`);
     for (const item of items) {
-      if (item.postToWhatsapp && !item.waPosted && item.waLeased && connected) await postWhatsapp(item);
-      if (CONFIG.dispatchInstagram && item.postToInstagram && !item.igPosted) await postInstagram(item);
+      const check = checkDue(item);
+      if (!check.due) {
+        log(`⏳ Slide ${item.label || item.id} dilewati (${check.reason})`);
+        continue;
+      }
+
+      if (check.isForce) {
+        log(`⚡ Force post diproses: ${item.label || item.id}`);
+      }
+
+      if (item.postToWhatsapp && !item.waPosted) {
+        if (!connected) {
+          log(`⚠ WhatsApp belum terhubung — ${item.label || item.id} menunggu koneksi WA`);
+        } else if (item.waLeased || check.isForce) {
+          await postWhatsapp(item);
+        }
+      }
+
+      if (CONFIG.dispatchInstagram && item.postToInstagram && !item.igPosted) {
+        await postInstagram(item);
+      }
     }
   } catch (err) {
     log("✖ Polling gagal:", err.message);
