@@ -1,0 +1,9 @@
+node_modules
+worker/node_modules
+worker/auth_info_baileys
+worker/contacts.json
+.next
+out
+build
+.git
+.env*
