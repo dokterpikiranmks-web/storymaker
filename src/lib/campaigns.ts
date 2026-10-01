@@ -343,7 +343,17 @@ export async function scheduleSlides(
   const [campaign] = await db.select().from(dailyCampaigns).where(eq(dailyCampaigns.id, campaignId)).limit(1);
   if (!campaign) throw new NotFoundError("Campaign tidak ditemukan");
   const all = await db.select().from(storySlides).where(eq(storySlides.campaignId, campaignId));
-  const targets = opts.slideIds?.length ? all.filter((s) => opts.slideIds!.includes(s.id)) : all;
+  let targets: StorySlide[];
+  if (opts.slideIds?.length) {
+    targets = all.filter((s) => opts.slideIds!.includes(s.id));
+  } else if (opts.mode === "now") {
+    // Mode "now" tanpa slideIds: tandai slide berikutnya yang berstatus SCHEDULED (atau DRAFT)
+    const sorted = [...all].sort((a, b) => actIndex(a.act) - actIndex(b.act));
+    const nextTarget = sorted.find((s) => s.status === "SCHEDULED") || sorted.find((s) => s.status === "DRAFT");
+    targets = nextTarget ? [nextTarget] : [];
+  } else {
+    targets = all;
+  }
   const tz = getAppTimezone();
   const channelSet = opts.channels
     ? { postToWhatsapp: opts.channels.whatsapp, postToInstagram: opts.channels.instagram }

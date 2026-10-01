@@ -56,6 +56,12 @@ if (!CONFIG.secret) {
 // ── Health Check Server for Render / Cloud Web Services ──────────────────
 const PORT = process.env.PORT || 10000;
 const healthServer = http.createServer((req, res) => {
+  if (req.url === "/post-now" || req.url === "/trigger") {
+    log("⚡ Trigger /post-now diterima via HTTP server worker — menjalankan tick()");
+    void tick();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ status: "ok", message: "tick triggered" }));
+  }
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(
     JSON.stringify({
@@ -437,18 +443,30 @@ async function postInstagram(item) {
   }
 }
 
-// ── Grace Period Keterlambatan (~60 menit) ──────────────────────────────────
-const GRACE_PERIOD_MS = 60 * 60 * 1000;
+// ── Logika Catch-Up Hari Ini (Tanpa Batas 60 Menit) ─────────────────────────
+function getLocalDateString(date = new Date(), timezone = CONFIG.timezone || "Asia/Makassar") {
+  try {
+    const d = date instanceof Date ? date : new Date(date);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  } catch {
+    return new Date(date).toISOString().slice(0, 10);
+  }
+}
 
 /**
  * Memeriksa apakah slide siap diposting:
  * 1. Jika ada instruksi force post (forcePost === true, force === true, atau status === "READY_TO_POST") -> langsung kirim!
- * 2. Jika status SCHEDULED, periksa waktu:
- *    - scheduledAt (ISO string UTC) dibandingkan dengan Date.now() (UTC).
- *    - Toleransi Grace Period ~60 menit: Jika jadwal sudah lewat (misal karena worker baru saja restart/redeploy),
- *      worker TETAP mengeksekusi pengiriman tersebut sekarang sebagai catch-up, bukan mengabaikannya atau menganggap hangus.
- *    - Fallback targetTime (HH:MM / HH:MM:SS) dibandingkan dengan jam lokal WITA (Asia/Makassar)
- *      agar terhindar dari bug pembanding waktu WITA vs UTC.
+ * 2. Jika status SCHEDULED:
+ *    - Selama item berasal dari campaign hari ini (tanggal lokal yang sama di zona waktu target),
+ *      berstatus 'SCHEDULED', dan waktu tayangnya <= waktu sekarang (now), MAKA WAJIB DIKIRIM (isCatchUp = true).
+ *    - Tidak dibatasi hanya 60 menit: keterlambatan berapa menit pun (akibat server restart/deploy Render)
+ *      akan langsung diproses tanpa pernah dianggap hangus.
+ * 3. Fallback targetTime (HH:MM / HH:MM:SS) jika scheduledAt tidak tersedia dibandingkan dengan jam lokal WITA.
  */
 function checkDue(item) {
   const isForce = Boolean(item.forcePost || item.force || item.status === "READY_TO_POST");
@@ -461,40 +479,48 @@ function checkDue(item) {
   }
 
   const now = Date.now();
+  const tz = CONFIG.timezone || "Asia/Makassar";
+  const todayStr = getLocalDateString(now, tz);
 
-  // 1. Cek scheduledAt (ISO UTC timestamp) dengan Toleransi Grace Period ~60 menit
+  // 1. Cek scheduledAt (ISO UTC timestamp) dengan toleransi penuh untuk jadwal hari ini
   if (item.scheduledAt) {
-    const scheduledTime = new Date(item.scheduledAt).getTime();
+    const scheduledDate = new Date(item.scheduledAt);
+    const scheduledTime = scheduledDate.getTime();
     if (Number.isFinite(scheduledTime)) {
       if (scheduledTime <= now) {
-        const elapsedMs = now - scheduledTime;
-        const elapsedMins = Math.round(elapsedMs / 60000);
-        if (elapsedMs <= GRACE_PERIOD_MS) {
+        // Verifikasi item berasal dari campaign hari ini (tanggal lokal yang sama di zona waktu target)
+        const itemDateStr = item.campaignDate || getLocalDateString(scheduledDate, tz);
+        const isToday = itemDateStr === todayStr;
+
+        if (isToday) {
+          const elapsedMs = now - scheduledTime;
+          const elapsedMins = Math.round(elapsedMs / 60000);
           return {
             due: true,
             isForce: false,
             isCatchUp: elapsedMins > 0,
             reason:
               elapsedMins > 0
-                ? `catch-up grace period aktif (${elapsedMins} menit lewat jadwal: ${item.scheduledAt})`
+                ? `catch-up hari ini (${elapsedMins} menit lewat jadwal: ${item.scheduledAt})`
                 : `jadwal tercapai (${item.scheduledAt})`,
           };
         }
-        // Lewat lebih dari 60 menit: tetap eksekusi pengiriman catch-up jika antrean server masih mengirimkannya
+
+        // Jika bukan campaign hari ini (misal sisa campaign kemarin), abaikan
         return {
-          due: true,
+          due: false,
           isForce: false,
-          isCatchUp: true,
-          reason: `jadwal terlewat (${elapsedMins} menit lalu), tetap dieksekusi (catch-up)`,
+          isCatchUp: false,
+          reason: `bukan jadwal hari ini (${itemDateStr} vs ${todayStr})`,
         };
       }
+
       return { due: false, isForce: false, isCatchUp: false, reason: `belum waktu tayang (${item.scheduledAt})` };
     }
   }
 
   // 2. Fallback cek targetTime terhadap jam lokal di zona waktu target (default Asia/Makassar / WITA)
   if (item.targetTime) {
-    const tz = CONFIG.timezone || "Asia/Makassar";
     const nowTimeStr = new Intl.DateTimeFormat("en-GB", {
       timeZone: tz,
       hour: "2-digit",
