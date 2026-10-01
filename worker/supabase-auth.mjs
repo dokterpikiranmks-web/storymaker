@@ -27,6 +27,12 @@ export function getDbPool() {
         ? false
         : { rejectUnauthorized: false },
     });
+
+    poolInstance.on("error", (err) => {
+      // Supabase pooler (PgBouncer) idle disconnects (e.g. ECONNRESET) are normal and self-healing.
+      // Handling this prevents unhandled exception from crashing the daemon process.
+      console.warn("⚠️ [Supabase DB Pool] Idle client reset (self-healing):", err.message);
+    });
   }
   return poolInstance;
 }

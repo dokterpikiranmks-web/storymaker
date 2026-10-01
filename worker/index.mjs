@@ -403,6 +403,14 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
+process.on("unhandledRejection", (reason) => {
+  log("⚠️ Unhandled Rejection (ditangani):", reason?.message || reason);
+});
+
+process.on("uncaughtException", (err) => {
+  log("⚠️ Uncaught Exception (ditangani):", err?.message || err);
+});
+
 main().catch((err) => {
   console.error(err);
   process.exit(1);
