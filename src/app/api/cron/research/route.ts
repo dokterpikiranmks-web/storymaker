@@ -28,7 +28,7 @@ interface RotatingPillar {
 }
 
 /**
- * Rotasi Kategori Harian Dr. Mind Scout (WIB / Asia/Jakarta):
+ * Rotasi Kategori Harian Dr. Mind Scout (WITA / Asia/Makassar):
  * - Senin & Kamis : Domain A — Traditional Functional Medicine & Totok Saraf
  * - Selasa & Jumat: Domain B — Hipnoterapi Klinis & Subconscious Architecture
  * - Rabu & Sabtu  : Domain C — Solusi AI & Augmentasi Produktivitas

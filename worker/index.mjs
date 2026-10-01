@@ -43,7 +43,7 @@ const CONFIG = {
   dispatchInstagram: process.env.DISPATCH_INSTAGRAM !== "false",
   dryRun: process.env.DRY_RUN === "true",
   logLevel: process.env.LOG_LEVEL || "silent",
-  timezone: process.env.APP_TIMEZONE || "Asia/Jakarta",
+  timezone: process.env.APP_TIMEZONE || "Asia/Makassar",
 };
 
 const log = (...args) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...args);
@@ -386,20 +386,36 @@ async function postWhatsapp(slide) {
   try {
     const targetChatJid = process.env.TARGET_CHAT_JID || "62811443327@s.whatsapp.net";
     const imageBuffer = await fetchImage(slide);
-    const actNumber = slide.act_number || slide.act?.match(/\d+/)?.[0] || slide.label?.match(/Babak\s+(\d+)/i)?.[1] || "";
-    const headline = slide.headline || "";
-    const bodyText = slide.body_text || slide.bodyText || slide.caption || "";
+    const actNumber = slide.actNumber || slide.act_number || slide.act?.match(/\d+/)?.[0] || slide.label?.match(/Babak\s+(\d+)/i)?.[1] || "";
+    const shortTitle = slide.actShortTitle || slide.label?.split("·")?.[2]?.trim() || "";
+    const imageCaption = `📸 *[BABAK ${actNumber}${shortTitle ? `: ${shortTitle}` : ""}]*`;
 
-    const caption = `📌 *[STORY MAKER - BABAK ${actNumber}]*\n*${headline}*\n\n${bodyText}\n\n━━━━━━━━━━━━━━━\n👉 _Ketuk foto di atas > pilih ikon panah "Teruskan" (Forward) > pilih "Status Saya". Selesai!_`;
+    // Naskah caption lengkap murni untuk Quick-Copy (tanpa header log / instruksi teknis apapun)
+    const pureCaption = (
+      slide.caption ||
+      [slide.headline, slide.bodyText || slide.body_text, slide.callToAction || slide.call_to_action].filter(Boolean).join("\n\n")
+    ).trim();
 
     if (CONFIG.dryRun) {
-      log(`🧪 [DRY RUN] ${slide.label} → chat ${targetChatJid} (${imageBuffer.length} bytes)`);
+      log(`🧪 [DRY RUN] ${slide.label} → chat ${targetChatJid} (${imageBuffer.length} bytes + quick-copy bubble)`);
     } else {
-      const sendResult = await sock.sendMessage(targetChatJid, {
+      // Pesan 1: File poster gambar (1080x1920) dengan caption ringkas penanda babak
+      const sendImgResult = await sock.sendMessage(targetChatJid, {
         image: imageBuffer,
-        caption: caption,
+        caption: imageCaption,
       });
-      log(`📨 Pesan slide berhasil terkirim ke chat ${targetChatJid} (Msg ID: ${sendResult?.key?.id || "unknown"})`);
+      log(`📸 Poster babak terkirim ke chat ${targetChatJid} (Msg ID: ${sendImgResult?.key?.id || "unknown"})`);
+
+      // Jeda 500ms agar urutan pesan rapi di WhatsApp (gambar di atas, teks caption di bawah)
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Pesan 2: Quick-Copy Bubble (Hanya teks naskah caption lengkap murni)
+      if (pureCaption) {
+        const sendTextResult = await sock.sendMessage(targetChatJid, {
+          text: pureCaption,
+        });
+        log(`📝 Quick-copy caption terkirim ke chat ${targetChatJid} (Msg ID: ${sendTextResult?.key?.id || "unknown"})`);
+      }
     }
     await api("/api/worker/ack", { method: "POST", body: { slideId: slide.id, channel: "whatsapp", ok: true } });
     log(`✅ WA Chat terkirim: ${slide.label} → ${targetChatJid}`);
@@ -421,38 +437,64 @@ async function postInstagram(item) {
   }
 }
 
+// ── Grace Period Keterlambatan (~60 menit) ──────────────────────────────────
+const GRACE_PERIOD_MS = 60 * 60 * 1000;
+
 /**
  * Memeriksa apakah slide siap diposting:
  * 1. Jika ada instruksi force post (forcePost === true, force === true, atau status === "READY_TO_POST") -> langsung kirim!
  * 2. Jika status SCHEDULED, periksa waktu:
  *    - scheduledAt (ISO string UTC) dibandingkan dengan Date.now() (UTC).
- *    - Fallback targetTime (HH:MM / HH:MM:SS) dibandingkan dengan jam lokal WIB (Asia/Jakarta)
- *      agar terhindar dari bug pembanding waktu WIB vs UTC.
+ *    - Toleransi Grace Period ~60 menit: Jika jadwal sudah lewat (misal karena worker baru saja restart/redeploy),
+ *      worker TETAP mengeksekusi pengiriman tersebut sekarang sebagai catch-up, bukan mengabaikannya atau menganggap hangus.
+ *    - Fallback targetTime (HH:MM / HH:MM:SS) dibandingkan dengan jam lokal WITA (Asia/Makassar)
+ *      agar terhindar dari bug pembanding waktu WITA vs UTC.
  */
 function checkDue(item) {
   const isForce = Boolean(item.forcePost || item.force || item.status === "READY_TO_POST");
   if (isForce) {
-    return { due: true, isForce: true, reason: "instruksi force post" };
+    return { due: true, isForce: true, isCatchUp: false, reason: "instruksi force post" };
   }
 
   if (item.status && item.status !== "SCHEDULED") {
-    return { due: false, isForce: false, reason: `status: ${item.status}` };
+    return { due: false, isForce: false, isCatchUp: false, reason: `status: ${item.status}` };
   }
 
-  // 1. Cek scheduledAt (ISO UTC timestamp)
+  const now = Date.now();
+
+  // 1. Cek scheduledAt (ISO UTC timestamp) dengan Toleransi Grace Period ~60 menit
   if (item.scheduledAt) {
     const scheduledTime = new Date(item.scheduledAt).getTime();
     if (Number.isFinite(scheduledTime)) {
-      if (scheduledTime <= Date.now()) {
-        return { due: true, isForce: false, reason: `jadwal tercapai (${item.scheduledAt})` };
+      if (scheduledTime <= now) {
+        const elapsedMs = now - scheduledTime;
+        const elapsedMins = Math.round(elapsedMs / 60000);
+        if (elapsedMs <= GRACE_PERIOD_MS) {
+          return {
+            due: true,
+            isForce: false,
+            isCatchUp: elapsedMins > 0,
+            reason:
+              elapsedMins > 0
+                ? `catch-up grace period aktif (${elapsedMins} menit lewat jadwal: ${item.scheduledAt})`
+                : `jadwal tercapai (${item.scheduledAt})`,
+          };
+        }
+        // Lewat lebih dari 60 menit: tetap eksekusi pengiriman catch-up jika antrean server masih mengirimkannya
+        return {
+          due: true,
+          isForce: false,
+          isCatchUp: true,
+          reason: `jadwal terlewat (${elapsedMins} menit lalu), tetap dieksekusi (catch-up)`,
+        };
       }
-      return { due: false, isForce: false, reason: `belum waktu tayang (${item.scheduledAt})` };
+      return { due: false, isForce: false, isCatchUp: false, reason: `belum waktu tayang (${item.scheduledAt})` };
     }
   }
 
-  // 2. Fallback cek targetTime terhadap jam lokal di zona waktu target (default Asia/Jakarta / WIB)
+  // 2. Fallback cek targetTime terhadap jam lokal di zona waktu target (default Asia/Makassar / WITA)
   if (item.targetTime) {
-    const tz = CONFIG.timezone || "Asia/Jakarta";
+    const tz = CONFIG.timezone || "Asia/Makassar";
     const nowTimeStr = new Intl.DateTimeFormat("en-GB", {
       timeZone: tz,
       hour: "2-digit",
@@ -463,12 +505,12 @@ function checkDue(item) {
 
     const target = item.targetTime.length === 5 ? `${item.targetTime}:00` : item.targetTime;
     if (target <= nowTimeStr) {
-      return { due: true, isForce: false, reason: `targetTime ${target} <= ${nowTimeStr} (${tz})` };
+      return { due: true, isForce: false, isCatchUp: true, reason: `targetTime ${target} <= ${nowTimeStr} (${tz})` };
     }
-    return { due: false, isForce: false, reason: `targetTime ${target} > ${nowTimeStr} (${tz})` };
+    return { due: false, isForce: false, isCatchUp: false, reason: `targetTime ${target} > ${nowTimeStr} (${tz})` };
   }
 
-  return { due: true, isForce: false, reason: "siap diproses" };
+  return { due: true, isForce: false, isCatchUp: false, reason: "siap diproses" };
 }
 
 async function tick() {
@@ -487,6 +529,10 @@ async function tick() {
       if (!check.due) {
         log(`⏳ Slide ${item.label || item.id} dilewati (${check.reason})`);
         continue;
+      }
+
+      if (check.isCatchUp) {
+        log(`⏰ [CATCH-UP] Slide ${item.label || item.id} diproses dalam jendela toleransi: ${check.reason}`);
       }
 
       if (check.isForce) {

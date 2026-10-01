@@ -1,7 +1,7 @@
 import "server-only";
 import type { FeatureFlags } from "@/lib/stories/types";
 
-const DEFAULT_TZ = "Asia/Jakarta";
+const DEFAULT_TZ = "Asia/Makassar";
 
 export function getAppTimezone(): string {
   const tz = process.env.APP_TIMEZONE?.trim() || DEFAULT_TZ;
