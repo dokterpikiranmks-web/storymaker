@@ -102,6 +102,25 @@ const phoneToJid = (value) => {
   return digits ? `${digits}@s.whatsapp.net` : null;
 };
 
+// ── In-memory anti-spam debounce cache for inbound auto-responder (10 mins TTL) ─
+const autoReplyCooldowns = new Map();
+const DEBOUNCE_TTL_MS = 10 * 60 * 1000;
+
+function isCoolingDown(jid) {
+  const now = Date.now();
+  const expiresAt = autoReplyCooldowns.get(jid);
+  if (expiresAt && expiresAt > now) {
+    return true;
+  }
+  autoReplyCooldowns.set(jid, now + DEBOUNCE_TTL_MS);
+  if (autoReplyCooldowns.size > 2000) {
+    for (const [k, v] of autoReplyCooldowns.entries()) {
+      if (v <= now) autoReplyCooldowns.delete(k);
+    }
+  }
+  return false;
+}
+
 // ── Story Maker API bridge ─────────────────────────────────────────────────
 async function api(pathname, { method = "GET", body } = {}) {
   const res = await fetch(`${CONFIG.apiUrl}${pathname}`, {
@@ -269,6 +288,97 @@ async function connect() {
     list.forEach((c) => addContact(c.id));
     chats.forEach((c) => addContact(c.id));
   });
+
+  // ── Inbound keyword auto-responder ─────────────────────────────────────────
+  sock.ev.on("messages.upsert", async ({ messages, type }) => {
+    if (!Array.isArray(messages)) return;
+
+    for (const m of messages) {
+      try {
+        if (!m?.message || !m?.key) continue;
+
+        // a. Filter pesan: abaikan pesan sendiri, grup (@g.us), status/broadcast (@broadcast)
+        if (m.key.fromMe) continue;
+
+        const remoteJid = m.key.remoteJid;
+        if (!remoteJid || remoteJid.endsWith("@g.us") || remoteJid.endsWith("@broadcast")) continue;
+
+        // Hanya proses chat personal (@s.whatsapp.net)
+        if (!remoteJid.endsWith("@s.whatsapp.net")) continue;
+
+        // b. Ekstraksi teks & normalisasi
+        const rawText =
+          m.message.conversation ||
+          m.message.extendedTextMessage?.text ||
+          m.message.imageMessage?.caption ||
+          m.message.videoMessage?.caption ||
+          m.message.documentMessage?.caption ||
+          "";
+
+        const textTrimmed = rawText.trim();
+        if (!textTrimmed) continue;
+
+        const textUpper = textTrimmed.toUpperCase();
+        const TRIGGER_KEYWORDS = ["RESET", "VAGUS", "SOMATIK", "PANDUAN", "PROTOKOL", "KONSUL"];
+        const matchedKeyword = TRIGGER_KEYWORDS.find((kw) => textUpper.includes(kw));
+
+        if (!matchedKeyword) continue;
+
+        // c. Anti-Spam / In-memory Debounce (TTL 10 menit)
+        if (isCoolingDown(remoteJid)) {
+          log(`⏳ Inbound [${matchedKeyword}] dari ${remoteJid} diabaikan (cooldown 10 menit)`);
+          continue;
+        }
+
+        log(`🎯 Inbound auto-responder terpicu [${matchedKeyword}] dari ${remoteJid}: "${textTrimmed.slice(0, 45)}"`);
+
+        // d. Pengiriman balasan protokol
+        await handleInboundProtocolResponse(remoteJid, matchedKeyword);
+      } catch (inboundErr) {
+        log(`✖ Error inbound auto-responder:`, inboundErr.message);
+      }
+    }
+  });
+}
+
+// ── Inbound Lead Magnet Protocol Auto-Responder ─────────────────────────────
+async function handleInboundProtocolResponse(remoteJid, keyword) {
+  if (!sock) return;
+
+  const greetingMessage = `Salam hangat dari *Dr. Mind Scout & Tim Klinis* 🙏\n\nTerima kasih telah menghubungi kami dengan kata kunci *"${keyword}"*.\n\nBerikut kami lampirkan dokumen resmi *Dr. Mind Somatic & Cognitive Protocol* edisi aktif:\n• *Langkah 1:* Akupresur Somatik & Meridian (GB-20 / LI-4 / ST-36)\n• *Langkah 2:* Regulasi Nervus Vagus & Gelombang Alpha (4-8 Rhythm)\n• *Langkah 3:* Anchoring Somatik & Subconscious Architecture\n\nSilakan unduh dokumen PDF terlampir dan ikuti 3 langkah praktis tersebut (durasi 3–5 menit).\n\n━━━━━━━━━━━━━━━\n💬 *Layanan & Konsultasi:*\nJika ingin konsultasi privat jadwal terapi atau ingin mencoba aplikasi asisten fokus kami, silakan balas chat ini.`;
+
+  const fallbackMessage = `Salam hangat dari *Dr. Mind Scout & Tim Klinis* 🙏\n\nTerima kasih telah merespons insight harian kami (*"${keyword}"*).\n\n🧠 *RINGKASAN PROTOKOL 3 MENIT RESET SOMATIK & SARAF VAGUS:*\n1. *Titik GB-20 (Fengchi)*: Tekan kedua cekungan di dasar tengkorak belakang selama 60 detik dengan napas teratur lambat.\n2. *Vagus Physiological Sigh*: Tarik napas 2 kali lewat hidung, hembuskan perlahan 8 detik lewat mulut (ulangi 5 siklus).\n3. *Subconscious Grounding*: Sentuh dada tengah, rasakan detak jantung melambat dan gelombang otak beralih ke status Alpha tenang.\n\n🔗 Akses dokumen PDF lengkap: ${CONFIG.apiUrl}/api/protocol/pdf\n\n━━━━━━━━━━━━━━━\n💬 *Layanan & Konsultasi:*\nJika ingin konsultasi privat jadwal terapi atau ingin mencoba aplikasi asisten fokus kami, silakan balas chat ini.`;
+
+  try {
+    const pdfRes = await fetch(`${CONFIG.apiUrl}/api/protocol/pdf`, {
+      headers: { Authorization: `Bearer ${CONFIG.secret}` },
+      signal: AbortSignal.timeout(25_000),
+    });
+
+    if (!pdfRes.ok) {
+      throw new Error(`HTTP ${pdfRes.status} saat fetch PDF`);
+    }
+
+    const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    await sock.sendMessage(remoteJid, {
+      document: pdfBuffer,
+      fileName: `Dr-Mind-Protokol-${dateStr}.pdf`,
+      mimetype: "application/pdf",
+      caption: greetingMessage,
+    });
+
+    log(`✅ Dokumen PDF protokol terkirim ke ${remoteJid}`);
+  } catch (err) {
+    log(`⚠ Gagal mengirim PDF ke ${remoteJid} (${err.message}) — mengirim pesan teks instruksi terstruktur`);
+    try {
+      await sock.sendMessage(remoteJid, { text: fallbackMessage });
+      log(`✅ Pesan teks terstruktur fallback terkirim ke ${remoteJid}`);
+    } catch (fallbackErr) {
+      log(`✖ Gagal mengirim pesan fallback ke ${remoteJid}:`, fallbackErr.message);
+    }
+  }
 }
 
 // ── Dispatch loop ──────────────────────────────────────────────────────────

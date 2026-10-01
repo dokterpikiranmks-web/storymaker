@@ -68,3 +68,44 @@ export async function removeAssets(paths: string[]): Promise<void> {
   if (!supabase || paths.length === 0) return;
   await supabase.storage.from(getStorageBucket()).remove(paths);
 }
+
+export async function ensureLeadMagnetsBucket(): Promise<string> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase Storage belum dikonfigurasi");
+  const bucketName = process.env.SUPABASE_LEAD_MAGNETS_BUCKET?.trim() || "lead-magnets";
+  try {
+    const { data } = await supabase.storage.getBucket(bucketName);
+    if (!data) {
+      const { error } = await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: "15MB",
+        allowedMimeTypes: ["application/pdf"],
+      });
+      if (error && !/already exists/i.test(error.message)) {
+        console.warn("[storage] Warning creating lead-magnets bucket:", error.message);
+      }
+    }
+    return bucketName;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[storage] Error ensuring lead-magnets bucket, fallback to default bucket:", msg);
+    return getStorageBucket();
+  }
+}
+
+/**
+ * Uploads a Lead Magnet protocol PDF to Supabase Storage ('lead-magnets' bucket or fallback bucket).
+ * Returns the public URL of the uploaded PDF file.
+ */
+export async function uploadLeadMagnetPdf(path: string, data: Buffer): Promise<string> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) throw new Error("Supabase Storage belum dikonfigurasi");
+  const bucket = await ensureLeadMagnetsBucket();
+  const { error } = await supabase.storage.from(bucket).upload(path, data, {
+    contentType: "application/pdf",
+    upsert: true,
+    cacheControl: "31536000",
+  });
+  if (error) throw error;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
