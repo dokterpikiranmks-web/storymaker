@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "postinstall": "node scripts/copy-fonts.mjs",
+    "postinstall": "node -e \"const fs=require('fs'); if(fs.existsSync('./scripts/copy-fonts.mjs')) require('child_process').execSync('node scripts/copy-fonts.mjs', {stdio:'inherit'})\"",
     "worker": "node worker/index.mjs",
     "worker:wa": "npm --prefix worker start"
   },

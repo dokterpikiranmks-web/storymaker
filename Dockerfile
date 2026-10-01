@@ -4,8 +4,8 @@ WORKDIR /app
 # Salin manifest dependensi
 COPY package*.json ./
 
-# Gunakan npm install dengan flag toleran terhadap lockfile & peer-deps
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund
+# Gunakan npm install dengan flag toleran & abaikan lifecycle scripts (postinstall)
+RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund --ignore-scripts
 
 # Salin folder worker
 COPY worker ./worker
