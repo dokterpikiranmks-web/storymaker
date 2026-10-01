@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "fs";
+import http from "http";
 import gracefulFs from "graceful-fs";
 gracefulFs.gracefulify(fs);
 
@@ -51,6 +52,23 @@ if (!CONFIG.secret) {
   console.error("✖ WORKER_SECRET wajib diisi dan harus sama dengan WORKER_SECRET di server Story Maker.");
   process.exit(1);
 }
+
+// ── Health Check Server for Render / Cloud Web Services ──────────────────
+const PORT = process.env.PORT || 10000;
+const healthServer = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      status: "ok",
+      service: "Story Maker WhatsApp Daemon",
+      uptime: process.uptime(),
+    })
+  );
+});
+
+healthServer.listen(PORT, "0.0.0.0", () => {
+  log(`🌐 Health check server aktif di port ${PORT}`);
+});
 
 // ── Contact store → statusJidList (who can see the Status) ─────────────────
 const contacts = new Set();
