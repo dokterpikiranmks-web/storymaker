@@ -23,7 +23,7 @@ export function getDbPool() {
       max: 5,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
-      ssl: process.env.DATABASE_URL.includes("localhost")
+      ssl: (process.env.DATABASE_URL.includes("localhost") || process.env.DATABASE_URL.includes("127.0.0.1"))
         ? false
         : { rejectUnauthorized: false },
     });
@@ -77,6 +77,9 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
     const res = await pool.query("SELECT value FROM wa_auth_store WHERE id = 'creds' LIMIT 1");
     if (res.rows.length > 0) {
       creds = JSON.parse(JSON.stringify(res.rows[0].value), BufferJSON.reviver);
+      if (creds?.me && creds.registered !== true) {
+        creds.registered = true;
+      }
       const userJid = creds?.me?.id || "tersimpan";
       console.log(`🔐 [Auth Store] Sesi Baileys ditemukan di Supabase untuk user: ${userJid}`);
     }
@@ -247,6 +250,9 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
 
     saveCreds: async () => {
       try {
+        if (creds?.me && !creds.registered) {
+          creds.registered = true;
+        }
         const serialized = JSON.stringify(creds, BufferJSON.replacer);
         await pool.query(
           `INSERT INTO wa_auth_store (id, value, updated_at)

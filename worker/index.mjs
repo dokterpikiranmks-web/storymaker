@@ -405,21 +405,27 @@ async function postWhatsapp(slide) {
     if (CONFIG.dryRun) {
       log(`🧪 [DRY RUN] ${slide.label} → chat ${targetChatJid} (${imageBuffer.length} bytes + quick-copy bubble)`);
     } else {
-      // Pesan 1: File poster gambar (1080x1920) dengan caption ringkas penanda babak
-      const sendImgResult = await sock.sendMessage(targetChatJid, {
-        image: imageBuffer,
-        caption: imageCaption,
-      });
+      // Pesan 1: File poster gambar (1080x1920) dengan caption ringkas penanda babak (timeout 45s)
+      const sendImgResult = await Promise.race([
+        sock.sendMessage(targetChatJid, {
+          image: imageBuffer,
+          caption: imageCaption,
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout 45s menunggu respons WhatsApp saat kirim poster")), 45_000)),
+      ]);
       log(`📸 Poster babak terkirim ke chat ${targetChatJid} (Msg ID: ${sendImgResult?.key?.id || "unknown"})`);
 
       // Jeda 500ms agar urutan pesan rapi di WhatsApp (gambar di atas, teks caption di bawah)
       await new Promise((r) => setTimeout(r, 500));
 
-      // Pesan 2: Quick-Copy Bubble (Hanya teks naskah caption lengkap murni)
+      // Pesan 2: Quick-Copy Bubble (Hanya teks naskah caption lengkap murni, timeout 30s)
       if (pureCaption) {
-        const sendTextResult = await sock.sendMessage(targetChatJid, {
-          text: pureCaption,
-        });
+        const sendTextResult = await Promise.race([
+          sock.sendMessage(targetChatJid, {
+            text: pureCaption,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout 30s menunggu respons WhatsApp saat kirim caption")), 30_000)),
+        ]);
         log(`📝 Quick-copy caption terkirim ke chat ${targetChatJid} (Msg ID: ${sendTextResult?.key?.id || "unknown"})`);
       }
     }
@@ -539,9 +545,19 @@ function checkDue(item) {
   return { due: true, isForce: false, isCatchUp: false, reason: "siap diproses" };
 }
 
+let lastTickStarted = 0;
+
 async function tick() {
-  if (busy) return;
+  if (busy) {
+    if (Date.now() - (lastTickStarted || 0) > 120_000) {
+      log("⚠️ Watchdog: tick() berjalan > 2 menit, mematikan status busy secara paksa agar antrean tidak macet.");
+      busy = false;
+    } else {
+      return;
+    }
+  }
   busy = true;
+  lastTickStarted = Date.now();
   try {
     const params = new URLSearchParams({
       connected: connected ? "1" : "0",
