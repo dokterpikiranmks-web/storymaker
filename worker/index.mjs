@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// 🛡️ [SHIELD] Global Crash Guard di baris paling atas agar worker tidak pernah mati karena unhandled error
+process.on("uncaughtException", (err) => console.error("🛡️ [SHIELD] Uncaught Exception:", err));
+process.on("unhandledRejection", (reason) => console.error("🛡️ [SHIELD] Unhandled Rejection:", reason));
+
 import fs from "fs";
 import http from "http";
 import gracefulFs from "graceful-fs";
@@ -10,12 +14,10 @@ gracefulFs.gracefulify(fs);
  * ════════════════════════════════════════════════════════════════════════
  *  • Runs on your own computer / free mini VPS (residential IP → low ban risk).
  *  • Authenticates to WhatsApp Web with a QR code (Baileys multi-device).
- *  • Every POLL_INTERVAL_SECONDS (default 60s) asks the Story Maker API for
- *    SCHEDULED slides whose time has come, posts them to WhatsApp Status via
- *    sock.sendMessage('status@broadcast', { image, caption }, { statusJidList })
- *    and acknowledges the result.
- *  • Security: talks to the portal over HTTPS with a shared bearer secret —
- *    no database credentials ever live on this machine.
+ *  • Robust auto-reconnect on connection.update + 60s Watchdog heartbeat.
+ *  • Deep unwrapping inbound auto-responder (RESET / VAGUS / SOMATIK / etc).
+ *  • Real-time & catch-up dispatch for today's scheduled campaign slides.
+ *  • Security: talks to the portal over HTTPS with a shared bearer secret.
  * ════════════════════════════════════════════════════════════════════════
  */
 import "dotenv/config";
@@ -48,33 +50,34 @@ const CONFIG = {
 
 const log = (...args) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...args);
 
-if (!CONFIG.secret) {
-  console.error("✖ WORKER_SECRET wajib diisi dan harus sama dengan WORKER_SECRET di server Story Maker.");
-  process.exit(1);
-}
-
 // ── Health Check Server for Render / Cloud Web Services ──────────────────
 const PORT = process.env.PORT || 10000;
 const healthServer = http.createServer((req, res) => {
-  if (req.url === "/post-now" || req.url === "/trigger") {
+  const url = req.url || "/";
+  if (url === "/post-now" || url === "/trigger") {
     log("⚡ Trigger /post-now diterima via HTTP server worker — menjalankan tick()");
     void tick();
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({ status: "ok", message: "tick triggered" }));
   }
+
+  // GET /health atau root kembalikan waConnected & uptime
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(
     JSON.stringify({
       status: "ok",
-      service: "Story Maker WhatsApp Daemon",
+      waConnected: connected,
       uptime: process.uptime(),
+      service: "Story Maker WhatsApp Daemon",
     })
   );
 });
 
-healthServer.listen(PORT, "0.0.0.0", () => {
-  log(`🌐 Health check server aktif di port ${PORT}`);
-});
+function startHealthServer() {
+  healthServer.listen(PORT, "0.0.0.0", () => {
+    log(`🌐 Health check server aktif di port ${PORT}`);
+  });
+}
 
 // ── Contact store → statusJidList (who can see the Status) ─────────────────
 const contacts = new Set();
@@ -153,12 +156,6 @@ async function fetchImage(item) {
 }
 
 // ── Auth cache & concurrency limiter (EMFILE protection) ───────────────────
-/**
- * In-memory cache layer & concurrency limiter for Baileys auth state keys.
- * Caches sessions, sender-keys, pre-keys, etc. in memory (including nulls for missing files)
- * and throttles file reads/writes to small batches (default 50) to prevent EMFILE
- * errors when broadcasting to 7,000+ contacts.
- */
 function makeCachedAuthState(state, { batchSize = 50 } = {}) {
   const cache = new Map();
   const originalGet = state.keys.get.bind(state.keys);
@@ -197,7 +194,6 @@ function makeCachedAuthState(state, { batchSize = 50 } = {}) {
     },
 
     set: async (data) => {
-      // 1. Synchronously update in-memory cache
       const entries = [];
       for (const category of Object.keys(data)) {
         for (const id of Object.keys(data[category])) {
@@ -207,7 +203,6 @@ function makeCachedAuthState(state, { batchSize = 50 } = {}) {
         }
       }
 
-      // 2. Persist to disk in bounded batches to prevent EMFILE
       for (let i = 0; i < entries.length; i += batchSize) {
         const chunk = entries.slice(i, i + batchSize);
         const chunkData = {};
@@ -230,161 +225,236 @@ function makeCachedAuthState(state, { batchSize = 50 } = {}) {
   return state;
 }
 
-// ── WhatsApp socket ────────────────────────────────────────────────────────
+// ── Deep Inbound Message Extractor & Keyword Matcher ───────────────────────
+const KEYWORDS = ["RESET", "VAGUS", "SOMATIK", "PANDUAN", "PROTOKOL", "KONSUL"];
+
+function extractMessageText(msg) {
+  return (
+    msg?.conversation ||
+    msg?.extendedTextMessage?.text ||
+    msg?.imageMessage?.caption ||
+    msg?.videoMessage?.caption ||
+    msg?.ephemeralMessage?.message?.extendedTextMessage?.text ||
+    msg?.ephemeralMessage?.message?.conversation ||
+    msg?.ephemeralMessage?.message?.imageMessage?.caption ||
+    msg?.viewOnceMessage?.message?.extendedTextMessage?.text ||
+    msg?.viewOnceMessage?.message?.conversation ||
+    msg?.viewOnceMessageV2?.message?.extendedTextMessage?.text ||
+    msg?.viewOnceMessageV2?.message?.conversation ||
+    msg?.documentMessage?.caption ||
+    ""
+  );
+}
+
+function isKeywordMatched(text) {
+  if (!text || typeof text !== "string") return false;
+  const cleanText = text.trim().toUpperCase();
+  return KEYWORDS.some((k) => cleanText.includes(k));
+}
+
+// ── WhatsApp socket & Lifecycle ────────────────────────────────────────────
 let sock = null;
 let connected = false;
 let meJid = null;
 let busy = false;
-let reconnectAttempts = 0;
+let isConnecting = false;
+let watchdogInterval = null;
 
-async function connect() {
-  const { state: rawState, saveCreds } = await useSupabaseAuthState(CONFIG.authDir);
-  const state = makeCachedAuthState(rawState, { batchSize: 50 });
-  let version;
-  try {
-    ({ version } = await fetchLatestBaileysVersion());
-  } catch {
-    version = undefined;
+async function startWorker() {
+  if (isConnecting) {
+    log("🔄 Koneksi sedang diproses, melewati pemanggilan ganda...");
+    return;
   }
+  isConnecting = true;
 
-  sock = makeWASocket({
-    auth: state,
-    version,
-    logger: pino({ level: CONFIG.logLevel }),
-    browser: Browsers.macOS("Desktop"),
-    markOnlineOnConnect: false,
-    syncFullHistory: false,
-  });
-
-  sock.ev.on("creds.update", saveCreds);
-
-  sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
-      log("📱 Scan QR berikut: WhatsApp → Perangkat tertaut → Tautkan perangkat");
-      qrcode.generate(qr, { small: true });
-    }
-    if (connection === "open") {
-      connected = true;
-      reconnectAttempts = 0;
-      meJid = normalizeJid(sock.user?.id ?? null);
-      log(`✅ Terhubung ke WhatsApp sebagai ${meJid}`);
-      void tick();
-    }
-    if (connection === "close") {
-      connected = false;
-      const code = lastDisconnect?.error?.output?.statusCode;
-      if (code === DisconnectReason.loggedOut) {
-        log("⚠ Sesi WhatsApp logout — menghapus sesi lama, QR baru akan muncul…");
-        try {
-          const pool = getDbPool();
-          if (pool) await pool.query("DELETE FROM wa_auth_store WHERE id = 'creds'");
-        } catch {}
-        await fsp.rm(CONFIG.authDir, { recursive: true, force: true }).catch(() => undefined);
-      }
-      const delay = Math.min(30_000, 2_000 * 2 ** reconnectAttempts++);
-      log(`↻ Koneksi tertutup (kode ${code ?? "?"}) — reconnect dalam ${Math.round(delay / 1000)} detik`);
-      setTimeout(() => connect().catch((err) => log("✖ Reconnect gagal:", err.message)), delay);
-    }
-  });
-
-  sock.ev.on("contacts.upsert", (list) => list.forEach((c) => addContact(c.id)));
-  sock.ev.on("contacts.update", (list) => list.forEach((c) => addContact(c.id)));
-  sock.ev.on("chats.upsert", (list) => list.forEach((c) => addContact(c.id)));
-  sock.ev.on("messaging-history.set", ({ contacts: list = [], chats = [] }) => {
-    list.forEach((c) => addContact(c.id));
-    chats.forEach((c) => addContact(c.id));
-  });
-
-  // ── Inbound keyword auto-responder ─────────────────────────────────────────
-  sock.ev.on("messages.upsert", async ({ messages, type }) => {
-    if (!Array.isArray(messages)) return;
-
-    for (const m of messages) {
+  try {
+    if (sock) {
       try {
-        if (!m?.message || !m?.key) continue;
-
-        // a. Filter pesan: abaikan pesan sendiri, grup (@g.us), status/broadcast (@broadcast)
-        if (m.key.fromMe) continue;
-
-        const remoteJid = m.key.remoteJid;
-        if (!remoteJid || remoteJid.endsWith("@g.us") || remoteJid.endsWith("@broadcast")) continue;
-
-        // Hanya proses chat personal (@s.whatsapp.net)
-        if (!remoteJid.endsWith("@s.whatsapp.net")) continue;
-
-        // b. Ekstraksi teks & normalisasi
-        const rawText =
-          m.message.conversation ||
-          m.message.extendedTextMessage?.text ||
-          m.message.imageMessage?.caption ||
-          m.message.videoMessage?.caption ||
-          m.message.documentMessage?.caption ||
-          "";
-
-        const textTrimmed = rawText.trim();
-        if (!textTrimmed) continue;
-
-        const textUpper = textTrimmed.toUpperCase();
-        const TRIGGER_KEYWORDS = ["RESET", "VAGUS", "SOMATIK", "PANDUAN", "PROTOKOL", "KONSUL"];
-        const matchedKeyword = TRIGGER_KEYWORDS.find((kw) => textUpper.includes(kw));
-
-        if (!matchedKeyword) continue;
-
-        // c. Anti-Spam / In-memory Debounce (TTL 10 menit)
-        if (isCoolingDown(remoteJid)) {
-          log(`⏳ Inbound [${matchedKeyword}] dari ${remoteJid} diabaikan (cooldown 10 menit)`);
-          continue;
-        }
-
-        log(`🎯 Inbound auto-responder terpicu [${matchedKeyword}] dari ${remoteJid}: "${textTrimmed.slice(0, 45)}"`);
-
-        // d. Pengiriman balasan protokol
-        await handleInboundProtocolResponse(remoteJid, matchedKeyword);
-      } catch (inboundErr) {
-        log(`✖ Error inbound auto-responder:`, inboundErr.message);
-      }
+        sock.ev?.removeAllListeners?.();
+        sock.ws?.close?.();
+      } catch {}
     }
-  });
+
+    const { state: rawState, saveCreds } = await useSupabaseAuthState(CONFIG.authDir);
+    const state = makeCachedAuthState(rawState, { batchSize: 50 });
+    let version;
+    try {
+      ({ version } = await fetchLatestBaileysVersion());
+    } catch {
+      version = undefined;
+    }
+
+    sock = makeWASocket({
+      auth: state,
+      version,
+      logger: pino({ level: CONFIG.logLevel }),
+      browser: Browsers.macOS("Desktop"),
+      markOnlineOnConnect: false,
+      syncFullHistory: false,
+    });
+
+    sock.ev.on("creds.update", saveCreds);
+
+    // ── Robust Auto-Reconnect pada connection.update ───────────────────────
+    sock.ev.on("connection.update", async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+      if (qr) {
+        log("📱 Scan QR berikut: WhatsApp → Perangkat tertaut → Tautkan perangkat");
+        qrcode.generate(qr, { small: true });
+      }
+      if (connection === "open") {
+        connected = true;
+        meJid = normalizeJid(sock.user?.id ?? null);
+        log(`✅ Terhubung ke WhatsApp sebagai ${meJid}`);
+        void tick();
+      }
+      if (connection === "close") {
+        connected = false;
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+        console.log(`⚠️ Koneksi terputus (Status: ${statusCode}). Reconnectable: ${!isLoggedOut}`);
+        if (!isLoggedOut) {
+          console.log("🔄 Menjadwalkan auto-reconnect dalam 5 detik...");
+          setTimeout(() => {
+            startWorker().catch((err) => log("✖ Reconnect gagal:", err.message));
+          }, 5000);
+        } else {
+          console.error("❌ Sesi WhatsApp Logged Out! Perlu login ulang.");
+          try {
+            const pool = getDbPool();
+            if (pool) await pool.query("DELETE FROM wa_auth_store WHERE id = 'creds'");
+          } catch {}
+          await fsp.rm(CONFIG.authDir, { recursive: true, force: true }).catch(() => undefined);
+        }
+      }
+    });
+
+    sock.ev.on("contacts.upsert", (list) => list.forEach((c) => addContact(c.id)));
+    sock.ev.on("contacts.update", (list) => list.forEach((c) => addContact(c.id)));
+    sock.ev.on("chats.upsert", (list) => list.forEach((c) => addContact(c.id)));
+    sock.ev.on("messaging-history.set", ({ contacts: list = [], chats = [] }) => {
+      list.forEach((c) => addContact(c.id));
+      chats.forEach((c) => addContact(c.id));
+    });
+
+    // ── Bulletproof Inbound Parser & Auto-Responder ────────────────────────
+    sock.ev.on("messages.upsert", async ({ messages }) => {
+      if (!Array.isArray(messages)) return;
+
+      for (const m of messages) {
+        try {
+          if (!m?.message || !m?.key) continue;
+
+          // a. Filter Ketat & Fleksibel:
+          // Abaikan pesan diri sendiri
+          if (m.key.fromMe) continue;
+
+          // Abaikan grup WhatsApp & status broadcast
+          const remoteJid = m.key.remoteJid || "";
+          if (!remoteJid || remoteJid.endsWith("@g.us") || remoteJid.endsWith("@broadcast")) continue;
+
+          // Buka dukungan untuk personal chat @s.whatsapp.net DAN format multi-device @lid
+          if (!remoteJid.endsWith("@s.whatsapp.net") && !remoteJid.endsWith("@lid")) continue;
+
+          // b. Ekstraksi Naskah Berlapis (Deep Unwrapping):
+          const msg = m.message;
+          const rawText =
+            msg?.conversation ||
+            msg?.extendedTextMessage?.text ||
+            msg?.imageMessage?.caption ||
+            msg?.videoMessage?.caption ||
+            msg?.ephemeralMessage?.message?.extendedTextMessage?.text ||
+            msg?.ephemeralMessage?.message?.conversation ||
+            msg?.ephemeralMessage?.message?.imageMessage?.caption ||
+            msg?.viewOnceMessage?.message?.extendedTextMessage?.text ||
+            msg?.viewOnceMessage?.message?.conversation ||
+            msg?.viewOnceMessageV2?.message?.extendedTextMessage?.text ||
+            msg?.viewOnceMessageV2?.message?.conversation ||
+            msg?.documentMessage?.caption ||
+            "";
+
+          const cleanText = rawText.trim().toUpperCase();
+          console.log(`📩 [INBOUND] Dari: ${remoteJid} | Naskah: "${rawText}"`);
+
+          if (!cleanText) continue;
+
+          // c. Pencocokan Kata Kunci:
+          const isMatched = KEYWORDS.some((k) => cleanText.includes(k));
+          if (!isMatched) continue;
+
+          // d. Respon Bertingkat Cepat (Fail-Safe):
+          // Cek anti-spam cache (10 menit TTL per JID)
+          if (isCoolingDown(remoteJid)) {
+            log(`⏳ Inbound [${cleanText.slice(0, 30)}] dari ${remoteJid} diabaikan (cooldown 10 menit)`);
+            continue;
+          }
+
+          log(`🎯 Inbound auto-responder terpicu [MATCH] dari ${remoteJid}: "${rawText.trim().slice(0, 45)}"`);
+
+          // TAHAP 1: Kirim langsung teks konfirmasi tanpa menunggu PDF
+          await sock.sendMessage(remoteJid, {
+            text: "Salam hangat dari Dr. Mind! 🌿\n\nBerikut panduan saku somatik & regulasi saraf vagus yang Anda minta. Silakan pelajari protokol praktis ini untuk meredakan ketegangan fisik dan mental.",
+          });
+          log(`💬 TAHAP 1: Teks konfirmasi terkirim ke ${remoteJid}`);
+
+          // TAHAP 2 (Try-Catch): Fetch buffer PDF dari /api/protocol/pdf dan kirim sebagai dokumen
+          try {
+            const pdfRes = await fetch(`${CONFIG.apiUrl}/api/protocol/pdf`, {
+              headers: { Authorization: `Bearer ${CONFIG.secret}` },
+              signal: AbortSignal.timeout(25_000),
+            });
+
+            if (!pdfRes.ok) {
+              throw new Error(`HTTP ${pdfRes.status} saat fetch PDF`);
+            }
+
+            const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            await sock.sendMessage(remoteJid, {
+              document: pdfBuffer,
+              fileName: `Dr-Mind-Protokol-${dateStr}.pdf`,
+              mimetype: "application/pdf",
+            });
+            log(`✅ TAHAP 2: Dokumen PDF protokol terkirim ke ${remoteJid}`);
+          } catch (pdfErr) {
+            log(`⚠ TAHAP 2: Gagal mengambil/mengirim PDF ke ${remoteJid} (${pdfErr.message}) — mengirim teks 3 langkah protokol sebagai fallback`);
+            const fallbackProtocolText =
+              `🧠 *RINGKASAN PROTOKOL 3 MENIT RESET SOMATIK & SARAF VAGUS:*\n\n` +
+              `1. *Titik GB-20 (Fengchi)*: Tekan kedua cekungan di dasar tengkorak belakang selama 60 detik dengan napas teratur lambat.\n` +
+              `2. *Vagus Physiological Sigh*: Tarik napas 2 kali lewat hidung, hembuskan perlahan 8 detik lewat mulut (ulangi 5 siklus).\n` +
+              `3. *Subconscious Grounding*: Sentuh dada tengah, rasakan detak jantung melambat dan gelombang otak beralih ke status Alpha tenang.\n\n` +
+              `🔗 Akses dokumen PDF lengkap: ${CONFIG.apiUrl}/api/protocol/pdf\n\n` +
+              `━━━━━━━━━━━━━━━\n` +
+              `💬 *Layanan & Konsultasi:*\nJika ingin konsultasi privat jadwal terapi atau ingin mencoba aplikasi asisten fokus kami, silakan balas chat ini.`;
+
+            await sock.sendMessage(remoteJid, { text: fallbackProtocolText });
+            log(`✅ TAHAP 2 (Fallback): Teks 3 langkah protokol terkirim ke ${remoteJid}`);
+          }
+        } catch (inboundErr) {
+          console.error(`✖ Error inbound auto-responder:`, inboundErr.message);
+        }
+      }
+    });
+  } catch (err) {
+    log("✖ Gagal menginisialisasi Baileys socket:", err.message);
+  } finally {
+    isConnecting = false;
+  }
 }
 
-// ── Inbound Lead Magnet Protocol Auto-Responder ─────────────────────────────
-async function handleInboundProtocolResponse(remoteJid, keyword) {
-  if (!sock) return;
+const connect = startWorker;
 
-  const greetingMessage = `Salam hangat dari *Dr. Mind Scout & Tim Klinis* 🙏\n\nTerima kasih telah menghubungi kami dengan kata kunci *"${keyword}"*.\n\nBerikut kami lampirkan dokumen resmi *Dr. Mind Somatic & Cognitive Protocol* edisi aktif:\n• *Langkah 1:* Akupresur Somatik & Meridian (GB-20 / LI-4 / ST-36)\n• *Langkah 2:* Regulasi Nervus Vagus & Gelombang Alpha (4-8 Rhythm)\n• *Langkah 3:* Anchoring Somatik & Subconscious Architecture\n\nSilakan unduh dokumen PDF terlampir dan ikuti 3 langkah praktis tersebut (durasi 3–5 menit).\n\n━━━━━━━━━━━━━━━\n💬 *Layanan & Konsultasi:*\nJika ingin konsultasi privat jadwal terapi atau ingin mencoba aplikasi asisten fokus kami, silakan balas chat ini.`;
-
-  const fallbackMessage = `Salam hangat dari *Dr. Mind Scout & Tim Klinis* 🙏\n\nTerima kasih telah merespons insight harian kami (*"${keyword}"*).\n\n🧠 *RINGKASAN PROTOKOL 3 MENIT RESET SOMATIK & SARAF VAGUS:*\n1. *Titik GB-20 (Fengchi)*: Tekan kedua cekungan di dasar tengkorak belakang selama 60 detik dengan napas teratur lambat.\n2. *Vagus Physiological Sigh*: Tarik napas 2 kali lewat hidung, hembuskan perlahan 8 detik lewat mulut (ulangi 5 siklus).\n3. *Subconscious Grounding*: Sentuh dada tengah, rasakan detak jantung melambat dan gelombang otak beralih ke status Alpha tenang.\n\n🔗 Akses dokumen PDF lengkap: ${CONFIG.apiUrl}/api/protocol/pdf\n\n━━━━━━━━━━━━━━━\n💬 *Layanan & Konsultasi:*\nJika ingin konsultasi privat jadwal terapi atau ingin mencoba aplikasi asisten fokus kami, silakan balas chat ini.`;
-
-  try {
-    const pdfRes = await fetch(`${CONFIG.apiUrl}/api/protocol/pdf`, {
-      headers: { Authorization: `Bearer ${CONFIG.secret}` },
-      signal: AbortSignal.timeout(25_000),
-    });
-
-    if (!pdfRes.ok) {
-      throw new Error(`HTTP ${pdfRes.status} saat fetch PDF`);
+// ── Watchdog / Heartbeat Loop (60 Detik) ───────────────────────────────────
+function startWatchdog() {
+  if (watchdogInterval) clearInterval(watchdogInterval);
+  watchdogInterval = setInterval(() => {
+    const isSocketOpen = Boolean(connected && sock && sock?.ws?.readyState === 1);
+    if (!isSocketOpen && !isConnecting) {
+      log("🐕 [WATCHDOG] Baileys socket tidak aktif / belum terhubung. Memicu inisialisasi ulang...");
+      startWorker().catch((err) => log("✖ [WATCHDOG] Reconnect error:", err.message));
     }
-
-    const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-    const dateStr = new Date().toISOString().slice(0, 10);
-
-    await sock.sendMessage(remoteJid, {
-      document: pdfBuffer,
-      fileName: `Dr-Mind-Protokol-${dateStr}.pdf`,
-      mimetype: "application/pdf",
-      caption: greetingMessage,
-    });
-
-    log(`✅ Dokumen PDF protokol terkirim ke ${remoteJid}`);
-  } catch (err) {
-    log(`⚠ Gagal mengirim PDF ke ${remoteJid} (${err.message}) — mengirim pesan teks instruksi terstruktur`);
-    try {
-      await sock.sendMessage(remoteJid, { text: fallbackMessage });
-      log(`✅ Pesan teks terstruktur fallback terkirim ke ${remoteJid}`);
-    } catch (fallbackErr) {
-      log(`✖ Gagal mengirim pesan fallback ke ${remoteJid}:`, fallbackErr.message);
-    }
-  }
+  }, 60_000);
 }
 
 // ── Dispatch loop ──────────────────────────────────────────────────────────
@@ -396,7 +466,7 @@ async function postWhatsapp(slide) {
     const shortTitle = slide.actShortTitle || slide.label?.split("·")?.[2]?.trim() || "";
     const imageCaption = `📸 *[BABAK ${actNumber}${shortTitle ? `: ${shortTitle}` : ""}]*`;
 
-    // Naskah caption lengkap murni untuk Quick-Copy (tanpa header log / instruksi teknis apapun)
+    // Naskah caption lengkap murni untuk Quick-Copy
     const pureCaption = (
       slide.caption ||
       [slide.headline, slide.bodyText || slide.body_text, slide.callToAction || slide.call_to_action].filter(Boolean).join("\n\n")
@@ -470,11 +540,10 @@ function getLocalDateString(date = new Date(), timezone = CONFIG.timezone || "As
  * 2. Jika status SCHEDULED:
  *    - Selama item berasal dari campaign hari ini (tanggal lokal yang sama di zona waktu target),
  *      berstatus 'SCHEDULED', dan waktu tayangnya <= waktu sekarang (now), MAKA WAJIB DIKIRIM (isCatchUp = true).
- *    - Tidak dibatasi hanya 60 menit: keterlambatan berapa menit pun (akibat server restart/deploy Render)
- *      akan langsung diproses tanpa pernah dianggap hangus.
+ *    - Keterlambatan berapa menit pun (akibat Baileys offline / server restart) langsung diproses seketika.
  * 3. Fallback targetTime (HH:MM / HH:MM:SS) jika scheduledAt tidak tersedia dibandingkan dengan jam lokal WITA.
  */
-function checkDue(item) {
+function checkDue(item, now = Date.now()) {
   const isForce = Boolean(item.forcePost || item.force || item.status === "READY_TO_POST");
   if (isForce) {
     return { due: true, isForce: true, isCatchUp: false, reason: "instruksi force post" };
@@ -484,7 +553,6 @@ function checkDue(item) {
     return { due: false, isForce: false, isCatchUp: false, reason: `status: ${item.status}` };
   }
 
-  const now = Date.now();
   const tz = CONFIG.timezone || "Asia/Makassar";
   const todayStr = getLocalDateString(now, tz);
 
@@ -495,7 +563,8 @@ function checkDue(item) {
     if (Number.isFinite(scheduledTime)) {
       if (scheduledTime <= now) {
         // Verifikasi item berasal dari campaign hari ini (tanggal lokal yang sama di zona waktu target)
-        const itemDateStr = item.campaignDate || getLocalDateString(scheduledDate, tz);
+        const rawItemDate = item.campaignDate || getLocalDateString(scheduledDate, tz);
+        const itemDateStr = typeof rawItemDate === "string" ? rawItemDate.slice(0, 10) : getLocalDateString(rawItemDate, tz);
         const isToday = itemDateStr === todayStr;
 
         if (isToday) {
@@ -533,7 +602,7 @@ function checkDue(item) {
       minute: "2-digit",
       second: "2-digit",
       hour12: false,
-    }).format(new Date());
+    }).format(new Date(now));
 
     const target = item.targetTime.length === 5 ? `${item.targetTime}:00` : item.targetTime;
     if (target <= nowTimeStr) {
@@ -586,6 +655,8 @@ async function tick() {
           log(`⚠ WhatsApp belum terhubung — ${item.label || item.id} menunggu koneksi WA`);
         } else if (item.waLeased || check.isForce) {
           await postWhatsapp(item);
+        } else {
+          log(`⏳ Slide ${item.label || item.id} sedang dikunci (waLockAt aktif) oleh siklus/proses lain`);
         }
       }
 
@@ -601,16 +672,26 @@ async function tick() {
 }
 
 async function main() {
+  if (!CONFIG.secret) {
+    console.error("✖ WORKER_SECRET wajib diisi dan harus sama dengan WORKER_SECRET di server Story Maker.");
+    process.exit(1);
+  }
+
   log(`🧠 Story Maker WA Daemon v${VERSION} → ${CONFIG.apiUrl} (poll ${CONFIG.pollMs / 1000}s${CONFIG.dryRun ? ", DRY RUN" : ""})`);
   if (CONFIG.audience.length) log(`👥 Audiens Status dibatasi ke ${CONFIG.audience.length} nomor (WA_STATUS_AUDIENCE)`);
+  
+  startHealthServer();
   await loadContacts();
+  
   try {
     await api(`/api/worker/queue?connected=0&version=${VERSION}`);
     log("🔐 Terautentikasi ke Story Maker API");
   } catch (err) {
     log("⚠ Belum bisa menghubungi Story Maker API:", err.message);
   }
-  await connect();
+  
+  await startWorker();
+  startWatchdog();
   setInterval(() => void tick(), CONFIG.pollMs);
 }
 
@@ -619,15 +700,27 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-process.on("unhandledRejection", (reason) => {
-  log("⚠️ Unhandled Rejection (ditangani):", reason?.message || reason);
-});
+const isDirectRun =
+  process.argv[1] &&
+  (fileURLToPath(import.meta.url) === path.resolve(process.argv[1]) ||
+    process.argv[1].endsWith("worker/index.mjs") ||
+    process.argv[1].endsWith("worker\\index.mjs"));
 
-process.on("uncaughtException", (err) => {
-  log("⚠️ Uncaught Exception (ditangani):", err?.message || err);
-});
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+export {
+  checkDue,
+  getLocalDateString,
+  extractMessageText,
+  isKeywordMatched,
+  KEYWORDS,
+  CONFIG,
+  startWorker,
+  connect,
+  healthServer,
+};
