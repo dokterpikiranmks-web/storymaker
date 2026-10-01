@@ -12,7 +12,7 @@ const globalForSupabase = globalThis as typeof globalThis & {
 };
 
 export function getStorageBucket(): string {
-  return process.env.SUPABASE_STORAGE_BUCKET?.trim() || "story-assets";
+  return process.env.SUPABASE_STORAGE_BUCKET?.trim() || "rendered-slides";
 }
 
 export function isSupabaseStorageConfigured(): boolean {

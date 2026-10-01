@@ -20,7 +20,8 @@ gracefulFs.gracefulify(fs);
 import "dotenv/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+import { getDbPool, useSupabaseAuthState } from "./supabase-auth.mjs";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
 
@@ -82,15 +83,6 @@ const phoneToJid = (value) => {
   const digits = value.replace(/[^0-9]/g, "");
   return digits ? `${digits}@s.whatsapp.net` : null;
 };
-
-function statusAudience(customMeJid) {
-  const myJid = sock?.user?.id
-    ? `${sock.user.id.split(":")[0].split("@")[0]}@s.whatsapp.net`
-    : customMeJid || meJid;
-  const recipientJids = CONFIG.audience.length ? CONFIG.audience.map(phoneToJid).filter(Boolean) : [...contacts];
-  const finalRecipients = Array.from(new Set(myJid ? [...recipientJids, myJid] : recipientJids));
-  return finalRecipients;
-}
 
 // ── Story Maker API bridge ─────────────────────────────────────────────────
 async function api(pathname, { method = "GET", body } = {}) {
@@ -203,7 +195,7 @@ let busy = false;
 let reconnectAttempts = 0;
 
 async function connect() {
-  const { state: rawState, saveCreds } = await useMultiFileAuthState(CONFIG.authDir);
+  const { state: rawState, saveCreds } = await useSupabaseAuthState(CONFIG.authDir);
   const state = makeCachedAuthState(rawState, { batchSize: 50 });
   let version;
   try {
@@ -240,7 +232,11 @@ async function connect() {
       const code = lastDisconnect?.error?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) {
         log("⚠ Sesi WhatsApp logout — menghapus sesi lama, QR baru akan muncul…");
-        await fsp.rm(CONFIG.authDir, { recursive: true, force: true });
+        try {
+          const pool = getDbPool();
+          if (pool) await pool.query("DELETE FROM wa_auth_store WHERE id = 'creds'");
+        } catch {}
+        await fsp.rm(CONFIG.authDir, { recursive: true, force: true }).catch(() => undefined);
       }
       const delay = Math.min(30_000, 2_000 * 2 ** reconnectAttempts++);
       log(`↻ Koneksi tertutup (kode ${code ?? "?"}) — reconnect dalam ${Math.round(delay / 1000)} detik`);
@@ -258,40 +254,32 @@ async function connect() {
 }
 
 // ── Dispatch loop ──────────────────────────────────────────────────────────
-async function postWhatsapp(item) {
+async function postWhatsapp(slide) {
   try {
-    // 2. [PASTIKAN PENGIRIMAN MEDIA MENGGUNAKAN BUFFER & BROADCAST TRUE]
-    const imageBuffer = await fetchImage(item);
+    const targetChatJid = process.env.TARGET_CHAT_JID || "62811443327@s.whatsapp.net";
+    const imageBuffer = await fetchImage(slide);
+    const actNumber = slide.act_number || slide.act?.match(/\d+/)?.[0] || slide.label?.match(/Babak\s+(\d+)/i)?.[1] || "";
+    const headline = slide.headline || "";
+    const bodyText = slide.body_text || slide.bodyText || slide.caption || "";
 
-    // 1. [INJECT NOMOR SENDIRI KE PENERIMA]
-    const myJid = sock?.user?.id
-      ? `${sock.user.id.split(":")[0].split("@")[0]}@s.whatsapp.net`
-      : (meJid || null);
-    const finalRecipients = statusAudience(myJid);
-    const caption = item.caption || item.body_text || item.bodyText || item.headline || "";
+    const caption = `📌 *[STORY MAKER - BABAK ${actNumber}]*\n*${headline}*\n\n${bodyText}\n\n━━━━━━━━━━━━━━━\n👉 _Ketuk foto di atas > pilih ikon panah "Teruskan" (Forward) > pilih "Status Saya". Selesai!_`;
 
     if (CONFIG.dryRun) {
-      log(`🧪 [DRY RUN] ${item.label} → ${finalRecipients.length} penerima (${imageBuffer.length} bytes, self: ${myJid || "none"})`);
+      log(`🧪 [DRY RUN] ${slide.label} → chat ${targetChatJid} (${imageBuffer.length} bytes)`);
     } else {
-      await sock.sendMessage(
-        "status@broadcast",
-        {
-          image: imageBuffer,
-          caption: caption,
-        },
-        {
-          statusJidList: finalRecipients,
-          broadcast: true,
-        },
-      );
+      const sendResult = await sock.sendMessage(targetChatJid, {
+        image: imageBuffer,
+        caption: caption,
+      });
+      log(`📨 Pesan slide berhasil terkirim ke chat ${targetChatJid} (Msg ID: ${sendResult?.key?.id || "unknown"})`);
     }
-    await api("/api/worker/ack", { method: "POST", body: { slideId: item.id, channel: "whatsapp", ok: true } });
-    log(`✅ WA Status terkirim: ${item.label} → ${finalRecipients.length} penerima (termasuk nomor pengirim: ${myJid || "?"})`);
+    await api("/api/worker/ack", { method: "POST", body: { slideId: slide.id, channel: "whatsapp", ok: true } });
+    log(`✅ WA Chat terkirim: ${slide.label} → ${targetChatJid}`);
   } catch (err) {
-    log(`✖ WA Status gagal: ${item.label} — ${err.message}`);
+    log(`✖ WA Chat gagal: ${slide.label} — ${err.message}`);
     await api("/api/worker/ack", {
       method: "POST",
-      body: { slideId: item.id, channel: "whatsapp", ok: false, error: String(err.message).slice(0, 900) },
+      body: { slideId: slide.id, channel: "whatsapp", ok: false, error: String(err.message).slice(0, 900) },
     }).catch(() => undefined);
   }
 }

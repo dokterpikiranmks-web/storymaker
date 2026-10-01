@@ -140,7 +140,16 @@ export const appState = pgTable("app_state", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ── Baileys Multi-Device WhatsApp Auth Store (Koyeb / Cloud 24/7) ────────
+export const waAuthStore = pgTable("wa_auth_store", {
+  id: text("id").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type DailyCampaign = typeof dailyCampaigns.$inferSelect;
 export type StorySlide = typeof storySlides.$inferSelect;
 export type NewStorySlide = typeof storySlides.$inferInsert;
 export type GeminiTelemetryRow = typeof geminiModelTelemetry.$inferSelect;
+export type WaAuthStoreRow = typeof waAuthStore.$inferSelect;
+

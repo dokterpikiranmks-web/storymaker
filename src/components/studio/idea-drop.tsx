@@ -26,6 +26,14 @@ const STEPS = [
   "Menyimpan campaign & aset…",
 ];
 
+const SCOUT_STEPS = [
+  "Dr. Mind Scout mendeteksi pilar klinis harian…",
+  "Meriset studi kasus & keluhan meja terapi…",
+  "Menyusun 4 babak dopamine loop (Pattern, Somatik, AI, Anchor)…",
+  "Merender 4 visual poster 9:16 via Satori…",
+  "Menyimpan ke Supabase Storage & setting jadwal tayang…",
+];
+
 type RecognitionResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
 interface RecognitionLike {
   lang: string;
@@ -62,6 +70,7 @@ export function IdeaDrop({
   const [raw, setRaw] = useState("");
   const [date, setDate] = useState(today);
   const [loading, setLoading] = useState(false);
+  const [scouting, setScouting] = useState(false);
   const [step, setStep] = useState(0);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<RecognitionLike | null>(null);
@@ -69,13 +78,52 @@ export function IdeaDrop({
 
   useEffect(() => {
     if (!loading) return;
-    const t = window.setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 2800);
+    const currentSteps = scouting ? SCOUT_STEPS : STEPS;
+    const t = window.setInterval(() => setStep((s) => Math.min(s + 1, currentSteps.length - 1)), 2800);
     return () => window.clearInterval(t);
-  }, [loading]);
+  }, [loading, scouting]);
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
 
   const canSubmit = !loading && (mode === "topic" ? topic.trim().length >= 3 : raw.trim().length >= 10);
+
+  async function autoPilotResearch(overwrite = true): Promise<void> {
+    setScouting(true);
+    setStep(0);
+    setLoading(true);
+    try {
+      const data = await apiFetch<{
+        ok: boolean;
+        agent: string;
+        pillar: string;
+        focus: string;
+        campaign: CampaignDTO;
+        generation: GenerationInfo;
+        scheduledSlidesCount: number;
+      }>("/api/cron/research", {
+        method: "POST",
+        json: { campaign_date: date || undefined, overwrite },
+      });
+      onGenerated(data.campaign, data.generation);
+      notify(
+        "success",
+        `✨ ${data.agent || "Dr. Mind Scout"} Berhasil Meriset!`,
+        `Pilar: ${data.pillar} · 4 Babak terjadwal otomatis (07:15, 12:30, 18:45, 21:30)`,
+      );
+    } catch (err) {
+      if (err instanceof ApiClientError && err.status === 409 && !overwrite) {
+        if (window.confirm(`Campaign untuk ${date} sudah ada. Timpa dengan riset baru Dr. Mind Scout?`)) {
+          await autoPilotResearch(true);
+        }
+        return;
+      }
+      notify("error", "Gagal Auto-Pilot Research", errorMessage(err));
+    } finally {
+      setScouting(false);
+      setLoading(false);
+    }
+  }
+
 
   async function generate(overwrite = false): Promise<void> {
     const payload = {
@@ -151,9 +199,21 @@ export function IdeaDrop({
       <div className="relative p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
-              <Zap className="size-3.5" /> Quick Idea Drop
-            </p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
+                <Zap className="size-3.5" /> Quick Idea Drop
+              </p>
+              <button
+                type="button"
+                onClick={() => void autoPilotResearch(true)}
+                disabled={loading}
+                title="Picu agen riset klinis otonom Dr. Mind Scout untuk meriset tema hari ini dan menjadwalkan 4 babak langsung"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/25 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {scouting ? <Loader2 className="size-3.5 animate-spin text-emerald-300" /> : <Sparkles className="size-3.5 text-emerald-400" />}
+                ✨ Auto-Pilot Research (AI Scout)
+              </button>
+            </div>
             <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
               Satu ide mentah → <span className="font-serif font-medium italic text-emerald-200">4 babak story</span> siap tayang
             </h2>
@@ -255,7 +315,7 @@ export function IdeaDrop({
 
         {loading ? (
           <div className="mt-5 grid gap-1.5 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
-            {STEPS.map((label, i) => (
+            {(scouting ? SCOUT_STEPS : STEPS).map((label, i) => (
               <div key={label} className={cn("flex items-center gap-2 text-xs", i <= step ? "text-slate-100" : "text-slate-500")}>
                 {i < step ? (
                   <CheckCircle2 className="size-3.5 text-emerald-300" />

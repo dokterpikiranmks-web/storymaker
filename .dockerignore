@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+worker/auth_info_baileys
+worker/contacts.json
+worker/node_modules
+.env
+.env.local
+.env*.local
+*.log
