@@ -280,6 +280,7 @@ export function HistoryPanel({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-100">{c.themeTopic}</p>
                   <div className="mt-1 flex flex-wrap gap-1">
+                    {c.campaignType === "FLASH_PROMO" ? <Badge tone="amber">⚡ Promo</Badge> : null}
                     <Badge tone={c.generationSource === "gemini" ? "emerald" : "amber"}>{c.generationSource === "gemini" ? "Gemini" : "Offline"}</Badge>
                     {c.counts.POSTED ? <Badge tone="emerald">{c.counts.POSTED} posted</Badge> : null}
                     {c.counts.SCHEDULED ? <Badge tone="amber">{c.counts.SCHEDULED} jadwal</Badge> : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Camera, ChevronLeft, ChevronRight, Download, Layers, MessageCircle, RefreshCw, Send, Trash2, Undo2 } from "lucide-react";
+import { CalendarClock, Camera, ChevronLeft, ChevronRight, Download, Layers, MessageCircle, RefreshCw, Send, Sparkles, Trash2, Undo2, Zap } from "lucide-react";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -143,9 +143,15 @@ export function StoryStudio({
       <div className="flex flex-col gap-5 border-b border-white/5 p-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="cyan">
-              <Layers /> Story Studio
-            </Badge>
+            {campaign.campaignType === "FLASH_PROMO" ? (
+              <Badge tone="amber">
+                <Zap /> ⚡ Flash Promo
+              </Badge>
+            ) : (
+              <Badge tone="cyan">
+                <Layers /> Story Studio
+              </Badge>
+            )}
             <Badge tone={campaign.generationSource === "gemini" ? "emerald" : "amber"}>
               {campaign.generationSource === "gemini" ? `Gemini · ${campaign.generationModel ?? "auto"}` : "Offline Alchemist"}
             </Badge>
@@ -153,6 +159,32 @@ export function StoryStudio({
           </div>
           <h2 className="mt-2 font-serif text-2xl font-medium italic leading-tight text-white sm:text-3xl">{campaign.themeTopic}</h2>
           {campaign.coreInsight ? <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-400">{campaign.coreInsight}</p> : null}
+          {campaign.leadMagnetProtocol ? (
+            <details className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-400/[0.04] p-3 text-xs">
+              <summary className="flex cursor-pointer items-center justify-between font-semibold text-emerald-300">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="size-3.5" /> Lead Magnet Protocol (Siap Render PDF): {campaign.leadMagnetProtocol.title}
+                </span>
+                <span className="rounded bg-emerald-400/20 px-1.5 py-0.5 text-[10px] text-emerald-200">3 Langkah</span>
+              </summary>
+              <div className="mt-2.5 space-y-2 text-slate-300">
+                <p className="text-[11px] text-slate-400 italic">Target: {campaign.leadMagnetProtocol.target_issue}</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {campaign.leadMagnetProtocol.steps.map((st) => (
+                    <div key={st.step} className="rounded-lg border border-white/5 bg-black/40 p-2.5">
+                      <p className="font-semibold text-emerald-200">Langkah {st.step}: {st.title}</p>
+                      <p className="mt-1 text-[11px] text-slate-300 leading-snug">{st.action}</p>
+                      <p className="mt-1 font-mono text-[10px] text-slate-400">⏱ {st.duration || "60s"}</p>
+                      <p className="mt-1 text-[10px] text-emerald-300/80 leading-tight">Mekanisme: {st.mechanism}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-400 border-t border-white/5 pt-1.5">
+                  <strong className="text-slate-200">Ringkasan PDF:</strong> {campaign.leadMagnetProtocol.pdf_summary}
+                </p>
+              </div>
+            </details>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-1.5">
             {counts.DRAFT ? <Badge>{counts.DRAFT} draft</Badge> : null}
             {counts.SCHEDULED ? <Badge tone="amber">{counts.SCHEDULED} terjadwal</Badge> : null}

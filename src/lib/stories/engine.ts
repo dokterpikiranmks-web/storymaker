@@ -1,7 +1,16 @@
 import "server-only";
 import { ACT_TYPES, ACTS, normalizeTheme, type ActType } from "./constants";
-import { buildOfflineAct, deriveTopicPhrase, generateOfflineStory } from "./offline";
-import type { GeneratedAct, GeneratedStory, GenerationInfo, PersonaSettings } from "./types";
+import { buildDefaultLeadMagnetProtocol, buildOfflineAct, deriveTopicPhrase, generateOfflineStory } from "./offline";
+import type {
+  CampaignType,
+  FlashPromoInput,
+  GeneratedAct,
+  GeneratedStory,
+  GenerationInfo,
+  LeadMagnetProtocol,
+  LeadMagnetProtocolStep,
+  PersonaSettings,
+} from "./types";
 import { GeminiCascadeError, GeminiNotConfiguredError, isGeminiConfigured, ModelOutputError } from "@/lib/gemini/detector";
 import { generateStructured } from "@/lib/gemini/generate";
 import { buildAlchemistSystemPrompt, buildAlchemistUserPrompt, STORY_RESPONSE_SCHEMA } from "@/lib/prompts/alchemist";
@@ -13,6 +22,9 @@ export interface StoryRequest {
   campaignDate: string;
   persona: PersonaSettings;
   requestId: string;
+  campaignType?: CampaignType;
+  flashPromo?: FlashPromoInput;
+  leadMagnetProtocol?: LeadMagnetProtocol | null;
 }
 
 export interface StoryGenerationResult {
@@ -106,10 +118,40 @@ export function normalizeStory(raw: unknown, req: Omit<StoryRequest, "requestId"
 
   if (missing >= 2) throw new ModelOutputError(`Output model tidak lengkap (${missing} babak hilang)`);
 
+  let leadMagnetProtocol: LeadMagnetProtocol | null = req.leadMagnetProtocol ?? null;
+  if (obj.lead_magnet_protocol && typeof obj.lead_magnet_protocol === "object") {
+    const lmp = obj.lead_magnet_protocol as Record<string, unknown>;
+    const rawSteps = Array.isArray(lmp.steps) ? lmp.steps : [];
+    const steps: LeadMagnetProtocolStep[] = rawSteps.slice(0, 3).map((st, idx) => {
+      const s = (st && typeof st === "object" ? st : {}) as Record<string, unknown>;
+      return {
+        step: idx + 1,
+        title: truncate(str(s.title) || `Langkah ${idx + 1}`, 100),
+        action: truncate(str(s.action), 400),
+        duration: truncate(str(s.duration) || "60 detik", 40),
+        mechanism: truncate(str(s.mechanism), 300),
+      };
+    });
+
+    if (steps.length === 3) {
+      leadMagnetProtocol = {
+        title: truncate(str(lmp.title) || `Protokol 3 Langkah: ${phrase}`, 120),
+        target_issue: truncate(str(lmp.target_issue) || phrase, 200),
+        steps,
+        pdf_summary: truncate(str(lmp.pdf_summary), 500) || `Panduan 3 langkah berbasis somatik dan neuro-arsitektur untuk mengatasi ${phrase}.`,
+      };
+    }
+  }
+
+  if (!leadMagnetProtocol) {
+    leadMagnetProtocol = buildDefaultLeadMagnetProtocol(phrase);
+  }
+
   return {
     theme_topic: truncate(stripEmoji(str(obj.theme_topic)) || req.topic || phrase, 120),
     core_insight: truncate(str(obj.core_insight), 300),
     acts,
+    lead_magnet_protocol: leadMagnetProtocol,
   };
 }
 
@@ -120,7 +162,13 @@ export function normalizeStory(raw: unknown, req: Omit<StoryRequest, "requestId"
 export async function generateFourActStory(req: StoryRequest): Promise<StoryGenerationResult> {
   const started = Date.now();
   const offline = (reason: string, attempts: GenerationInfo["attempts"] = []): StoryGenerationResult => ({
-    story: generateOfflineStory({ topic: req.topic, rawThought: req.rawThought, persona: req.persona }),
+    story: generateOfflineStory({
+      topic: req.topic,
+      rawThought: req.rawThought,
+      persona: req.persona,
+      campaignType: req.campaignType,
+      flashPromo: req.flashPromo,
+    }),
     info: { source: "offline", model: null, attempts, latencyMs: Date.now() - started, fallbackReason: reason },
   });
 
@@ -130,7 +178,14 @@ export async function generateFourActStory(req: StoryRequest): Promise<StoryGene
 
   try {
     const result = await generateStructured(
-      buildAlchemistUserPrompt({ topic: req.topic, rawThought: req.rawThought, campaignDate: req.campaignDate }),
+      buildAlchemistUserPrompt({
+        topic: req.topic,
+        rawThought: req.rawThought,
+        campaignDate: req.campaignDate,
+        campaignType: req.campaignType,
+        flashPromo: req.flashPromo,
+        leadMagnetProtocol: req.leadMagnetProtocol,
+      }),
       buildAlchemistSystemPrompt(req.persona),
       (text) => normalizeStory(extractJson(text), req),
       { json: true, responseSchema: STORY_RESPONSE_SCHEMA, temperature: 0.95, requestId: req.requestId },

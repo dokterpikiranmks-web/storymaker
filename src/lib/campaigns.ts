@@ -10,8 +10,10 @@ import { ACT_TYPES, ACTS, normalizeTheme, POST_STATUSES, type PostStatus, type T
 import type {
   CampaignDTO,
   CampaignSummaryDTO,
+  CampaignType,
   GeneratedStory,
   GenerationInfo,
+  LeadMagnetProtocol,
   PersonaSettings,
   SlideDTO,
 } from "@/lib/stories/types";
@@ -55,17 +57,31 @@ export function toSlideDTO(s: StorySlide): SlideDTO {
 }
 
 export function toCampaignDTO(c: DailyCampaign, slides: StorySlide[]): CampaignDTO {
+  let leadMagnetProtocol: LeadMagnetProtocol | null = null;
+  if (c.rawInputNotes && c.rawInputNotes.includes("---LEAD_MAGNET_PROTOCOL_JSON---")) {
+    try {
+      const parts = c.rawInputNotes.split("---LEAD_MAGNET_PROTOCOL_JSON---");
+      if (parts[1]) {
+        leadMagnetProtocol = JSON.parse(parts[1].trim());
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+  }
+
   return {
     id: c.id,
     campaignDate: c.campaignDate,
+    campaignType: (c.campaignType as CampaignType) || "DAILY_AUTONOMOUS",
     themeTopic: c.themeTopic,
-    rawInputNotes: c.rawInputNotes,
+    rawInputNotes: c.rawInputNotes ? c.rawInputNotes.split("---LEAD_MAGNET_PROTOCOL_JSON---")[0].trim() : null,
     coreInsight: c.coreInsight,
     generationSource: c.generationSource,
     generationModel: c.generationModel,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
     slides: [...slides].sort((a, b) => actIndex(a.act) - actIndex(b.act)).map(toSlideDTO),
+    leadMagnetProtocol,
   };
 }
 
@@ -77,8 +93,12 @@ export async function getCampaign(id: string): Promise<CampaignDTO | null> {
   return toCampaignDTO(campaign, slides);
 }
 
-export async function getCampaignRowByDate(date: string): Promise<DailyCampaign | null> {
-  const [row] = await db.select().from(dailyCampaigns).where(eq(dailyCampaigns.campaignDate, date)).limit(1);
+export async function getCampaignRowByDate(date: string, type: CampaignType = "DAILY_AUTONOMOUS"): Promise<DailyCampaign | null> {
+  const [row] = await db
+    .select()
+    .from(dailyCampaigns)
+    .where(and(eq(dailyCampaigns.campaignDate, date), eq(dailyCampaigns.campaignType, type)))
+    .limit(1);
   return row ?? null;
 }
 
@@ -105,6 +125,7 @@ export async function listCampaigns(limit = 30): Promise<CampaignSummaryDTO[]> {
     return {
       id: r.id,
       campaignDate: r.campaignDate,
+      campaignType: (r.campaignType as CampaignType) || "DAILY_AUTONOMOUS",
       themeTopic: r.themeTopic,
       generationSource: r.generationSource,
       generationModel: r.generationModel,
@@ -131,37 +152,87 @@ export async function saveGeneratedCampaign(input: {
   rawThought?: string;
   story: GeneratedStory;
   info: GenerationInfo;
+  campaignType?: CampaignType;
 }): Promise<string> {
-  const rawNotes = [input.topic ? `Topik: ${input.topic}` : null, input.rawThought || null].filter(Boolean).join("\n\n") || null;
-  const themeTopic = input.story.theme_topic || input.topic || "Story harian";
+  const campaignType = input.campaignType ?? "DAILY_AUTONOMOUS";
+  const protocolNote = input.story.lead_magnet_protocol
+    ? `\n\n---LEAD_MAGNET_PROTOCOL_JSON---\n${JSON.stringify(input.story.lead_magnet_protocol)}`
+    : "";
+  const baseNotes = [input.topic ? `Topik: ${input.topic}` : null, input.rawThought || null].filter(Boolean).join("\n\n");
+  const rawNotes = (baseNotes ? baseNotes + protocolNote : protocolNote ? protocolNote.trim() : null);
+  const themeTopic = input.story.theme_topic || input.topic || (campaignType === "FLASH_PROMO" ? "Flash Promo" : "Story harian");
+
   return db.transaction(async (tx) => {
     const now = new Date();
-    const [campaign] = await tx
-      .insert(dailyCampaigns)
-      .values({
-        campaignDate: input.campaignDate,
-        themeTopic,
-        rawInputNotes: rawNotes,
-        coreInsight: input.story.core_insight || null,
-        generationSource: input.info.source,
-        generationModel: input.info.model,
-      })
-      .onConflictDoUpdate({
-        target: dailyCampaigns.campaignDate,
-        set: {
+    let campaignId: string;
+
+    if (campaignType === "FLASH_PROMO") {
+      // FLASH_PROMO: Always insert as an independent separate entry without overwriting or blocking daily queue
+      const [campaign] = await tx
+        .insert(dailyCampaigns)
+        .values({
+          campaignDate: input.campaignDate,
+          campaignType: "FLASH_PROMO",
           themeTopic,
           rawInputNotes: rawNotes,
           coreInsight: input.story.core_insight || null,
           generationSource: input.info.source,
           generationModel: input.info.model,
+          createdAt: now,
           updatedAt: now,
-        },
-      })
-      .returning();
-    await tx.delete(storySlides).where(eq(storySlides.campaignId, campaign.id));
+        })
+        .returning();
+      campaignId = campaign.id;
+    } else {
+      // DAILY_AUTONOMOUS: Check if daily autonomous campaign already exists for this date
+      const [existing] = await tx
+        .select()
+        .from(dailyCampaigns)
+        .where(
+          and(
+            eq(dailyCampaigns.campaignDate, input.campaignDate),
+            eq(dailyCampaigns.campaignType, "DAILY_AUTONOMOUS"),
+          ),
+        )
+        .limit(1);
+
+      if (existing) {
+        const [updated] = await tx
+          .update(dailyCampaigns)
+          .set({
+            themeTopic,
+            rawInputNotes: rawNotes,
+            coreInsight: input.story.core_insight || null,
+            generationSource: input.info.source,
+            generationModel: input.info.model,
+            updatedAt: now,
+          })
+          .where(eq(dailyCampaigns.id, existing.id))
+          .returning();
+        campaignId = updated.id;
+        await tx.delete(storySlides).where(eq(storySlides.campaignId, campaignId));
+      } else {
+        const [campaign] = await tx
+          .insert(dailyCampaigns)
+          .values({
+            campaignDate: input.campaignDate,
+            campaignType: "DAILY_AUTONOMOUS",
+            themeTopic,
+            rawInputNotes: rawNotes,
+            coreInsight: input.story.core_insight || null,
+            generationSource: input.info.source,
+            generationModel: input.info.model,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .returning();
+        campaignId = campaign.id;
+      }
+    }
+
     await tx.insert(storySlides).values(
       input.story.acts.map((a) => ({
-        campaignId: campaign.id,
+        campaignId,
         act: a.act,
         targetTime: `${ACTS[a.act].time}:00`,
         headline: a.headline,
@@ -172,7 +243,7 @@ export async function saveGeneratedCampaign(input: {
         meta: { technique: a.technique, keyElement: a.key_element, source: input.info.source, model: input.info.model } satisfies SlideMeta,
       })),
     );
-    return campaign.id;
+    return campaignId;
   });
 }
 

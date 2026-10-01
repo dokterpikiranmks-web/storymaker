@@ -52,18 +52,26 @@ export interface SlideMeta {
   forcedAt?: string;
 }
 
-// ── Daily campaign (one per calendar day) ────────────────────────────────
-export const dailyCampaigns = pgTable("daily_campaigns", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  campaignDate: date("campaign_date").notNull().unique(),
-  themeTopic: text("theme_topic").notNull(),
-  rawInputNotes: text("raw_input_notes"),
-  coreInsight: text("core_insight"),
-  generationSource: text("generation_source").notNull().default("gemini"),
-  generationModel: text("generation_model"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+// ── Daily campaign (daily autonomous or flash promo) ─────────────────────
+export const dailyCampaigns = pgTable(
+  "daily_campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignDate: date("campaign_date").notNull(),
+    campaignType: text("campaign_type").notNull().default("DAILY_AUTONOMOUS"),
+    themeTopic: text("theme_topic").notNull(),
+    rawInputNotes: text("raw_input_notes"),
+    coreInsight: text("core_insight"),
+    generationSource: text("generation_source").notNull().default("gemini"),
+    generationModel: text("generation_model"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("daily_campaigns_date_idx").on(t.campaignDate),
+    index("daily_campaigns_type_idx").on(t.campaignType),
+  ],
+);
 
 // ── Slide per act ────────────────────────────────────────────────────────
 export const storySlides = pgTable(

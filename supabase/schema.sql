@@ -14,10 +14,11 @@ do $$ begin
   create type post_status as enum ('DRAFT', 'SCHEDULED', 'POSTED', 'FAILED');
 exception when duplicate_object then null; end $$;
 
--- ── Rencana story harian ────────────────────────────────────────────────
+-- ── Rencana story harian / flash promo ──────────────────────────────────
 create table if not exists daily_campaigns (
   id                 uuid primary key default gen_random_uuid(),
-  campaign_date      date not null unique,
+  campaign_date      date not null,
+  campaign_type      text not null default 'DAILY_AUTONOMOUS', -- 'DAILY_AUTONOMOUS' | 'FLASH_PROMO'
   theme_topic        text not null,
   raw_input_notes    text,
   core_insight       text,                          -- ext: insight pemersatu 4 babak
@@ -26,6 +27,8 @@ create table if not exists daily_campaigns (
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
+create index if not exists daily_campaigns_campaign_date_idx on daily_campaigns (campaign_date);
+create index if not exists daily_campaigns_campaign_type_idx on daily_campaigns (campaign_type);
 
 -- ── Detail slide per babak ──────────────────────────────────────────────
 create table if not exists story_slides (

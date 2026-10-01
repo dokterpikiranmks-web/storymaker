@@ -23,10 +23,39 @@ export interface GeneratedAct {
   key_element: string;
 }
 
+export type CampaignType = "DAILY_AUTONOMOUS" | "FLASH_PROMO";
+export type FlashPromoSubtype = "THERAPY_SLOT" | "APP_SHOWCASE";
+
+export interface LeadMagnetProtocolStep {
+  step: number;
+  title: string;
+  action: string;
+  duration?: string;
+  mechanism: string;
+}
+
+export interface LeadMagnetProtocol {
+  title: string;
+  target_issue: string;
+  steps: LeadMagnetProtocolStep[];
+  pdf_summary: string;
+}
+
+export interface FlashPromoInput {
+  subtype: FlashPromoSubtype;
+  remainingSlots?: number;
+  practiceDate?: string;
+  therapyType?: "TOTOK_SARAF" | "HIPNOTERAPI" | "KOMBINASI";
+  appName?: string;
+  appSolution?: string;
+  targetUser?: string;
+}
+
 export interface GeneratedStory {
   theme_topic: string;
   core_insight: string;
   acts: GeneratedAct[];
+  lead_magnet_protocol?: LeadMagnetProtocol | null;
 }
 
 export interface AttemptLogDTO {
@@ -74,6 +103,7 @@ export interface SlideDTO {
 export interface CampaignDTO {
   id: string;
   campaignDate: string;
+  campaignType: CampaignType;
   themeTopic: string;
   rawInputNotes: string | null;
   coreInsight: string | null;
@@ -82,11 +112,13 @@ export interface CampaignDTO {
   createdAt: string;
   updatedAt: string;
   slides: SlideDTO[];
+  leadMagnetProtocol?: LeadMagnetProtocol | null;
 }
 
 export interface CampaignSummaryDTO {
   id: string;
   campaignDate: string;
+  campaignType: CampaignType;
   themeTopic: string;
   generationSource: string;
   generationModel: string | null;

@@ -4,6 +4,7 @@ import { getCampaign, getCampaignRowByDate, renderCampaignSlides, saveGeneratedC
 import { todayInTimezone } from "@/lib/env";
 import { getPersona } from "@/lib/settings";
 import { generateFourActStory } from "@/lib/stories/engine";
+import type { FlashPromoInput } from "@/lib/stories/types";
 import { generateStorySchema, zodMessage } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -11,9 +12,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * POST /api/stories/generate  (PRD Task 2.2)
- * Body: { topic?: string, raw_thought?: string, campaign_date?: "YYYY-MM-DD", overwrite?: boolean }
- * → 4-act structured story (Gemini cascade → offline fallback), persisted + rendered.
+ * POST /api/stories/generate
+ * Supports both DAILY_AUTONOMOUS stories and FLASH_PROMO ad-hoc campaigns.
+ * If FLASH_PROMO: saves as an independent entry without checking or blocking today's daily queue.
  */
 export async function POST(req: Request) {
   const denied = await requireDashboard(req);
@@ -21,19 +22,64 @@ export async function POST(req: Request) {
 
   const parsed = generateStorySchema.safeParse(await readJson(req));
   if (!parsed.success) return jsonError(zodMessage(parsed.error), 400);
+
   const { topic, raw_thought: rawThought, overwrite } = parsed.data;
+  const campaignType = parsed.data.campaign_type ?? "DAILY_AUTONOMOUS";
   const campaignDate = parsed.data.campaign_date ?? todayInTimezone();
 
   try {
-    const existing = await getCampaignRowByDate(campaignDate);
-    if (existing && !overwrite) {
-      return jsonError(`Campaign untuk tanggal ${campaignDate} sudah ada.`, 409, { existingCampaignId: existing.id });
+    // Logika validasi: Jika DAILY_AUTONOMOUS, cek apakah campaign hari ini sudah ada.
+    // Jika FLASH_PROMO, simpan sebagai entri terpisah tanpa memvalidasi atau memblokir antrean tanggal hari ini.
+    if (campaignType === "DAILY_AUTONOMOUS") {
+      const existing = await getCampaignRowByDate(campaignDate, "DAILY_AUTONOMOUS");
+      if (existing && !overwrite) {
+        return jsonError(`Campaign harian untuk tanggal ${campaignDate} sudah ada.`, 409, { existingCampaignId: existing.id });
+      }
     }
 
     const persona = await getPersona();
     const requestId = randomUUID();
-    const { story, info } = await generateFourActStory({ topic, rawThought, campaignDate, persona, requestId });
-    const campaignId = await saveGeneratedCampaign({ campaignDate, topic, rawThought, story, info });
+
+    const flashPromo: FlashPromoInput | undefined =
+      campaignType === "FLASH_PROMO" && parsed.data.flash_promo_subtype
+        ? {
+            subtype: parsed.data.flash_promo_subtype,
+            remainingSlots: parsed.data.remaining_slots,
+            practiceDate: parsed.data.practice_date,
+            therapyType: parsed.data.therapy_type,
+            appName: parsed.data.app_name,
+            appSolution: parsed.data.app_solution,
+            targetUser: parsed.data.target_user,
+          }
+        : undefined;
+
+    const topicFinal =
+      topic ||
+      (flashPromo
+        ? flashPromo.subtype === "THERAPY_SLOT"
+          ? `Slot Praktek Terapi (${flashPromo.practiceDate ?? "Pekan Ini"})`
+          : `Showcase Solusi: ${flashPromo.appName ?? "AI Tool"}`
+        : undefined);
+
+    const { story, info } = await generateFourActStory({
+      topic: topicFinal,
+      rawThought,
+      campaignDate,
+      persona,
+      requestId,
+      campaignType,
+      flashPromo,
+    });
+
+    const campaignId = await saveGeneratedCampaign({
+      campaignDate,
+      topic: topicFinal,
+      rawThought,
+      story,
+      info,
+      campaignType,
+    });
+
     const renderErrors = await renderCampaignSlides(campaignId);
     const campaign = await getCampaign(campaignId);
 
