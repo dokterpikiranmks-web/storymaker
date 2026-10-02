@@ -29,80 +29,80 @@ const TEMPLATES: Record<ActType, Builder[]> = {
     (t) => ({
       headline: `Yang kamu lawan *bukan* ${t}`,
       body_text:
-        "Perhatikan pagi ini: saat pikiran bilang \"aku baik-baik saja\", bahu dan rahangmu justru mengeras. Tubuh selalu melapor lebih dulu.\n\nAda satu titik kecil yang bisa mematikan alarm itu dalam 90 detik. Aku buka siang nanti.",
-      call_to_action: "Simpan rasa penasaranmu sampai 12:30.",
-      caption: `Pagi ini aku mau jujur soal ${t}.\n\nYang kita kira masalah pikiran, seringkali adalah sinyal tubuh yang belum dibaca. Dan selama sinyal itu diabaikan, pikiran akan terus mencari masalah baru.\n\nSiang nanti aku bagikan teknik 90 detiknya. Pantau status berikutnya 🧠\n\n#hipnoterapi #totoksaraf #mentalhealth`,
-      technique: "Open loop + paradoks tubuh-pikiran (efek Zeigarnik)",
-      key_element: "Hook: tubuh melapor lebih dulu daripada pikiran.",
+        "Perhatikan pagi ini: saat pikiran bilang \"aku baik-baik saja\", otot leher belakang dan rahangmu justru mengeras kaku.\n\nSiang nanti jam 12:30, saya tunjukkan 1 titik saraf di leher yang kalau ditekan 30 detik langsung bikin nafas enteng.",
+      call_to_action: "Tunggu panduannya siang nanti jam 12:30.",
+      caption: `Pagi ini aku mau jujur soal ${t}.\n\nYang kita kira masalah otak kebanyakan mikir, seringkali adalah sinyal tubuh yang belum sempat kita dengarkan. Otot leher belakang kaku mengunci alarm siaga tubuh.\n\nSiang nanti jam 12:30 aku tunjukkan titik peredanya. Pantau terus ya 🌿\n\n#totoksaraf #remalami #kesehatantubuh`,
+      technique: "Open loop + jembatan siang (retention hook)",
+      key_element: "Hook pagi: tubuh melapor lebih dulu, janji teknik titik leher jam 12:30.",
     }),
     (t) => ({
-      headline: `Semakin keras *berpikir*, semakin jauh *jawabannya*`,
-      body_text: `Ini paradoks yang sering aku lihat di ruang terapi soal ${t}. Otak yang dipaksa mencari solusi justru terkunci di mode bertahan hidup.\n\nKuncinya bukan di kepala. Ada di satu tempat di tubuhmu yang jarang kamu sentuh.`,
-      call_to_action: "Tebak di mana? Jawabannya jam 12:30.",
-      caption: `Pernah merasa makin dipikirkan, makin buntu? Itu bukan karena kamu kurang pintar.\n\nSaat otak masuk mode siaga, area berpikir jernih justru \"dimatikan\" sementara. Jalan keluarnya lewat tubuh, bukan lewat debat di kepala.\n\nSiang ini aku kasih tahu titiknya 👀\n\n#overthinking #hipnoterapi #selfhealing`,
+      headline: `Makin dipikirkan, *otak makin nge-hang*`,
+      body_text: `Ini paradoks yang sering kulihat di meja terapi soal ${t}. Otak yang dipaksa mencari jalan keluar justru terkunci kelelahan.\n\nSiang nanti jam 12:30, saya tunjukkan 1 titik saraf di leher yang kalau ditekan 30 detik langsung bikin nafas enteng.`,
+      call_to_action: "Jawabannya siang nanti jam 12:30.",
+      caption: `Pernah merasa makin dipikirkan, kepala makin berat seperti diikat? Itu tanda rem darurat alami tubuhmu butuh diaktifkan.\n\nSolusinya ada di tubuh, bukan debat di kepala.\n\nSiang ini jam 12:30 aku bocorkan titiknya 👀\n\n#otakngehang #remdarurat #relaksasi`,
       technique: "Pattern interrupt + curiosity gap",
-      key_element: "Hook: solusi ada di tubuh, bukan di kepala.",
+      key_element: "Hook pagi: otak nge-hang, janji titik leher jam 12:30.",
     }),
   ],
   ACT_2_SOMATIC: [
     () => ({
-      headline: `*90 detik* untuk menenangkan *sistem saraf*`,
+      headline: `Tekan titik ini, *nafas langsung enteng*`,
       body_text:
-        "Letakkan dua jari di cekungan pangkal tengkorak, kiri dan kanan. Tekan lembut, tarik napas 4 hitungan, buang 8 hitungan. Ulangi 6 kali.\n\nNapas buang yang panjang mengirim sinyal aman lewat nervus vagus. Hentikan bila tidak nyaman.",
-      call_to_action: "Coba sekarang, lalu rasakan bahumu.",
+        "Sesuai janji tadi pagi: letakkan dua jempol di cekungan pangkal tengkorak leher belakang. Tekan lembut 30 detik sambil hembuskan napas panjang.\n\nTapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' yang kita bahas nanti sore.",
+      call_to_action: "Coba sekarang, lalu tunggu sore jam 18:45.",
       caption:
-        "Janji pagi tadi aku tepati 🙏\n\nTitik di pangkal tengkorak ini sering aku pakai di sesi totok saraf. Dikombinasikan dengan napas buang 2x lebih panjang, tubuh berpindah dari mode siaga (simpatik) ke mode pulih (parasimpatik).\n\nCoba sekarang dan ceritakan apa yang kamu rasakan.\n\n#totoksaraf #nervusvagus #breathwork",
-      technique: "Somatic grounding + napas 4-8 (aktivasi parasimpatik)",
-      key_element: "Teknik somatik: tekan lembut pangkal tengkorak + napas buang panjang.",
+        "Sesuai janji tadi pagi 🙏\n\nTitik GB-20 di cekungan leher belakang ini langsung menyalakan rem darurat alami tubuh (saraf vagus). Nafas seketika terasa plong dan bahu turun santai.\n\nPenasaran kenapa leher bisa kaku tanpa sebab fisik? Kita kupas sore nanti jam 18:45 ✨\n\n#totokleher #remdarurat #nafasplong",
+      technique: "Somatic release + jembatan sore",
+      key_element: "Teknik siang: menyapa pagi, tekan titik leher GB-20, lempar hook kabel emosi sore.",
     }),
     (t) => ({
-      headline: `Tubuh tenang dulu, *pikiran menyusul*`,
-      body_text: `Untuk ${t}, mulai dari fisik: tekan lembut titik di antara ibu jari dan telunjuk 30 detik tiap tangan, sambil menghembuskan napas pelan seperti meniup lilin.\n\nDetak jantung melambat, otak pindah dari mode alarm ke mode jernih.`,
-      call_to_action: "Praktikkan sekali sebelum makan siang.",
+      headline: `Sesuai janji pagi: *rem darurat tubuh*`,
+      body_text: `Untuk ${t}, kita mulai dari fisik: tekan lembut titik cekungan leher belakang sambil buang napas perlahan lewat mulut seperti meniup lilin.\n\nTapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' yang kita bahas nanti sore.`,
+      call_to_action: "Praktikkan sekarang, kita sambung sore nanti.",
       caption:
-        "Logikanya sederhana: pikiran yang panik tidak bisa diajak berdebat. Tapi tubuh bisa diajak melambat.\n\nTekanan lembut + napas buang panjang = sinyal ke otak bahwa kamu aman. Setelah itu, baru pikiran jernih bisa bekerja.\n\nSore nanti aku ceritakan kisah dari ruang terapi ✨\n\n#somatic #functionalmedicine #calm",
-      technique: "Bottom-up regulation (tubuh → otak)",
-      key_element: "Teknik somatik: titik tangan + napas buang pelan.",
+        "Sesuai janji tadi pagi, ini rahasianya.\n\nPikiran yang panik tidak bisa didebat dengan kata-kata, tapi tubuh bisa diajak melambat lewat rem alami tubuh.\n\nLalu apa hubungan leher kaku ini dengan emosi yang tertahan? Sore nanti jam 18:45 kita bahas tuntas 🌿\n\n#remalami #leherkaku #sarafvagus",
+      technique: "Bottom-up regulation + open loop sore",
+      key_element: "Teknik siang: menyapa pagi, panduan napas & titik leher, lempar hook sore.",
     }),
   ],
   ACT_3_CLINICAL_AI: [
     (t) => ({
-      headline: `Pikiranmu tidak *rusak*. *System prompt*-nya usang.`,
-      body_text: `Seorang klien (disamarkan) datang dengan keluhan ${t}. Dia yakin dirinya "error".\n\nPadahal pikirannya hanya menjalankan instruksi lama dengan sangat disiplin. Persis AI agent: output buruk jarang karena modelnya bodoh, tapi karena instruksinya tak pernah di-update.`,
-      call_to_action: "Instruksi lama apa yang masih kamu jalankan?",
+      headline: `Tubuh kaku karena *instruksi lama*`,
+      body_text: `Melanjutkan titik leher tadi siang: seorang klien datang dengan keluhan ${t}. Lehernya kaku bukan karena beban fisik, melainkan 'kabel emosinya' terus mengirim alarm siaga.\n\nNanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.`,
+      call_to_action: "Siapkan dirimu malam ini jam 21:30.",
       caption:
-        "Siang aku ngoding AI agent, malam aku duduk di kursi terapi. Polanya ternyata sama.\n\nSaat agent memberi jawaban kacau, aku tidak memarahi modelnya — aku membaca ulang system prompt-nya. Di terapi pun begitu: kita cari \"instruksi lama\" yang masih dijalankan bawah sadar, lalu kita refactor.\n\nMalam ini ada sesi singkat untukmu 🌙\n\n#aiagent #hipnoterapi #mindset",
-      technique: "Reframing + metafora terapeutik (analogi AI)",
-      key_element: "Analogi AI: keyakinan lama = system prompt usang yang perlu di-refactor.",
+        "Melanjutkan titik leher tadi siang...\n\nSama seperti sistem komputer yang butuh restart saat nge-hang, tubuh kita kaku tegang karena pikiran bawah sadar masih menjalankan instruksi lama yang usang.\n\nMalam ini jam 21:30 kita reset bersama sebelum tidur 🌙\n\n#kabelemosi #instruksilama #resetpikiran",
+      technique: "Reframing bahasa awam + jembatan malam",
+      key_element: "Koneksi sore: menyambung titik leher siang, analogi instruksi lama, lempar hook malam.",
     }),
     (t) => ({
-      headline: `Di meja terapi, aku *debugging* manusia`,
-      body_text: `Keluhannya ${t}. Kami tidak melawan gejalanya — kami menelusuri kode yang memicunya: satu keyakinan lama yang terus di-loop.\n\nSama seperti membangun AI agent: bug tidak hilang dengan marah pada output. Bug hilang saat baris akarnya ditemukan.`,
-      call_to_action: "Malam ini kita refactor bersama.",
+      headline: `Di meja terapi, kita *restart sistem*`,
+      body_text: `Melanjutkan bahasan siang tadi: leher kaku pada kasus ${t} adalah sinyal kabel emosi yang korslet. Pikiran terus bekerja lembur tanpa sadar.\n\nNanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.`,
+      call_to_action: "Tunggu panduannya malam ini jam 21:30.",
       caption:
-        "Debugging manusia dan debugging kode punya aturan yang sama: jangan tambal gejalanya, temukan akar instruksinya.\n\nKlien ini (identitas disamarkan) akhirnya sadar, reaksinya bukan \"dirinya\" — hanya loop lama yang tidak pernah dihentikan.\n\nNanti malam aku pandu relaksasi singkat 💤\n\n#debugging #terapipikiran #aidev",
-      technique: "Metafora debugging + dissociation ringan",
-      key_element: "Analogi AI: gejala = output, keyakinan lama = bug di baris akar.",
+        "Melanjutkan titik leher tadi siang...\n\nKita tidak perlu melawan rasa cemasnya. Yang kita lakukan adalah merestart sistem dari akar: memutus instruksi lama yang bikin leher mengunci.\n\nMalam ini jam 21:30 ada panduan relaksasi tidur untukmu 💤\n\n#terapisaraf #restartotak #ketenanganmalam",
+      technique: "Metafora restart sistem + hook malam",
+      key_element: "Koneksi sore: menyambung siang, analogi restart otak, hook malam jam 21:30.",
     }),
   ],
   ACT_4_ANCHOR: [
     (_t, p) => ({
-      headline: `Malam ini, biarkan *tubuhmu* yang memimpin`,
+      headline: `Malam ini, *izinkan tubuhmu* beristirahat`,
       body_text:
-        "Pejamkan mata. Tarik napas pelan... dan saat menghembuskannya, biarkan hitungan mundur dari sepuluh membuat bahumu semakin ringan.\n\nKamu tidak perlu berusaha tenang. Cukup izinkan. Besok pagi kamu bangun dengan kepala yang lebih jernih.",
-      call_to_action: `KETIK '${p.ctaKeyword}' untuk audio relaksasi 7 menit`,
-      caption: `Sebelum tidur, beri tubuhmu izin untuk berhenti bekerja.\n\nSemakin kamu memperhatikan napasmu, semakin dalam rasa tenang itu turun... dan bagian dirimu yang paling bijak tahu cara melanjutkannya sendiri.\n\nMau versi audio terpandu? KETIK '${p.ctaKeyword}' di chat WhatsApp 🌙\n\n#relaksasi #hipnosis #tidurnyenyak`,
-      technique: "Sugesti Alpha/Theta + future pacing + embedded command",
-      key_element: "Sugesti malam: hitung mundur 10 → bahu melepas, bangun lebih jernih.",
+        "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore... malam ini letakkan tangan di dadamu. Izinkan bahumu melepas semua beban hari ini.\n\nBesok pagi kamu bangun dengan kepala yang jauh lebih enteng.",
+      call_to_action: `KETIK '${p.ctaKeyword}' untuk panduan lengkap PDF`,
+      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore... sekarang saatnya tubuhmu pulih sepenuhnya.\n\nSentuh dadamu, bernapas perlahan, izinkan tidurmu lelap malam ini.\n\nMau panduan lengkap PDF 3 langkahnya? KETIK '${p.ctaKeyword}' di chat WhatsApp 🌙\n\n#tidurnyenyak #afirmasitidur #resetvagus`,
+      technique: "Rangkuman seharian + afirmasi tidur + CTA",
+      key_element: "Sugesti malam: merangkum seharian (pagi-siang-sore), afirmasi dada, CTA kata kunci WhatsApp.",
     }),
     (_t, p) => ({
-      headline: `Sentuh dadamu. *Ini anchor-mu* malam ini.`,
+      headline: `Sentuh dadamu. *Hari ini sudah tuntas.*`,
       body_text:
-        "Letakkan telapak tangan di dada, rasakan hangatnya. Setiap napas keluar membawa pergi sisa hari ini.\n\nMulai malam ini, setiap kali kamu menyentuh dada seperti ini, tubuhmu ingat rasa aman ini... semakin dalam, semakin tenang.",
-      call_to_action: `KETIK '${p.ctaKeyword}' untuk panduan lengkapnya`,
-      caption: `Anchor adalah jembatan kecil ke rasa aman yang bisa kamu bawa ke mana saja.\n\nMalam ini kita tanam bersama: telapak tangan di dada, napas buang panjang, izinkan tubuh melepas. Besok, saat hari mulai berat, cukup sentuh dada dan rasakan kembali.\n\nKETIK '${p.ctaKeyword}' kalau mau panduan audionya 🤍\n\n#anchoring #hipnoterapi #selfcare`,
-      technique: "Kinesthetic anchoring + presuposisi",
-      key_element: "Sugesti malam: sentuhan dada sebagai anchor rasa aman.",
+        "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore: perjalanan tubuhmu hari ini luar biasa. Sentuh dadamu, rasakan kehangatannya, dan izinkan pikiranmu beristirahat damai.",
+      call_to_action: `KETIK '${p.ctaKeyword}' di WA untuk panduan PDF`,
+      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...\n\nKamu sudah berjuang seharian. Malam ini tubuhmu berhak atas kedamaian dan pemulihan utuh.\n\nKetik '${p.ctaKeyword}' di WhatsApp kalau kamu ingin dokumen panduan PDF lengkapnya 🤍\n\n#pemulihantubuh #afirmasimalam #drMind`,
+      technique: "Rangkuman narasi + anchoring damai + CTA",
+      key_element: "Sugesti malam: merangkum perjalanan seharian, penanaman rasa aman, CTA WhatsApp.",
     }),
   ],
 };
@@ -115,32 +115,38 @@ export function buildOfflineAct(act: ActType, topicPhrase: string, persona: Pers
 
 export function buildDefaultLeadMagnetProtocol(topicPhrase: string): LeadMagnetProtocol {
   return {
-    title: `Protokol 3 Menit Reset Somatik: ${topicPhrase}`,
-    target_issue: `Meredakan ketegangan sistem saraf, leher kaku, dan overthinking terkait ${topicPhrase}`,
+    title: `Panduan Saku Reset Somatik & Saraf Vagus: ${topicPhrase}`,
+    target_issue: `Meredakan otot leher kaku, rem darurat tubuh, dan overthinking terkait ${topicPhrase}`,
     steps: [
       {
         step: 1,
-        title: "Pelepasan Titik Meridian GB-20 (Fengchi)",
-        action: "Letakkan kedua jempol tangan di lekukan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil menutup mata.",
+        title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
+        action:
+          "Letakkan kedua jempol di cekungan pangkal tengkorak belakang leher (titik batas antara kepala dan leher). Berikan tekanan lembut mengarah ke atas selama 60 detik sambil memejamkan mata dan bernapas perlahan.",
         duration: "60 detik",
-        mechanism: "Mengendurkan spasme otot suboksipital, melancarkan aliran darah ke otak, dan mengirim sinyal relaksasi ke nervus vagus.",
+        mechanism:
+          "Mengendurkan otot leher belakang yang tegang kaku, melancarkan aliran darah ke otak, dan mematikan alarm siaga tubuh.",
       },
       {
         step: 2,
-        title: "Regulasi Saraf Vagus via Extended Exhale 4-8",
-        action: "Tarik napas perlahan melalui hidung selama 4 detik, lalu hembuskan lembut lewat bibir mengerucut selama 8 detik. Ulangi sebanyak 5 siklus.",
+        title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
+        action:
+          "Tarik napas lembut lewat hidung 4 detik, tahan napas santai 7 detik, lalu hembuskan perlahan lewat mulut seperti meniup lilin selama 8 detik. Ulangi 4 hingga 5 siklus.",
         duration: "60 detik",
-        mechanism: "Hembusan napas yang panjang menurunkan denyut jantung dan memicu pelepasan asetilkolin untuk mengaktifkan sistem saraf parasimpatik.",
+        mechanism:
+          "Hembusan napas yang panjang merangsang saraf vagus (rem alami tubuh) untuk menurunkan denyut jantung dan memicu rasa tenang seketika.",
       },
       {
         step: 3,
-        title: "Subconscious Anchoring & Pelepasan",
-        action: "Sentuh telapak tangan kanan di dada tengah, rasakan sensasi hangat napasmu, dan afirmasikan dalam hati: 'Tubuhku aman, instruksi lama telah selesai dilepas.'",
+        title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
+        action:
+          "Letakkan telapak tangan kanan di tengah dada. Rasakan kehangatan napasmu, turunkan bahu santai, dan katakan dalam hati: 'Hari ini sudah selesai, tubuhku aman untuk beristirahat dan pulih sepenuhnya.'",
         duration: "60 detik",
-        mechanism: "Menanamkan jangkar kinestetik (kinesthetic anchor) pada frekuensi gelombang otak Alpha untuk mengunci rasa tenang di memori somatik.",
+        mechanism:
+          "Menanamkan rasa aman di pikiran bawah sadar dan memindahkan gelombang otak ke status Alpha tenang untuk tidur lelap berkualitas.",
       },
     ],
-    pdf_summary: `Protokol klinis 3 langkah mandiri untuk memutus loop stres, mengaktifkan saraf vagus, dan merestorasi ketenangan pikiran dalam waktu kurang dari 3 menit.`,
+    pdf_summary: `Protokol klinis 3 langkah mandiri untuk meredakan ketegangan leher, mengaktifkan rem darurat alami tubuh, dan menenangkan pikiran dalam waktu 3 menit.`,
   };
 }
 

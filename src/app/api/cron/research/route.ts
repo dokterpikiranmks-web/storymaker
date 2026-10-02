@@ -29,10 +29,10 @@ interface RotatingPillar {
 
 /**
  * Rotasi Kategori Harian Dr. Mind Scout (WITA / Asia/Makassar):
- * - Senin & Kamis : Domain A — Traditional Functional Medicine & Totok Saraf
- * - Selasa & Jumat: Domain B — Hipnoterapi Klinis & Subconscious Architecture
- * - Rabu & Sabtu  : Domain C — Solusi AI & Augmentasi Produktivitas
- * - Minggu        : Somatic Deep Rest & Neuro-Restoration
+ * - Senin & Kamis : Domain A — Totok Saraf & Stimulasi Titik Leher (GB-20) & Rem Alami Tubuh
+ * - Selasa & Jumat: Domain B — Hipnoterapi Klinis & Ketenangan Bawah Sadar Menjelang Tidur
+ * - Rabu & Sabtu  : Domain C — Solusi AI & Mengurai Otak Nge-hang Kebanyakan Mikir
+ * - Minggu        : Deep Rest — Melepaskan Beban Tubuh & Pikiran Sepekan
  */
 function getPillarForDate(date: Date, tz: string): RotatingPillar {
   const formatter = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" });
@@ -43,52 +43,52 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
     case "thursday":
       return {
         domainKey: "DOMAIN_A_TOTOK_SARAF",
-        category: "Traditional Functional Medicine & Totok Saraf",
-        pillar: "Jalur Meridian, Titik Akupresur (GB-20, LI-4, ST-36) & Regulasi Saraf Vagus",
+        category: "Totok Saraf & Rem Darurat Alami Tubuh",
+        pillar: "Pelepasan Otot Leher Kaku (Titik GB-20) & Hubungan Perut Begah dengan Pikiran Cemas",
         focus:
-          "Regulasi sistem saraf otonom (simpatik vs parasimpatik), stimulasi saraf vagus, pelepasan ketegangan otot leher & tension headache via titik GB-20 (Fengchi), pereda stres & modulasi nyeri via titik LI-4 (Hegu), penguatan energi vital & motilitas lambung via titik ST-36 (Zusanli), penanganan radang gut-brain axis, serta herbal adaptogen (Ashwagandha, Rhodiola, Pegagan, Lion's Mane).",
+          "Meredakan otot leher belakang yang kaku tegang, mengatasi sakit kepala berat seperti diikat, mengaktifkan rem darurat alami tubuh (saraf vagus), dan menenangkan asam lambung/perut begah saat banyak pikiran.",
         clinicalKnowledge:
-          "Integrasi biologi fungsional barat dengan jalur meridian timur: Spasme suboksipital menjepit arteri vertebralis dan nervus vagus cranial, mengunci tubuh di mode survival. Stimulasi titik GB-20 di lekukan tengkorak belakang dan titik LI-4 meredakan hiperaktivitas simpatik seketika. Titik ST-36 menstimulasi motilitas saluran cerna dan modulasi serotonin usus (gut-brain axis). Herbal adaptogen menyeimbangkan aksis HPA untuk mencegah lonjakan kortisol kronis.",
+          "Saat stres dan dikejar beban kerjaan, otot leher belakang kita mengunci kencang dan rem darurat alami tubuh (saraf vagus) mati. Akibatnya, kepala terasa berat dan perut ikut begah. Menekan lembut cekungan di pangkal leher (titik GB-20) dan menghela napas panjang mengirim sinyal aman langsung ke tubuh, membuat nafas kembali enteng dan otot lemas seketika.",
         curatedCase: {
-          topic: "Leher Mengunci & Gut-Brain Axis: Rahasia Titik GB-20 dan Saraf Vagus",
+          topic: "Otot Leher Kaku & Perut Begah: Rahasia Titik Leher GB-20 dan Rem Darurat Alami Tubuh",
           clinicalComplaint:
-            "Klien datang dengan keluhan pundak seperti memikul beban 20 kg, leher belakang kaku mengunci, dan perut kembung kronis saat tenggat proyek menumpuk. Secara anatomis ototnya mengalami spasme fasia suboksipital yang menghambat aliran mikrosirkulasi ke batang otak. Sistem saraf otonomnya terkunci di mode 'fight-or-flight' sehingga persarafan lambung mati rasa.",
+            "Klien datang dengan keluhan pundak seperti memikul beban berat, otot leher belakang kaku mengunci, dan perut sering begah atau kembung saat pekerjaan menumpuk. Tubuhnya terkunci di mode siaga sehingga pencernaan terganggu dan kepala terasa berat.",
           coreInsight:
-            "Tubuh fisik tidak bisa membedakan antara kejaran deadline dan kejaran predator. Menekan titik GB-20 di cekungan tengkorak belakang dan titik ST-36 di bawah lutut selama 90 detik mengirim sinyal parasimpatik langsung ke nervus vagus: mengumumkan kondisi aman bagi tubuh untuk pulih dan mencerna.",
+            "Tubuh kita tidak bisa membedakan antara kejaran deadline pekerjaan dengan bahaya sungguhan. Menekan titik GB-20 di cekungan leher belakang dan bernapas panjang langsung mengaktifkan rem darurat alami tubuh kita, memberi tahu tubuh bahwa segalanya aman.",
           lead_magnet_protocol: {
-            title: "Protokol 3 Menit Reset Vagus & Meridian GB-20",
-            target_issue: "Tension headache, leher kaku akibat layar, dan kembung stres gut-brain axis",
+            title: "Panduan Saku Reset Somatik & Saraf Vagus 3 Menit",
+            target_issue: "Otot leher kaku, kepala berat akibat layar, dan perut begah saat cemas",
             steps: [
               {
                 step: 1,
-                title: "Akupresur Titik GB-20 (Fengchi)",
+                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
                 action:
-                  "Tempatkan kedua ibu jari di cekungan pangkal tengkorak belakang leher, sejajar cuping telinga. Tekan lembut mengarah ke atas sambil memejamkan mata selama 60 detik.",
+                  "Letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil memejamkan mata dan bernapas santai.",
                 duration: "60 detik",
                 mechanism:
-                  "Mengendurkan spasme otot suboksipital, melancarkan sirkulasi arteri vertebralis ke otak, dan memutus sinyal panik ke batang otak.",
+                  "Mengendurkan otot leher belakang yang kaku tegang, melancarkan aliran darah ke otak, dan mematikan alarm siaga tubuh.",
               },
               {
                 step: 2,
-                title: "Respirasi Sinus Saraf Vagus (Extended Exhale 4-8)",
+                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
                 action:
-                  "Tarik napas perlahan melalui hidung selama 4 detik, lalu hembuskan panjang dan halus melalui bibir seperti meniup sedotan selama 8 detik. Ulangi 5 kali.",
+                  "Tarik napas lembut lewat hidung 4 detik, tahan santai 7 detik, lalu hembuskan perlahan lewat mulut seperti meniup lilin selama 8 detik. Ulangi 4 hingga 5 siklus.",
                 duration: "60 detik",
                 mechanism:
-                  "Hembusan napas lambat menstimulasi cabang aferen nervus vagus, menurunkan denyut jantung, dan memicu pelepasan asetilkolin penenang.",
+                  "Hembusan napas yang panjang merangsang rem alami tubuh untuk menurunkan denyut jantung dan memicu rasa rileks seketika.",
               },
               {
                 step: 3,
-                title: "Aktivasi Meridian ST-36 (Zusanli) & Herbal Adaptogen",
+                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
                 action:
-                  "Temukan titik ST-36 (4 jari di bawah tempurung lutut bagian luar). Pijat memutar searah jarum jam selama 30 detik tiap kaki, lalu minum segelas air hangat dengan ekstrak adaptogen (pegagan atau kunyit).",
+                  "Letakkan telapak tangan kanan di tengah dada. Rasakan kehangatan napasmu, turunkan bahu santai, dan katakan dalam hati: 'Hari ini sudah selesai, tubuhku aman untuk beristirahat.'",
                 duration: "60 detik",
                 mechanism:
-                  "Mengaktifkan refleks vagal lambung-usus, meredakan neuro-inflamasi gut-brain axis, dan memulihkan peristaltik pencernaan.",
+                  "Menanamkan rasa aman di pikiran bawah sadar dan memindahkan gelombang otak ke status tenang untuk istirahat optimal.",
               },
             ],
             pdf_summary:
-              "Protokol klinis 3 langkah mandiri untuk meredakan ketegangan leher, mengaktifkan saraf vagus, dan menenangkan poros gut-brain axis dalam waktu kurang dari 3 menit.",
+              "Protokol 3 langkah mandiri untuk meredakan ketegangan leher, mengaktifkan rem darurat alami tubuh, dan menenangkan perut begah dalam 3 menit.",
           },
         },
       };
@@ -97,52 +97,52 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
     case "friday":
       return {
         domainKey: "DOMAIN_B_HIPNOTERAPI",
-        category: "Hipnoterapi Klinis & Subconscious Architecture",
-        pillar: "Gelombang Alpha/Theta, Pelepasan Somatic Trauma Loop & Sugesti Hipnagogik",
+        category: "Hipnoterapi Klinis & Ketenangan Bawah Sadar",
+        pillar: "Melepaskan Beban Pikiran Menjelang Tidur & Pemrograman Ulang Ketenangan",
         focus:
-          "Reframing program bawah sadar, pelepasan somatic trauma loop yang terkunci di otot psoas & fasia dada, penanaman sugesti hipnagogik pada fase transisi tidur, pembongkaran mental loop sabotase diri (impostor syndrome), dan pembukaan Critical Factor pikiran bawah sadar menggunakan frekuensi Alpha (8–12 Hz) dan Theta (4–8 Hz).",
+          "Memutus kebiasaan overthinking malam hari, meredakan dada berdebar cemas saat terbangun malam, dan menanamkan sugesti ketenangan sebelum tidur.",
         clinicalKnowledge:
-          "Pikiran sadar hanya memproses 5% keputusan harian, sementara 95% otomatis dikendalikan arsitektur bawah sadar. Somatic trauma loop terbentuk ketika ancaman emosional masa lalu membekukan otot psoas dan dada dalam postur defensif. Membuka loop ini membutuhkan kombinasi pelepasan somatik dan sugesti di jendela hipnagogik (5–10 menit sebelum tertidur) saat gelombang otak turun ke Alpha/Theta sehingga presuposisi identitas baru diterima tanpa resistensi Critical Factor.",
+          "Pikiran sadar kita sering kali lelah mendebat kecemasan di kepala. Saat tubuh rileks dan mata mulai mengantuk, sensor kritis pikiran kita melunak. Di momen transisi inilah sugesti ketenangan bisa masuk langsung ke pikiran bawah sadar tanpa bantahan.",
         curatedCase: {
-          topic: "Memutus Somatic Trauma Loop Jam 11 Malam & Sugesti Hipnagogik",
+          topic: "Melepaskan Beban Pikiran Jam 11 Malam & Ketenangan Menjelang Tidur",
           clinicalComplaint:
-            "Klien selalu terjaga jam 11 malam dihantui kecemasan skenario terburuk proyek esok hari dan terbangun dengan dada berdebar kencang jam 3 pagi. Pikiran sadarnya tahu semuanya terkendali, tetapi pikiran bawah sadarnya menjalankan loop proteksi traumatik kuno: 'jika kamu rileks, bencana akan datang'. Fasia dada dan otot psoasnya mengencang defensif.",
+            "Klien selalu terjaga jam 11 malam dihantui skenario terburuk proyek esok hari dan terbangun dengan dada berdebar cemas jam 3 pagi. Pikiran sadarnya tahu semuanya aman, tetapi pikiran bawah sadarnya masih menjalankan instruksi lama: 'jangan rileks dulu, nanti ada masalah'.",
           coreInsight:
-            "Afirmasi positif sadar gagal karena langsung ditolak oleh Critical Factor yang berjaga. Diperlukan intervensi hipnagogik: melunakkan sensor kritis di gelombang Alpha/Theta, lalu menugaskan bagian diri yang cemas untuk beralih peran menjadi penjaga ketenangan malam yang hening.",
+            "Mendebat pikiran cemas saat mau tidur hanya bikin semakin terjaga. Kuncinya adalah menenangkan fisik terlebih dahulu lewat titik leher dan napas lambat, lalu memberi izin pada pikiran bawah sadar bahwa hari ini sudah tuntas.",
           lead_magnet_protocol: {
-            title: "Protokol Somatic Unwinding & Sugesti Hipnagogik 3 Langkah",
-            target_issue: "Overthinking malam hari, terbangun cemas jam 3 pagi, dan sindrom waspada berlebih",
+            title: "Panduan Saku Reset Somatik & Ketenangan Tidur 3 Menit",
+            target_issue: "Overthinking malam hari, susah tidur, dan rasa cemas berlebih",
             steps: [
               {
                 step: 1,
-                title: "Somatic Psoas & Chest De-armoring",
+                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
                 action:
-                  "Berbaring telentang di kasur, tekuk kedua lutut. Goyangkan panggul ke kiri dan kanan dengan ritme sangat lambat selama 60 detik sambil meletakkan tangan di dada tengah.",
+                  "Rebahkan kepala, letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil bernapas perlahan.",
                 duration: "60 detik",
                 mechanism:
-                  "Melepaskan mikrokontraksi kronis pada otot psoas (otot survival emosional) dan mengirim sinyal biofeedback ke amigdala bahwa bahaya telah berakhir.",
+                  "Mengendurkan otot leher belakang yang kaku tegang dan menghentikan loop sinyal bahaya ke otak.",
               },
               {
                 step: 2,
-                title: "Transisi Gelombang Alpha (Peripheral Softening)",
+                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
                 action:
-                  "Tatap satu titik di langit-langit kamar, lalu tanpa menggerakkan pupil mata, lebarkan kesadaran pandangan ke sudut kiri dan kanan ruangan secara bersamaan hingga pandangan terasa mengabur dan mengembang lembut.",
+                  "Tarik napas lembut lewat hidung 4 detik, tahan santai 7 detik, lalu hembuskan perlahan lewat mulut selama 8 detik. Ulangi 4 kali.",
                 duration: "60 detik",
                 mechanism:
-                  "Mengaktifkan sistem visual parasimpatik dan menurunkan ritme gelombang otak dari Beta (gelisah) langsung ke Alpha (tenang terfokus).",
+                  "Mengaktifkan rem darurat alami tubuh untuk menurunkan ritme detak jantung dan menenangkan pikiran yang gelisah.",
               },
               {
                 step: 3,
-                title: "Scripting Sugesti Hipnagogik (Jendela Emas Tidur)",
+                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
                 action:
-                  "Saat kelopak mata mulai memberat ingin tertutup, bisikkan dalam hati 3 kali: 'Tugasku hari ini telah selesai sempurna. Tubuhku aman untuk beristirahat, dan pikiran bawah sadarku merawat kesembuhanku malam ini.'",
+                  "Letakkan telapak tangan kanan di dada. Saat kelopak mata mulai memberat, ucapkan lembut dalam hati: 'Hari ini sudah selesai sempurna. Tubuhku aman beristirahat, pikiranku pulih malam ini.'",
                 duration: "60 detik",
                 mechanism:
-                  "Menanamkan sugesti restoratif tepat saat Critical Factor non-aktif menjelang gelombang Theta, mengunci rasa aman ke memori jangka panjang.",
+                  "Menanamkan rasa aman di pikiran bawah sadar tepat sebelum terlelap agar tidur nyenyak berkualitas.",
               },
             ],
             pdf_summary:
-              "Panduan arsitektur bawah sadar 3 langkah untuk memutus trauma loop fisik dan memprogram ulang ketenangan mental saat transisi tidur Alpha-Theta.",
+              "Panduan praktis 3 langkah untuk menuntaskan overthinking malam hari dan memprogram ulang ketenangan pikiran bawah sadar sebelum tidur.",
           },
         },
       };
@@ -151,52 +151,52 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
     case "saturday":
       return {
         domainKey: "DOMAIN_C_SOLUSI_AI",
-        category: "Solusi AI & Augmentasi Produktivitas Kognitif",
-        pillar: "Cognitive Load Offloading, Rekayasa Prompt & AI Mental Tools",
+        category: "Solusi AI & Mengurai Otak Nge-hang",
+        pillar: "Bongkar Beban Pikiran Kebanyakan Mikir & Reset Instruksi Lama",
         focus:
-          "Bagaimana automasi dan AI agent mengurai beban kognitif (mental load), analogi arsitektur LLM dengan cara kerja otak manusia (context window overflow, memory dump, debugging bad habits, system prompt refactoring), serta studi kasus nyata integrasi tools AI dan otomasi sistem mental untuk memecahkan kelelahan kerja solo builder & profesional.",
+          "Bagaimana automasi dan teknologi AI mengosongkan beban pikiran yang menumpuk, analogi otak manusia seperti sistem komputer yang butuh restart, dan cara cerdas mengembalikan fokus tajam.",
         clinicalKnowledge:
-          "Working memory korteks prefrontal manusia hanya sanggup menampung 4–7 chunks informasi aktif. Ketika tuntutan tugas melebihi kapasitas, otak mengalami cognitive context window overflow: gejala brain fog, executive paralysis, dan hilangnya fokus mendalam. Memanfaatkan AI sebagai 'second brain' dan automasi sistem tugas bukan sekadar trik produktivitas, melainkan dekompresi kognitif biologis agar energi mental dapat didedikasikan untuk keputusan strategis bernilai tinggi.",
+          "Kapasitas memori kerja otak kita sangat terbatas. Ketika kita membuka 30 tab di laptop dan 50 urusan di kepala sekaligus, otak mengalami gejala 'nge-hang'. Memindahkan isi kepala ke catatan luar dan merestart instruksi lama adalah cara biologis mengembalikan energi mental.",
         curatedCase: {
-          topic: "Pikiranmu Tidak Lambat: Cognitive Context Window Mengalami Token Overflow",
+          topic: "Otak Nge-hang Kebanyakan Mikir: Saat Kapasitas Pikiran Perlu Di-Reset",
           clinicalComplaint:
-            "Klien merasa 'otaknya korslet' dan tidak bisa fokus setelah membuka 30 tab browser, puluhan pesan chat, dan daftar pekerjaan yang bercabang. Dia menyalahkan dirinya lambat dan mulai kehilangan percaya diri, padahal otaknya hanya mengalami overload kapasitas working memory yang tidak pernah di-purge.",
+            "Klien merasa otaknya seperti komputer nge-hang setelah membuka puluhan tab kerjaan dan pesan chat tanpa henti. Dia merasa bersalah dan mengira dirinya lambat, padahal otaknya hanya kelebihan beban informasi yang belum dibongkar.",
           coreInsight:
-            "Seperti LLM dengan konteks berlebih yang mulai berhalusinasi, otak manusia butuh 'context clear' dan prompt grounding berkala. Membuang memory dump ke catatan eksternal dan mendelegasikan beban mental ke sistem AI terstruktur langsung mengembalikan kecepatan berpikir 10x lipat.",
+            "Pikiran kita seperti sistem yang menjalankan instruksi lama. Saat beban kerjaan berlebih, kita perlu me-reset instruksinya, memindahkan catatan ke luar kepala, dan mengistirahatkan saraf leher agar kepala kembali enteng.",
           lead_magnet_protocol: {
-            title: "Protokol 3 Langkah AI Cognitive Offloading (Bebas Brain Fog)",
-            target_issue: "Brain fog, kelelahan mental akibat multitasking, dan cognitive context overflow",
+            title: "Panduan Saku Reset Somatik & Kognitif 3 Menit",
+            target_issue: "Otak nge-hang, kepala berat kebanyakan mikir, dan kelelahan mental",
             steps: [
               {
                 step: 1,
-                title: "External Memory Dump (Bongkar RAM Otak)",
+                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
                 action:
-                  "Buka aplikasi perekam suara atau AI transcription tool. Rekam voice note 90 detik tanpa sensor berisi SEMUA hal yang saat ini menggelayuti pikiranmu.",
-                duration: "90 detik",
+                  "Duduk tegak, letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan dorongan lembut ke atas selama 60 detik sambil memejamkan mata.",
+                duration: "60 detik",
                 mechanism:
-                  "Memindahkan beban memori kerja (working memory) dari korteks prefrontal ke media eksternal, menghentikan loop kecemasan internal.",
+                  "Mengendurkan otot leher belakang yang kaku tegang akibat menatap layar dan melancarkan aliran darah ke otak.",
               },
               {
                 step: 2,
-                title: "AI Context Filtering (Sistem 3 Kotak)",
+                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
                 action:
-                  "Minta AI membagi dump tadi menjadi 3 kolom: (1) Selesai dalam 2 menit, (2) Otomasi / simpan di database, (3) Eliminasi total yang di luar kendali.",
+                  "Tarik napas lembut lewat hidung 4 detik, tahan 7 detik, lalu hembuskan perlahan lewat mulut selama 8 detik. Ulangi 4 kali.",
                 duration: "60 detik",
                 mechanism:
-                  "Menghilangkan 'decision fatigue' dan kelumpuhan analisis dengan memberikan kejelasan hierarki kognitif instan.",
+                  "Mengaktifkan rem darurat alami tubuh untuk menghentikan kebiasaan panik multitasking dan memulihkan fokus jernih.",
               },
               {
                 step: 3,
-                title: "Mono-Task Grounding Anchor",
+                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
                 action:
-                  "Pilih HANYA 1 tindakan kotak pertama. Tutup semua jendela browser lainnya, letakkan kedua telapak kaki rata di lantai, tarik 1 napas panjang, dan kerjakan selama 15 menit tanpa interupsi.",
-                duration: "30 detik",
+                  "Sentuh telapak tangan di dada tengah, ambil jeda hening, dan katakan dalam hati: 'Saya melepaskan semua tab yang terbuka di kepala. Satu hal pada satu waktu.'",
+                duration: "60 detik",
                 mechanism:
-                  "Mengembalikan jalur dopamin ke ritme mono-tasking dan memulihkan kapasitas pemrosesan kognitif optimal.",
+                  "Menanamkan fokus mono-tasking di pikiran bawah sadar dan memulihkan kapasitas berpikir optimal.",
               },
             ],
             pdf_summary:
-              "Metode ergonomi kognitif 3 langkah menggabungkan AI dan neurosains untuk mengosongkan context window otak, mengeliminasi brain fog, dan memulihkan fokus tajam.",
+              "Protokol ergonomi pikiran 3 langkah untuk mengosongkan beban kepala yang nge-hang dan memulihkan fokus tajam dalam 3 menit.",
           },
         },
       };
@@ -205,52 +205,52 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
     default:
       return {
         domainKey: "DOMAIN_RESET",
-        category: "Deep Rest & Neuro-Restoration",
-        pillar: "Pembersihan Residu Emosi & Reset Sistem Saraf Sepekan",
+        category: "Deep Rest & Pemulihan Menyeluruh",
+        pillar: "Melepaskan Ketegangan Tubuh & Pikiran Menjelang Pekan Baru",
         focus:
-          "Integrasi menyeluruh dari somatik meridian GB-20/ST-36, pelepasan subconscious loop, dan digital detox untuk memulihkan neuroplastisitas alami tubuh menyambut pekan baru.",
+          "Integrasi totok titik leher, pelepasan beban cemas menghadapi hari Senin (Sunday Scaries), dan istirahat berkualitas untuk memulihkan energi.",
         clinicalKnowledge:
-          "Pemulihan sejati sistem saraf otonom bukan sekadar rebahan pasif di depan layar HP, melainkan mengizinkan sistem saraf masuk ke gelombang hening Alpha dan Theta. Pelepasan total residu emosi sepekan mengaktifkan regenerasi neuroplastisitas alami.",
+          "Istirahat sejati bukan sekadar rebahan pasif sambil terus menatap layar HP, melainkan mengizinkan tubuh melepaskan leher yang kaku dan memberi tahu pikiran bawah sadar bahwa hari ini adalah waktu pemulihan penuh.",
         curatedCase: {
-          topic: "Ketenangan Radikal: Transisi Gelombang Otak dari Beban Sepekan Menuju Alpha",
+          topic: "Ketenangan Utuh: Menuntaskan Lelah Fisik dan Pikiran Menjelang Pekan Baru",
           clinicalComplaint:
-            "Klien merasa bersalah jika hari Minggu tidak produktif, akibatnya libur tetap tegang dan bangun hari Senin dalam kondisi baterai emosional 10%. Tubuh tidak pernah masuk fase pemulihan parasimpatik mendalam.",
+            "Klien merasa libur akhir pekan tidak terasa karena pikiran tetap tegang memikirkan hari Senin. Tubuh tidak pernah benar-benar masuk mode istirahat mendalam dan bangun dengan leher kaku.",
           coreInsight:
-            "Pemulihan sejati bukan pasif di depan layar HP, melainkan mengizinkan sistem saraf masuk ke gelombang hening Alpha dan Theta. Sugesti pelepasan total sebelum tidur mengaktifkan regenerasi neuroplastisitas alami.",
+            "Istirahat sejati bukan pasif di depan layar HP, melainkan mengizinkan tubuh melepaskan leher yang kaku dan memberi tahu pikiran bawah sadar bahwa hari ini adalah waktu pemulihan penuh.",
           lead_magnet_protocol: {
-            title: "Protokol Reset Holistik Mingguan 3 Langkah",
-            target_issue: "Kelelahan emosional sepekan dan kecemasan menghadapi hari Senin (Sunday Scaries)",
+            title: "Panduan Saku Reset Somatik Akhir Pekan 3 Menit",
+            target_issue: "Kelelahan fisik sepekan dan cemas menghadapi hari Senin",
             steps: [
               {
                 step: 1,
-                title: "Digital Fasting & Somatic Grounding",
+                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
                 action:
-                  "Matikan layar gawai 2 jam sebelum tidur. Berjalan tanpa alas kaki di atas lantai atau karpet sambil merasakan kontak gravitasi bumi pada telapak kaki.",
+                  "Berbaring santai, letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil bernapas perlahan.",
                 duration: "60 detik",
                 mechanism:
-                  "Menghilangkan stimulasi dopamin artifisial cahaya biru dan memicu aktivasi reseptor mekanosensori relaksasi.",
+                  "Mengendurkan otot leher belakang yang kaku tegang dan menguras ketegangan fisik sisa sepekan.",
               },
               {
                 step: 2,
-                title: "Pelepasan Beban Sepekan (Exhale Sweep)",
+                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
                 action:
-                  "Tarik napas sambil mengangkat bahu ke arah telinga, tahan 3 detik, lalu jatuhkan bahu seketika sambil menghembuskan napas kuat lewat mulut 'HAHH'. Ulangi 3 kali.",
+                  "Tarik napas lembut lewat hidung 4 detik, tahan santai 7 detik, lalu hembuskan perlahan lewat mulut selama 8 detik. Ulangi 4 kali.",
                 duration: "60 detik",
                 mechanism:
-                  "Pelepasan mendadak ketegangan tonus otot trapezius mengirim sinyal pembebasan beban ke sistem limbik.",
+                  "Mengaktifkan rem darurat alami tubuh untuk menurunkan hormon stres dan mengizinkan tubuh beristirahat penuh.",
               },
               {
                 step: 3,
-                title: "Instalasi Sugesti Kesegaran Pekan Baru",
+                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
                 action:
-                  "Rebahkan diri, letakkan tangan di perut. Rasakan napas perut yang mengembang dan kempis, tanamkan keyakinan: 'Pekan lalu telah usai, pekan baru menyambutku dengan energi jernih dan utuh.'",
+                  "Letakkan telapak tangan di dada. Rasakan kehangatannya dan ucapkan dalam hati: 'Pekan lalu sudah tuntas. Tubuhku berhak istirahat, besok aku menyambut hari baru dengan tenang.'",
                 duration: "60 detik",
                 mechanism:
-                  "Memandu gelombang otak masuk ke Theta restoratif untuk sintesis hormon pertumbuhan dan pemulihan seluler.",
+                  "Mengunci ketenangan di pikiran bawah sadar agar tidur lelap dan bangun dalam kondisi segar bertenaga.",
               },
             ],
             pdf_summary:
-              "Protokol restorasi mingguan 3 langkah untuk menguras residu stres emosional sepekan dan mengisi ulang baterai mental menyambut pekan baru.",
+              "Protokol pemulihan mingguan 3 langkah untuk menguras kelelahan fisik sepekan dan mengisi ulang baterai pikiran menyambut hari baru.",
           },
         },
       };
@@ -264,28 +264,37 @@ async function researchWithGemini(
 ): Promise<{ topic: string; clinicalComplaint: string; coreInsight: string; lead_magnet_protocol: LeadMagnetProtocol }> {
   if (!isGeminiConfigured()) return pillar.curatedCase;
 
-  const prompt = `Kamu adalah "Dr. Mind Scout", agen riset klinis otonom untuk "Sang Alchemist" (Hipnoterapis Klinis, Praktisi Totok Saraf & Functional Medicine, dan Solo AI Developer).
-Tugasmu: Merumuskan 1 studi kasus keluhan klinis harian yang sangat nyata dan tajam untuk tanggal ${campaignDate}, lengkap dengan protokol lead magnet 3 langkah yang siap di-render menjadi PDF.
+  const prompt = `Kamu adalah "Dr. Mind Scout", partner riset klinis dan sahabat pemulihan untuk Dr. Mind / Sang Alchemist (Hipnoterapis Klinis, Praktisi Totok Saraf, dan Solo AI Developer).
+Tugasmu: Merumuskan 1 studi kasus keluhan harian yang sangat nyata dan membumi untuk tanggal ${campaignDate}, lengkap dengan protokol lead magnet 3 langkah yang siap di-render menjadi PDF.
 
-Matriks Pengetahuan Klinis Hari Ini:
+# ATURAN EMAS BAHASA & PERSONA (WAJIB DIIKUTI):
+- DILARANG KERAS menggunakan istilah medis/anatomi rumit tanpa analogi sehari-hari!
+- WAJIB menerjemahkan konsep teknis ke bahasa awam yang renyah dan membumi:
+  * "Spasme suboksipital" -> "Otot leher belakang yang kaku tegang"
+  * "Nervus vagus / sistem simpatik" -> "Rem darurat alami tubuh kita"
+  * "Gut-brain axis" -> "Hubungan perut begah/asam lambung dengan pikiran cemas"
+  * "Cognitive load overflow" -> "Otak nge-hang kebanyakan mikir"
+  * "Aktivasi parasimpatik" -> "Sinyal aman agar tubuh bisa bernapas lega dan rileks"
+- Gaya bahasa: Hangat, empatik, seperti seorang praktisi senior sekaligus sahabat yang mengerti beban hidup audiens. Mengalir renyah, pendek-pendek (cocok untuk WhatsApp Status), tidak bertele-tele.
+
+Matriks Inspirasi Hari Ini:
 - Domain Utama: ${pillar.category}
-- Fokus Klinis: ${pillar.pillar}
-- Detail Pengetahuan: ${pillar.focus}
-- Basis Teori & Integrasi: ${pillar.clinicalKnowledge}
-${customTopic ? `- Topik Arahan Spesifik: "${customTopic}"` : ""}
+- Fokus Bahasan: ${pillar.pillar}
+- Intisari Solusi: ${pillar.focus}
+${customTopic ? `- Topik Arahan Khusus: "${customTopic}"` : ""}
 
-Kriteria Wajib:
-1. "topic": Topik/judul tajam provokatif tentang paradoks pikiran-tubuh / metafora AI (maks 12 kata, tanpa emoji/hashtag).
-2. "clinicalComplaint": Narasi keluhan nyata klien di meja terapi yang emosional dan detail (sensasi tubuh somatis + konflik pikiran bawah sadar + beban kognitif).
-3. "coreInsight": Terobosan wawasan (the "aha!" moment) yang menghubungkan titik akupresur / regulasi vagus / hipnoterapi bawah sadar / metafora augmentasi AI.
-4. "lead_magnet_protocol": Protokol 3 langkah fisik/mental yang sangat praktis dan bernilai tinggi:
-   - "title": Judul protokol yang memikat (maks 10 kata).
-   - "target_issue": Masalah spesifik yang diatasi protokol ini.
+Kriteria Wajib Output:
+1. "topic": Topik/judul memikat dalam bahasa awam tentang hubungan tubuh-pikiran (maks 12 kata, tanpa emoji/hashtag).
+2. "clinicalComplaint": Narasi curhat keluhan nyata klien di meja terapi yang emosional dan manusiawi (misal leher kaku, perut begah, otak nge-hang kebanyakan mikir).
+3. "coreInsight": Wawasan pencerahan yang menghubungkan rem darurat tubuh (saraf vagus), totok leher, dan reset instruksi lama di pikiran bawah sadar.
+4. "lead_magnet_protocol": Protokol 3 langkah resmi siap cetak PDF:
+   - "title": Judul panduan (misal: "Panduan Saku Reset Somatik & Saraf Vagus").
+   - "target_issue": Masalah spesifik yang diatasi.
    - "steps": Array persis 3 objek langkah terstruktur:
-       { "step": 1, "title": "...", "action": "instruksi fisik/mental yang jelas", "duration": "misal: 60 detik", "mechanism": "penjelasan biologis/bawah sadar mengapa cara ini bekerja" }
-       { "step": 2, "title": "...", "action": "...", "duration": "...", "mechanism": "..." }
-       { "step": 3, "title": "...", "action": "...", "duration": "...", "mechanism": "..." }
-   - "pdf_summary": Ringkasan eksekutif 2-3 kalimat yang siap dicetak ke halaman depan PDF panduan.
+       { "step": 1, "title": "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital", "action": "instruksi tekan titik leher belakang", "duration": "60 detik", "mechanism": "mengendurkan otot leher kaku & melancarkan aliran darah ke kepala" },
+       { "step": 2, "title": "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus", "action": "tarik napas 4 detik, tahan 7 detik, hembus perlahan 8 detik", "duration": "60 detik", "mechanism": "mengaktifkan rem alami tubuh menurunkan detak jantung dan rasa cemas" },
+       { "step": 3, "title": "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar", "action": "sentuh dada tengah, afirmasi tubuh aman untuk istirahat", "duration": "60 detik", "mechanism": "menanamkan ketenangan di pikiran bawah sadar sebelum lelap" }
+   - "pdf_summary": Ringkasan eksekutif 2-3 kalimat yang membumi dan siap dicetak ke halaman depan PDF panduan.
 
 Hasilkan JSON valid sesuai format persis:
 {

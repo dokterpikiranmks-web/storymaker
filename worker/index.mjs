@@ -459,7 +459,7 @@ async function startWorker() {
           // LANGKAH 1: Balas pesan teks instan detik itu juga
           try {
             await sock.sendMessage(remoteJid, {
-              text: `Halo! Salam hangat dari Dr. Mind. 🌿\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot suboksipital di pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
+              text: `Halo! Salam hangat dari Dr. Mind. 🌿\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
             });
             console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
           } catch (err) {
@@ -475,7 +475,7 @@ async function startWorker() {
               await sock.sendMessage(remoteJid, {
                 document: pdfBuffer,
                 mimetype: 'application/pdf',
-                fileName: 'Panduan_Somatic_Reset_DrMind.pdf',
+                fileName: 'Panduan_Reset_Saraf_DrMind.pdf',
                 caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
               });
               console.log(`✅ [PDF SENT] File PDF berhasil dikirim ke ${remoteJid}`);
