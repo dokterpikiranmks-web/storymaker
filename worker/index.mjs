@@ -33,8 +33,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const VERSION = "1.0.0";
 const CONFIG = {
-  apiUrl: (process.env.STORY_MAKER_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, ""),
+  apiUrl: (process.env.STORYMAKER_URL || process.env.STORY_MAKER_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://storymaker-jet.vercel.app").replace(/\/+$/, ""),
+  storyMakerUrl: (process.env.STORYMAKER_URL || process.env.STORY_MAKER_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://storymaker-jet.vercel.app").replace(/\/+$/, ""),
   secret: process.env.WORKER_SECRET || "",
+  workerSecret: process.env.WORKER_SECRET || "",
   pollMs: Math.max(15, Number(process.env.POLL_INTERVAL_SECONDS) || 60) * 1000,
   authDir: path.resolve(process.env.WA_AUTH_DIR || path.join(__dirname, "auth_info_baileys")),
   contactsFile: path.resolve(process.env.WA_CONTACTS_FILE || path.join(__dirname, "contacts.json")),
@@ -180,22 +182,29 @@ const phoneToJid = (value) => {
   return digits ? `${digits}@s.whatsapp.net` : null;
 };
 
-// ── In-memory anti-spam debounce cache for inbound auto-responder (10 mins TTL) ─
+// ── In-memory anti-spam debounce cache for inbound auto-responder (5 mins TTL) ──
 const autoReplyCooldowns = new Map();
-const DEBOUNCE_TTL_MS = 10 * 60 * 1000;
+const DEBOUNCE_TTL_MS = 5 * 60 * 1000;
 
-function isCoolingDown(jid) {
+function isInDebounce(jid) {
   const now = Date.now();
   const expiresAt = autoReplyCooldowns.get(jid);
-  if (expiresAt && expiresAt > now) {
-    return true;
-  }
+  return Boolean(expiresAt && expiresAt > now);
+}
+
+function setDebounce(jid) {
+  const now = Date.now();
   autoReplyCooldowns.set(jid, now + DEBOUNCE_TTL_MS);
   if (autoReplyCooldowns.size > 2000) {
     for (const [k, v] of autoReplyCooldowns.entries()) {
       if (v <= now) autoReplyCooldowns.delete(k);
     }
   }
+}
+
+function isCoolingDown(jid) {
+  if (isInDebounce(jid)) return true;
+  setDebounce(jid);
   return false;
 }
 
@@ -407,101 +416,73 @@ async function startWorker() {
     });
 
     // ── Bulletproof Inbound Parser & Auto-Responder ────────────────────────
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-      if (!Array.isArray(messages)) return;
+    sock.ev.on('messages.upsert', async (upsert) => {
+      const { messages, type } = upsert;
+      if (!messages || !Array.isArray(messages)) return;
 
       for (const m of messages) {
-        try {
-          if (!m?.message || !m?.key) continue;
+        // 1. Abaikan pesan dari akun sendiri & status broadcast
+        if (m.key?.fromMe) continue;
+        const remoteJid = m.key?.remoteJid || '';
+        if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
 
-          // a. Filter Ketat & Fleksibel:
-          // Abaikan pesan diri sendiri
-          if (m.key.fromMe) continue;
+        // 2. Ekstraksi naskah dari m.message (dengan penanganan unwrapping lengkap)
+        const msg = m.message;
+        if (!msg) continue;
 
-          // Abaikan grup WhatsApp & status broadcast
-          const remoteJid = m.key.remoteJid || "";
-          if (!remoteJid || remoteJid.endsWith("@g.us") || remoteJid.endsWith("@broadcast")) continue;
+        const rawText = msg.conversation ||
+                        msg.extendedTextMessage?.text ||
+                        msg.imageMessage?.caption ||
+                        msg.videoMessage?.caption ||
+                        msg.ephemeralMessage?.message?.extendedTextMessage?.text ||
+                        msg.ephemeralMessage?.message?.conversation ||
+                        msg.viewOnceMessage?.message?.extendedTextMessage?.text ||
+                        '';
 
-          // Buka dukungan untuk personal chat @s.whatsapp.net DAN format multi-device @lid
-          if (!remoteJid.endsWith("@s.whatsapp.net") && !remoteJid.endsWith("@lid")) continue;
+        const cleanText = rawText.trim().toUpperCase();
+        console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} | Teks: "${rawText}"`);
 
-          // b. Ekstraksi Naskah Berlapis (Deep Unwrapping):
-          const msg = m.message;
-          const rawText =
-            msg?.conversation ||
-            msg?.extendedTextMessage?.text ||
-            msg?.imageMessage?.caption ||
-            msg?.videoMessage?.caption ||
-            msg?.ephemeralMessage?.message?.extendedTextMessage?.text ||
-            msg?.ephemeralMessage?.message?.conversation ||
-            msg?.ephemeralMessage?.message?.imageMessage?.caption ||
-            msg?.viewOnceMessage?.message?.extendedTextMessage?.text ||
-            msg?.viewOnceMessage?.message?.conversation ||
-            msg?.viewOnceMessageV2?.message?.extendedTextMessage?.text ||
-            msg?.viewOnceMessageV2?.message?.conversation ||
-            msg?.documentMessage?.caption ||
-            "";
+        // 3. Pencocokan kata kunci
+        const KEYWORDS = ['RESET', 'VAGUS', 'SOMATIK', 'PANDUAN', 'PROTOKOL', 'KONSUL'];
+        const isMatched = KEYWORDS.some(k => cleanText.includes(k));
 
-          const cleanText = rawText.trim().toUpperCase();
-          console.log(`📩 [INBOUND] Dari: ${remoteJid} | Naskah: "${rawText}"`);
+        if (isMatched) {
+          console.log(`🎯 [TRIGGER MATCHED] Kata kunci cocok untuk ${remoteJid}! Memproses balasan...`);
 
-          if (!cleanText) continue;
-
-          // c. Pencocokan Kata Kunci:
-          const isMatched = KEYWORDS.some((k) => cleanText.includes(k));
-          if (!isMatched) continue;
-
-          // d. Respon Bertingkat Cepat (Fail-Safe):
-          // Cek anti-spam cache (10 menit TTL per JID)
-          if (isCoolingDown(remoteJid)) {
-            log(`⏳ Inbound [${cleanText.slice(0, 30)}] dari ${remoteJid} diabaikan (cooldown 10 menit)`);
+          // Cek in-memory debounce anti-spam (5 menit TTL)
+          if (isInDebounce(remoteJid)) {
+            console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
             continue;
           }
+          setDebounce(remoteJid);
 
-          log(`🎯 Inbound auto-responder terpicu [MATCH] dari ${remoteJid}: "${rawText.trim().slice(0, 45)}"`);
-
-          // TAHAP 1: Kirim langsung teks konfirmasi tanpa menunggu PDF
-          await sock.sendMessage(remoteJid, {
-            text: "Salam hangat dari Dr. Mind! 🌿\n\nBerikut panduan saku somatik & regulasi saraf vagus yang Anda minta. Silakan pelajari protokol praktis ini untuk meredakan ketegangan fisik dan mental.",
-          });
-          log(`💬 TAHAP 1: Teks konfirmasi terkirim ke ${remoteJid}`);
-
-          // TAHAP 2 (Try-Catch): Fetch buffer PDF dari /api/protocol/pdf dan kirim sebagai dokumen
+          // LANGKAH 1: Balas pesan teks instan detik itu juga
           try {
-            const pdfRes = await fetch(`${CONFIG.apiUrl}/api/protocol/pdf`, {
-              headers: { Authorization: `Bearer ${CONFIG.secret}` },
-              signal: AbortSignal.timeout(25_000),
-            });
-
-            if (!pdfRes.ok) {
-              throw new Error(`HTTP ${pdfRes.status} saat fetch PDF`);
-            }
-
-            const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-            const dateStr = new Date().toISOString().slice(0, 10);
-
             await sock.sendMessage(remoteJid, {
-              document: pdfBuffer,
-              fileName: `Dr-Mind-Protokol-${dateStr}.pdf`,
-              mimetype: "application/pdf",
+              text: `Halo! Salam hangat dari Dr. Mind. 🌿\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot suboksipital di pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
             });
-            log(`✅ TAHAP 2: Dokumen PDF protokol terkirim ke ${remoteJid}`);
-          } catch (pdfErr) {
-            log(`⚠ TAHAP 2: Gagal mengambil/mengirim PDF ke ${remoteJid} (${pdfErr.message}) — mengirim teks 3 langkah protokol sebagai fallback`);
-            const fallbackProtocolText =
-              `🧠 *RINGKASAN PROTOKOL 3 MENIT RESET SOMATIK & SARAF VAGUS:*\n\n` +
-              `1. *Titik GB-20 (Fengchi)*: Tekan kedua cekungan di dasar tengkorak belakang selama 60 detik dengan napas teratur lambat.\n` +
-              `2. *Vagus Physiological Sigh*: Tarik napas 2 kali lewat hidung, hembuskan perlahan 8 detik lewat mulut (ulangi 5 siklus).\n` +
-              `3. *Subconscious Grounding*: Sentuh dada tengah, rasakan detak jantung melambat dan gelombang otak beralih ke status Alpha tenang.\n\n` +
-              `🔗 Akses dokumen PDF lengkap: ${CONFIG.apiUrl}/api/protocol/pdf\n\n` +
-              `━━━━━━━━━━━━━━━\n` +
-              `💬 *Layanan & Konsultasi:*\nJika ingin konsultasi privat jadwal terapi atau ingin mencoba aplikasi asisten fokus kami, silakan balas chat ini.`;
-
-            await sock.sendMessage(remoteJid, { text: fallbackProtocolText });
-            log(`✅ TAHAP 2 (Fallback): Teks 3 langkah protokol terkirim ke ${remoteJid}`);
+            console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
+          } catch (err) {
+            console.error(`❌ Gagal kirim teks inbound:`, err);
           }
-        } catch (inboundErr) {
-          console.error(`✖ Error inbound auto-responder:`, inboundErr.message);
+
+          // LANGKAH 2: Kirim PDF dokumen dari Vercel
+          try {
+            const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
+            const pdfRes = await fetch(`${baseUrl}/api/protocol/pdf`, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
+            if (pdfRes.ok) {
+              const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+              await sock.sendMessage(remoteJid, {
+                document: pdfBuffer,
+                mimetype: 'application/pdf',
+                fileName: 'Panduan_Somatic_Reset_DrMind.pdf',
+                caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
+              });
+              console.log(`✅ [PDF SENT] File PDF berhasil dikirim ke ${remoteJid}`);
+            }
+          } catch (pdfErr) {
+            console.error(`⚠️ Gagal kirim PDF dokumen:`, pdfErr);
+          }
         }
       }
     });
@@ -818,4 +799,6 @@ export {
   connect,
   healthServer,
   startSelfPing,
+  isInDebounce,
+  setDebounce,
 };
