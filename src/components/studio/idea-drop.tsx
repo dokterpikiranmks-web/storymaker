@@ -108,6 +108,7 @@ export function IdeaDrop({
   const [appSolution, setAppSolution] = useState("Otomasi pembuatan 4 babak neuro-storytelling harian dalam 30 detik untuk praktisi & solo dev.");
   const [targetUser, setTargetUser] = useState("Praktisi kesehatan, kreator & solo developer");
   const [appTopic, setAppTopic] = useState("");
+  const [autoSchedule, setAutoSchedule] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [scouting, setScouting] = useState(false);
@@ -179,6 +180,7 @@ export function IdeaDrop({
             campaign_type: "FLASH_PROMO",
             campaign_date: date || undefined,
             flash_promo_subtype: flashSubtype,
+            auto_schedule: autoSchedule,
             ...(flashSubtype === "THERAPY_SLOT"
               ? {
                   therapy_type: therapyType,
@@ -211,9 +213,13 @@ export function IdeaDrop({
       onGenerated(data.campaign, data.generation);
       notify(
         "success",
-        campaignType === "FLASH_PROMO" ? "⚡ Flash Promo Berhasil Dibuat!" : "4 babak story siap diedit",
         campaignType === "FLASH_PROMO"
-          ? "Tersimpan sebagai entri ad-hoc terpisah (tanpa menimpa campaign harian)."
+          ? (autoSchedule ? "⚡ Flash Promo Berhasil Dibuat & Dijadwalkan!" : "⚡ Flash Promo Berhasil Dibuat!")
+          : "4 babak story siap diedit",
+        campaignType === "FLASH_PROMO"
+          ? (autoSchedule
+              ? "Semua slide & gambar berhasil diunggah ke bucket story-assets serta masuk antrean tayang."
+              : "Semua slide & gambar berhasil diunggah ke bucket story-assets sebagai entri ad-hoc terpisah.")
           : data.generation.source === "gemini"
           ? `Ditulis oleh ${data.generation.model}`
           : "Mode Offline Alchemist (Gemini tidak dipakai)",
@@ -545,17 +551,43 @@ export function IdeaDrop({
               <span className="text-slate-500">Engine:</span> <span className="font-mono text-slate-300">{engineHint}</span>
             </div>
           </div>
-          <Button
-            variant={campaignType === "FLASH_PROMO" ? "primary" : "primary"}
-            size="lg"
-            onClick={() => void generate()}
-            disabled={!canSubmit}
-            loading={loading}
-            className={campaignType === "FLASH_PROMO" ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : undefined}
-          >
-            {loading ? null : campaignType === "FLASH_PROMO" ? <Zap className="size-4" /> : <Sparkles />}
-            {campaignType === "FLASH_PROMO" ? "Generate Flash Promo (Ad-Hoc)" : "Generate 4-Act Story"}
-          </Button>
+
+          <div className="flex flex-col items-end gap-2">
+            {campaignType === "FLASH_PROMO" ? (
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-amber-300 transition hover:text-amber-200">
+                <input
+                  type="checkbox"
+                  checked={autoSchedule}
+                  onChange={(e) => setAutoSchedule(e.target.checked)}
+                  disabled={loading}
+                  className="size-4 cursor-pointer rounded border-amber-400/40 bg-black/40 text-amber-500 accent-amber-400 focus:ring-amber-400"
+                />
+                <span>Otomatis jadwalkan & unggah ke antrean siar WhatsApp</span>
+              </label>
+            ) : null}
+
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => void generate()}
+              disabled={!canSubmit}
+              loading={loading}
+              className={campaignType === "FLASH_PROMO" ? "bg-amber-500 font-bold text-slate-950 hover:bg-amber-400" : undefined}
+            >
+              {loading ? (
+                campaignType === "FLASH_PROMO"
+                  ? (autoSchedule ? "Merender & Menjadwalkan Promo..." : "Membuat & Mengunggah Promo...")
+                  : "Meracik 4 Babak Story..."
+              ) : (
+                <>
+                  {campaignType === "FLASH_PROMO" ? <Zap className="size-4" /> : <Sparkles />}
+                  {campaignType === "FLASH_PROMO"
+                    ? (autoSchedule ? "⚡ Buat & Jadwalkan Flash Promo" : "⚡ Generate Flash Promo (Ad-Hoc)")
+                    : "Generate 4-Act Story"}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Loading Progress State */}

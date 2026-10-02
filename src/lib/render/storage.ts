@@ -22,17 +22,26 @@ export async function storeRenderedImage(opts: {
   campaignId?: string;
   previousPath?: string;
 }): Promise<StoredAsset> {
+  if (!opts.png || opts.png.length === 0) {
+    throw new Error("Buffer gambar PNG kosong atau tidak valid (0 bytes)");
+  }
+
   if (isSupabaseStorageConfigured()) {
     try {
       const folder = opts.campaignId ? `campaigns/${opts.campaignId}` : "adhoc";
       const path = `${folder}/${opts.slideId ?? "slide"}-${opts.etag}.png`;
       const url = await uploadPublicAsset(path, opts.png, "image/png");
+      if (!url) {
+        throw new Error("Supabase Storage tidak mengembalikan URL publik yang valid");
+      }
       if (opts.previousPath && opts.previousPath !== path) {
         removeAssets([opts.previousPath]).catch(() => undefined);
       }
       return { url, storage: "supabase", etag: opts.etag, path };
     } catch (err) {
-      console.warn("[storage] Supabase upload failed — falling back to Postgres:", (err as Error).message);
+      const msg = (err as Error).message;
+      console.error(`[storage] Gagal mengunggah ke Supabase bucket story-assets: ${msg}`);
+      throw new Error(`Upload gambar ke Supabase bucket story-assets gagal: ${msg}`);
     }
   }
 

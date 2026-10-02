@@ -266,9 +266,15 @@ export function slideRenderInput(
 export async function renderSlideToStorage(slide: StorySlide, persona?: PersonaSettings): Promise<StorySlide> {
   const p = persona ?? (await getPersona());
   const png = await renderSlidePng(slideRenderInput(slide, p));
+  if (!png || png.length === 0) {
+    throw new Error(`Buffer gambar PNG kosong saat merender slide ${slide.act} (${slide.id})`);
+  }
   const etag = contentEtag(png);
   const meta = (slide.meta ?? {}) as SlideMeta;
   const stored = await storeRenderedImage({ png, etag, slideId: slide.id, campaignId: slide.campaignId, previousPath: meta.storagePath });
+  if (!stored.url) {
+    throw new Error(`Gagal mendapatkan public URL gambar untuk slide ${slide.act} (${slide.id})`);
+  }
   const nextMeta: SlideMeta = { ...meta, imageEtag: etag, storage: stored.storage, renderedAt: new Date().toISOString() };
   if (stored.path) nextMeta.storagePath = stored.path;
   const [updated] = await db

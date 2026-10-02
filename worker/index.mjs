@@ -53,30 +53,99 @@ const log = (...args) => console.log(`[${new Date().toISOString().slice(11, 19)}
 // ── Health Check Server for Render / Cloud Web Services ──────────────────
 const PORT = process.env.PORT || 10000;
 const healthServer = http.createServer((req, res) => {
-  const url = req.url || "/";
-  if (url === "/post-now" || url === "/trigger") {
-    log("⚡ Trigger /post-now diterima via HTTP server worker — menjalankan tick()");
-    void tick();
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ status: "ok", message: "tick triggered" }));
-  }
+  try {
+    const rawUrl = req.url || "/";
+    const pathname = rawUrl.split("?")[0];
 
-  // GET /health atau root kembalikan waConnected & uptime
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(
-    JSON.stringify({
-      status: "ok",
-      waConnected: connected,
-      uptime: process.uptime(),
-      service: "Story Maker WhatsApp Daemon",
-    })
-  );
+    // GET /ping - respons super cepat untuk keep-alive
+    if (pathname === "/ping") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(
+        JSON.stringify({
+          status: "pong",
+          timestamp: Date.now(),
+          uptime: Math.round(process.uptime()),
+        })
+      );
+    }
+
+    // GET /health atau root kembalikan waConnected & uptime detail
+    if (pathname === "/health" || pathname === "/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(
+        JSON.stringify({
+          status: "ok",
+          waConnected: connected,
+          uptime: Math.round(process.uptime()),
+          service: "Story Maker WhatsApp Daemon",
+          timestamp: new Date().toISOString(),
+          busy,
+          lastTickStarted: lastTickStarted ? new Date(lastTickStarted).toISOString() : null,
+        })
+      );
+    }
+
+    if (pathname === "/post-now" || pathname === "/trigger") {
+      log("⚡ Trigger /post-now diterima via HTTP server worker — menjalankan tick()");
+      void tick();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ status: "ok", message: "tick triggered" }));
+    }
+
+    // Default response 200 OK untuk path lain
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", service: "Story Maker WhatsApp Daemon" }));
+  } catch (httpErr) {
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "error", error: httpErr.message }));
+  }
 });
 
 function startHealthServer() {
   healthServer.listen(PORT, "0.0.0.0", () => {
     log(`🌐 Health check server aktif di port ${PORT}`);
   });
+}
+
+// ── Internal Anti-Sleep Self-Ping (Render Web Service) ────────────────────
+let selfPingInterval = null;
+
+function startSelfPing() {
+  const externalUrl = (process.env.RENDER_EXTERNAL_URL || process.env.WORKER_PUBLIC_URL || "").trim();
+  if (!externalUrl) {
+    log("ℹ️ [ANTI-SLEEP] RENDER_EXTERNAL_URL / WORKER_PUBLIC_URL tidak diset. Self-ping eksternal dinonaktifkan (mode lokal/VPS biasa).");
+    return;
+  }
+
+  const pingUrl = `${externalUrl.replace(/\/+$/, "")}/health`;
+  log(`⏰ [ANTI-SLEEP] Mengaktifkan self-ping keep-alive ke ${pingUrl} setiap 5 menit (300.000 ms)`);
+
+  const doPing = async () => {
+    try {
+      const res = await fetch(pingUrl, {
+        headers: { "User-Agent": "StoryMaker-AntiSleep-Worker/1.0" },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) {
+        log(`🏓 [ANTI-SLEEP] Self-ping sukses (HTTP ${res.status}) — container tetap terjaga aktif.`);
+      } else {
+        log(`⚠️ [ANTI-SLEEP] Self-ping menerima respons HTTP ${res.status}`);
+      }
+    } catch (err) {
+      log(`⚠️ [ANTI-SLEEP] Self-ping gagal (${err.message}) — container mungkin sedang spin-up.`);
+    }
+  };
+
+  // Ping awal 15 detik setelah boot
+  setTimeout(() => {
+    void doPing().catch(() => undefined);
+  }, 15_000);
+
+  // Interval setiap 5 menit (300.000 ms)
+  if (selfPingInterval) clearInterval(selfPingInterval);
+  selfPingInterval = setInterval(() => {
+    void doPing().catch((err) => log("⚠️ [ANTI-SLEEP] Unhandled self-ping error:", err?.message));
+  }, 300_000);
 }
 
 // ── Contact store → statusJidList (who can see the Status) ─────────────────
@@ -633,39 +702,51 @@ async function tick() {
       me: meJid ? meJid.split("@")[0] : "",
       version: VERSION,
     });
-    const { items = [] } = await api(`/api/worker/queue?${params}`);
+    let items = [];
+    try {
+      const response = await api(`/api/worker/queue?${params}`);
+      items = response.items || [];
+    } catch (apiErr) {
+      log("✖ Gagal mengambil antrean worker dari API (network/database drop):", apiErr.message);
+      return;
+    }
+
     if (items.length) log(`📬 ${items.length} slide diterima dari antrean`);
     for (const item of items) {
-      const check = checkDue(item);
-      if (!check.due) {
-        log(`⏳ Slide ${item.label || item.id} dilewati (${check.reason})`);
-        continue;
-      }
-
-      if (check.isCatchUp) {
-        log(`⏰ [CATCH-UP] Slide ${item.label || item.id} diproses dalam jendela toleransi: ${check.reason}`);
-      }
-
-      if (check.isForce) {
-        log(`⚡ Force post diproses: ${item.label || item.id}`);
-      }
-
-      if (item.postToWhatsapp && !item.waPosted) {
-        if (!connected) {
-          log(`⚠ WhatsApp belum terhubung — ${item.label || item.id} menunggu koneksi WA`);
-        } else if (item.waLeased || check.isForce) {
-          await postWhatsapp(item);
-        } else {
-          log(`⏳ Slide ${item.label || item.id} sedang dikunci (waLockAt aktif) oleh siklus/proses lain`);
+      try {
+        const check = checkDue(item);
+        if (!check.due) {
+          log(`⏳ Slide ${item.label || item.id} dilewati (${check.reason})`);
+          continue;
         }
-      }
 
-      if (CONFIG.dispatchInstagram && item.postToInstagram && !item.igPosted) {
-        await postInstagram(item);
+        if (check.isCatchUp) {
+          log(`⏰ [CATCH-UP] Slide ${item.label || item.id} diproses dalam jendela toleransi: ${check.reason}`);
+        }
+
+        if (check.isForce) {
+          log(`⚡ Force post diproses: ${item.label || item.id}`);
+        }
+
+        if (item.postToWhatsapp && !item.waPosted) {
+          if (!connected) {
+            log(`⚠ WhatsApp belum terhubung — ${item.label || item.id} menunggu koneksi WA`);
+          } else if (item.waLeased || check.isForce) {
+            await postWhatsapp(item);
+          } else {
+            log(`⏳ Slide ${item.label || item.id} sedang dikunci (waLockAt aktif) oleh siklus/proses lain`);
+          }
+        }
+
+        if (CONFIG.dispatchInstagram && item.postToInstagram && !item.igPosted) {
+          await postInstagram(item);
+        }
+      } catch (itemErr) {
+        log(`✖ Error memproses slide ${item?.label || item?.id}:`, itemErr.message);
       }
     }
   } catch (err) {
-    log("✖ Polling gagal:", err.message);
+    log("✖ Polling loop error tak terduga:", err.message);
   } finally {
     busy = false;
   }
@@ -681,6 +762,7 @@ async function main() {
   if (CONFIG.audience.length) log(`👥 Audiens Status dibatasi ke ${CONFIG.audience.length} nomor (WA_STATUS_AUDIENCE)`);
   
   startHealthServer();
+  startSelfPing();
   await loadContacts();
   
   try {
@@ -692,7 +774,19 @@ async function main() {
   
   await startWorker();
   startWatchdog();
-  setInterval(() => void tick(), CONFIG.pollMs);
+
+  // 🛡️ [RESILIENT POLLING LOOP]
+  // Loop setInterval dibungkus try/catch absolut. Jika ada network drop atau query Supabase gagal,
+  // error hanya di-log dan timer BERIKUTNYA TETAP BERJALAN normal tanpa mematikan loop.
+  const pollInterval = CONFIG.pollMs || 60_000;
+  setInterval(async () => {
+    try {
+      await tick();
+    } catch (unhandledErr) {
+      log("✖ [POLL ERROR] Exception tertangkap di luar tick():", unhandledErr?.message || unhandledErr);
+      busy = false;
+    }
+  }, pollInterval);
 }
 
 process.on("SIGINT", () => {
@@ -723,4 +817,5 @@ export {
   startWorker,
   connect,
   healthServer,
+  startSelfPing,
 };

@@ -304,15 +304,19 @@ function extractMessage(err: unknown): string {
 
 function extractStatus(err: unknown, message: string): number {
   if (err instanceof ApiError && typeof err.status === "number") return err.status;
-  const e = err as { status?: unknown; code?: unknown; name?: unknown } | null;
+  const e = err as { status?: unknown; code?: unknown; name?: unknown; statusText?: unknown; error?: { code?: unknown; status?: unknown; message?: unknown } } | null;
   if (e && typeof e.status === "number") return e.status;
   if (e && typeof e.code === "number" && e.code >= 100 && e.code < 600) return e.code;
+  if (e && typeof e.error?.code === "number" && e.error.code >= 100 && e.error.code < 600) return e.error.code;
   if (e && (e.name === "AbortError" || e.name === "TimeoutError")) return 0;
   const jsonCode = message.match(/"code"\s*:\s*(\d{3})/);
   if (jsonCode) return Number(jsonCode[1]);
-  if (/RESOURCE_EXHAUSTED/.test(message)) return 429;
-  if (/UNAVAILABLE|overloaded/i.test(message)) return 503;
-  if (/NOT_FOUND/.test(message)) return 404;
+  if (/\b503\b|UNAVAILABLE|overloaded|service unavailable|temporarily unavailable|high demand/i.test(message)) return 503;
+  if (/\b429\b|RESOURCE_EXHAUSTED|too many requests|quota exceeded/i.test(message)) return 429;
+  if (/\b404\b|NOT_FOUND/i.test(message)) return 404;
+  if (/\b500\b|INTERNAL/i.test(message)) return 500;
+  if (/\b502\b|BAD_GATEWAY/i.test(message)) return 502;
+  if (/\b504\b|GATEWAY_TIMEOUT/i.test(message)) return 504;
   return 0;
 }
 
@@ -360,7 +364,8 @@ export function classifyFailure(err: unknown): ClassifiedFailure {
       return make({ kind: "rate_limit", baseCooldownMs: Math.max(retryAfterMs ?? 0, base), escalate: true });
     }
     case status === 503:
-      return make({ kind: "overloaded", baseCooldownMs: Math.max(retryAfterMs ?? 0, Math.round(base / 2)), escalate: true });
+      // 503 Overloaded: Berikan cooldown awal 10s dengan eskalasi, agar segera fallback ke model alternatif
+      return make({ kind: "overloaded", baseCooldownMs: Math.max(retryAfterMs ?? 0, 10_000), escalate: true });
     case status === 500 || status === 502 || status === 504:
       return make({ kind: "server_error", baseCooldownMs: Math.round(base / 3), escalate: true });
     case status === 404:
@@ -642,14 +647,32 @@ export async function runWithFailover<T>(
   // Default budget leaves room for rendering inside a 60s serverless function.
   const deadline = Date.now() + (options.deadlineMs ?? 48_000);
   const maxPasses = options.maxPasses ?? 3;
-  const maxWait = options.maxWaitMs ?? 12_000;
+  const maxWait = options.maxWaitMs ?? 15_000;
 
   for (let pass = 0; pass < maxPasses; pass++) {
-    for (const model of cascade) {
-      if (Date.now() >= deadline) break;
-      if (getModelState(model) !== "ready") continue;
+    // 🛡️ Filter model-model dalam cascade yang saat ini berstatus READY di quota guard
+    const readyModels = cascade.filter((m) => getModelState(m) === "ready");
 
-      if (deadline - Date.now() < 5_000) break; // not enough budget for a meaningful attempt
+    if (readyModels.length === 0) {
+      const soonest = msUntilSoonestRecovery(cascade);
+      if (soonest === null) break;
+      // Exponential backoff dengan jitter
+      const backoff = Math.min(Math.max(soonest, 1000 * 2 ** pass), maxWait) + Math.floor(Math.random() * 500);
+      if (Date.now() + backoff >= deadline) {
+        console.warn(`[gemini-detector] Waktu tersisa (${deadline - Date.now()}ms) tidak cukup untuk backoff ${backoff}ms`);
+        break;
+      }
+      console.warn(`[gemini-detector] Semua model sedang cooldown/overloaded. Menunggu exponential backoff (${backoff}ms, pass ${pass + 1}/${maxPasses})...`);
+      await sleep(backoff);
+      continue;
+    }
+
+    for (const model of readyModels) {
+      if (Date.now() >= deadline) break;
+      // Pastikan model masih berstatus ready (bisa berubah jika model sebelumnya memicu side-effect)
+      if (getModelState(model) !== "ready") continue;
+      if (deadline - Date.now() < 4_000) break; // not enough budget for a meaningful attempt
+
       const started = Date.now();
       try {
         const result = await task(model, { deadline });
@@ -670,18 +693,28 @@ export async function runWithFailover<T>(
           errorMessage: `[${failure.kind}${cooldown ? ` · cooldown ${Math.round(cooldown / 1000)}s` : ""}] ${failure.message}`,
           requestId: options.requestId,
         });
-        console.warn(`[gemini-detector] ${model} → ${failure.status} ${failure.kind}; failing over`);
+
+        if (failure.status === 503 || failure.kind === "overloaded") {
+          const nextReady = cascade.find((m) => m !== model && getModelState(m) === "ready");
+          console.warn(
+            `[gemini-detector] ⚠️ Model utama ${model} 503 Overloaded! Segera fallback cascade ke model alternatif berstatus READY (${nextReady ?? "tidak ada alternatif yang ready saat ini"}).`
+          );
+        } else {
+          console.warn(`[gemini-detector] ${model} → ${failure.status} ${failure.kind}; failing over`);
+        }
+
         if (failure.fatal) {
           throw new GeminiCascadeError(`Gemini menolak kredensial (${failure.kind}): ${failure.message}`, attempts, true);
         }
       }
     }
 
-    // Whole cascade is cooling down → exponential backoff until the soonest breaker half-opens.
+    // Jika seluruh model yang tadinya ready gagal pada pass ini, jalankan exponential backoff sebelum pass berikutnya
     const soonest = msUntilSoonestRecovery(cascade);
     if (soonest === null) break;
-    const backoff = Math.max(soonest, 500 * 2 ** pass) + Math.floor(Math.random() * 250);
+    const backoff = Math.min(Math.max(soonest, 1000 * 2 ** pass), maxWait) + Math.floor(Math.random() * 500);
     if (backoff > maxWait || Date.now() + backoff >= deadline) break;
+    console.warn(`[gemini-detector] Pass ${pass + 1} selesai. Menunggu ${backoff}ms sebelum mencoba cascade kembali...`);
     await sleep(backoff);
   }
 

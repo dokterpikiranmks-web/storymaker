@@ -27,6 +27,7 @@ export const generateStorySchema = z
     app_solution: z.string().trim().max(600).optional(),
     target_user: z.string().trim().max(200).optional(),
     overwrite: z.boolean().optional(),
+    auto_schedule: z.boolean().optional(),
   })
   .refine(
     (v) => {

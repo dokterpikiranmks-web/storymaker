@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { handleRouteError, jsonError, jsonOk, readJson, requireDashboard } from "@/lib/api";
-import { getCampaign, getCampaignRowByDate, renderCampaignSlides, saveGeneratedCampaign } from "@/lib/campaigns";
+import { getCampaign, getCampaignRowByDate, renderCampaignSlides, saveGeneratedCampaign, scheduleSlides } from "@/lib/campaigns";
 import { todayInTimezone } from "@/lib/env";
 import { getPersona } from "@/lib/settings";
 import { generateFourActStory } from "@/lib/stories/engine";
@@ -80,8 +80,29 @@ export async function POST(req: Request) {
       campaignType,
     });
 
+    // Render 4 visual slide dan upload ke Supabase bucket story-assets
     const renderErrors = await renderCampaignSlides(campaignId);
-    const campaign = await getCampaign(campaignId);
+    let campaign = await getCampaign(campaignId);
+
+    // 🛡️ [VALIDASI VISUAL RENDER & UPLOAD KE BUCKET story-assets]
+    // Pastikan buffer gambar berhasil di-generate dan di-upload ke Supabase bucket story-assets.
+    // Jika upload gagal, kembalikan response error yang jelas, jangan biarkan status menggantung di DRAFT kosong.
+    const missingSlides = campaign?.slides.filter((s) => !s.renderedImageUrl) ?? [];
+    if (missingSlides.length > 0 || renderErrors.length > 0) {
+      const errorDetail = renderErrors.length > 0 ? renderErrors.join("; ") : `${missingSlides.length} slide tidak memiliki gambar ter-render`;
+      console.error(`[generate] Gagal merender visual untuk campaign ${campaignId}: ${errorDetail}`);
+      return jsonError(
+        `Gagal membuat visual story (${errorDetail}). Pastikan buffer gambar berhasil di-generate dan di-upload ke bucket story-assets.`,
+        500,
+        { campaignId, renderErrors, missingSlideCount: missingSlides.length }
+      );
+    }
+
+    // Jika parameter auto_schedule aktif, picu penjadwalan otomatis langsung ke antrean siar WhatsApp
+    if (parsed.data.auto_schedule) {
+      await scheduleSlides(campaignId, { mode: "schedule", channels: { whatsapp: true, instagram: false } });
+      campaign = await getCampaign(campaignId);
+    }
 
     return jsonOk({ requestId, campaign, story, generation: { ...info, renderErrors } });
   } catch (err) {
