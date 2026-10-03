@@ -39,6 +39,7 @@ export interface LeadMagnetProtocol {
   target_issue: string;
   steps: LeadMagnetProtocolStep[];
   pdf_summary: string;
+  keyword?: string;
 }
 
 export interface FlashPromoInput {
@@ -105,6 +106,7 @@ export interface CampaignDTO {
   campaignDate: string;
   campaignType: CampaignType;
   themeTopic: string;
+  triggerKeyword?: string | null;
   rawInputNotes: string | null;
   coreInsight: string | null;
   generationSource: string;

@@ -28,11 +28,11 @@ interface RotatingPillar {
 }
 
 /**
- * Rotasi Kategori Harian Dr. Mind Scout (WITA / Asia/Makassar):
- * - Senin & Kamis : Domain A — Totok Saraf & Stimulasi Titik Leher (GB-20) & Rem Alami Tubuh
- * - Selasa & Jumat: Domain B — Hipnoterapi Klinis & Ketenangan Bawah Sadar Menjelang Tidur
- * - Rabu & Sabtu  : Domain C — Solusi AI & Mengurai Otak Nge-hang Kebanyakan Mikir
- * - Minggu        : Deep Rest — Melepaskan Beban Tubuh & Pikiran Sepekan
+ * Rotasi Kategori Harian Dokter Pikiran Scout (WITA / Asia/Makassar):
+ * - Senin & Kamis : Domain A — Totok Saraf & Stimulasi Titik Leher (GB-20) & Rem Alami Tubuh (Keyword: LEHER)
+ * - Selasa & Jumat: Domain B — Hipnoterapi Klinis & Ketenangan Bawah Sadar Menjelang Tidur (Keyword: INSOMNIA)
+ * - Rabu & Sabtu  : Domain C — Solusi AI & Mengurai Otak Nge-hang Kebanyakan Mikir (Keyword: FOKUS)
+ * - Minggu        : Deep Rest — Melepaskan Beban Tubuh & Pikiran Sepekan (Keyword: RESET)
  */
 function getPillarForDate(date: Date, tz: string): RotatingPillar {
   const formatter = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" });
@@ -56,6 +56,7 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
           coreInsight:
             "Tubuh kita tidak bisa membedakan antara kejaran deadline pekerjaan dengan bahaya sungguhan. Menekan titik GB-20 di cekungan leher belakang dan bernapas panjang langsung mengaktifkan rem darurat alami tubuh kita, memberi tahu tubuh bahwa segalanya aman.",
           lead_magnet_protocol: {
+            keyword: "LEHER",
             title: "Panduan Saku Reset Somatik & Saraf Vagus 3 Menit",
             target_issue: "Otot leher kaku, kepala berat akibat layar, dan perut begah saat cemas",
             steps: [
@@ -110,6 +111,7 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
           coreInsight:
             "Mendebat pikiran cemas saat mau tidur hanya bikin semakin terjaga. Kuncinya adalah menenangkan fisik terlebih dahulu lewat titik leher dan napas lambat, lalu memberi izin pada pikiran bawah sadar bahwa hari ini sudah tuntas.",
           lead_magnet_protocol: {
+            keyword: "INSOMNIA",
             title: "Panduan Saku Reset Somatik & Ketenangan Tidur 3 Menit",
             target_issue: "Overthinking malam hari, susah tidur, dan rasa cemas berlebih",
             steps: [
@@ -164,6 +166,7 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
           coreInsight:
             "Pikiran kita seperti sistem yang menjalankan instruksi lama. Saat beban kerjaan berlebih, kita perlu me-reset instruksinya, memindahkan catatan ke luar kepala, dan mengistirahatkan saraf leher agar kepala kembali enteng.",
           lead_magnet_protocol: {
+            keyword: "FOKUS",
             title: "Panduan Saku Reset Somatik & Kognitif 3 Menit",
             target_issue: "Otak nge-hang, kepala berat kebanyakan mikir, dan kelelahan mental",
             steps: [
@@ -218,6 +221,7 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
           coreInsight:
             "Istirahat sejati bukan pasif di depan layar HP, melainkan mengizinkan tubuh melepaskan leher yang kaku dan memberi tahu pikiran bawah sadar bahwa hari ini adalah waktu pemulihan penuh.",
           lead_magnet_protocol: {
+            keyword: "RESET",
             title: "Panduan Saku Reset Somatik Akhir Pekan 3 Menit",
             target_issue: "Kelelahan fisik sepekan dan cemas menghadapi hari Senin",
             steps: [
@@ -264,7 +268,7 @@ async function researchWithGemini(
 ): Promise<{ topic: string; clinicalComplaint: string; coreInsight: string; lead_magnet_protocol: LeadMagnetProtocol }> {
   if (!isGeminiConfigured()) return pillar.curatedCase;
 
-  const prompt = `Kamu adalah "Dr. Mind Scout", partner riset klinis dan sahabat pemulihan untuk Dr. Mind / Sang Alchemist (Hipnoterapis Klinis, Praktisi Totok Saraf, dan Solo AI Developer).
+  const prompt = `Kamu adalah "Dokter Pikiran Scout", partner riset klinis dan sahabat pemulihan untuk Dokter Pikiran / Sang Alchemist (Hipnoterapis Klinis, Praktisi Totok Saraf Meridian, dan Solo AI Developer).
 Tugasmu: Merumuskan 1 studi kasus keluhan harian yang sangat nyata dan membumi untuk tanggal ${campaignDate}, lengkap dengan protokol lead magnet 3 langkah yang siap di-render menjadi PDF.
 
 # ATURAN EMAS BAHASA & PERSONA (WAJIB DIIKUTI):
@@ -287,7 +291,8 @@ Kriteria Wajib Output:
 1. "topic": Topik/judul memikat dalam bahasa awam tentang hubungan tubuh-pikiran (maks 12 kata, tanpa emoji/hashtag).
 2. "clinicalComplaint": Narasi curhat keluhan nyata klien di meja terapi yang emosional dan manusiawi (misal leher kaku, perut begah, otak nge-hang kebanyakan mikir).
 3. "coreInsight": Wawasan pencerahan yang menghubungkan rem darurat tubuh (saraf vagus), totok leher, dan reset instruksi lama di pikiran bawah sadar.
-4. "lead_magnet_protocol": Protokol 3 langkah resmi siap cetak PDF:
+4. "lead_magnet_protocol": Protokol 3 langkah resmi siap cetak PDF dengan KATA KUNCI DINAMIS:
+   - "keyword": 1 kata kunci unik huruf kapital (maksimal 1 kata, mudah diketik di ponsel, relevan dengan masalah tubuh, contoh: "LEHER", "LAMBUNG", "INSOMNIA", "FOKUS", "BELIKAT", "MIGRAIN").
    - "title": Judul panduan (misal: "Panduan Saku Reset Somatik & Saraf Vagus").
    - "target_issue": Masalah spesifik yang diatasi.
    - "steps": Array persis 3 objek langkah terstruktur:
@@ -302,6 +307,7 @@ Hasilkan JSON valid sesuai format persis:
   "clinicalComplaint": "...",
   "coreInsight": "...",
   "lead_magnet_protocol": {
+    "keyword": "...",
     "title": "...",
     "target_issue": "...",
     "steps": [
@@ -345,7 +351,14 @@ Hasilkan JSON valid sesuai format persis:
           };
         });
 
+        const rawKeyword = String(rawProtocol.keyword || pillar.curatedCase.lead_magnet_protocol.keyword || "RESET")
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Za-z0-9]/g, "")
+          .split(/\s+/)[0];
+
         const leadMagnetProtocol: LeadMagnetProtocol = {
+          keyword: rawKeyword || pillar.curatedCase.lead_magnet_protocol.keyword || "RESET",
           title: String(rawProtocol.title || pillar.curatedCase.lead_magnet_protocol.title).trim(),
           target_issue: String(rawProtocol.target_issue || pillar.curatedCase.lead_magnet_protocol.target_issue).trim(),
           steps,
@@ -363,16 +376,16 @@ Hasilkan JSON valid sesuai format persis:
     );
     return res.data;
   } catch (err) {
-    console.warn("[Dr. Mind Scout] Gemini research fallback to curated case:", (err as Error).message);
+    console.warn("[Dokter Pikiran Scout] Gemini research fallback to curated case:", (err as Error).message);
     return pillar.curatedCase;
   }
 }
 
 /**
- * POST & GET /api/cron/research — Autonomous Clinical Research Agent ("Dr. Mind Scout")
+ * POST & GET /api/cron/research — Autonomous Clinical Research Agent ("Dokter Pikiran Scout")
  * 1. Amankan endpoint dengan Bearer Token (CRON_SECRET / WORKER_SECRET) ATAU Dashboard Session.
  * 2. Tentukan kategori tema otomatis berputar berdasarkan 3 domain klinis utama.
- * 3. Dr. Mind Scout meriset keluhan klinis & generate naskah 4 babak lengkap + payload lead_magnet_protocol.
+ * 3. Dokter Pikiran Scout meriset keluhan klinis & generate naskah 4 babak lengkap + payload lead_magnet_protocol.
  * 4. Render langsung ke visual poster 9:16 via Satori dan simpan ke Supabase Storage (rendered-slides).
  * 5. Simpan campaign dan set jadwal posting otomatis (07:15, 12:30, 18:45, 21:30).
  */
@@ -400,7 +413,7 @@ async function handleResearch(req: Request) {
     const persona = await getPersona();
     const requestId = randomUUID();
 
-    // 1. Dr. Mind Scout riset keluhan klinis 3 domain + lead_magnet_protocol
+    // 1. Dokter Pikiran Scout riset keluhan klinis 3 domain + lead_magnet_protocol
     const scoutData = await researchWithGemini(pillar, campaignDate, body.topic);
     const rawThought = `${scoutData.clinicalComplaint}\n\nCore Insight: ${scoutData.coreInsight}`;
 
@@ -442,7 +455,7 @@ async function handleResearch(req: Request) {
 
     return jsonOk({
       ok: true,
-      agent: "Dr. Mind Scout",
+      agent: "Dokter Pikiran Scout",
       domain: pillar.domainKey,
       pillar: pillar.category,
       focus: pillar.focus,

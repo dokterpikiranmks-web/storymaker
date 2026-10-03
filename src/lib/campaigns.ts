@@ -69,11 +69,17 @@ export function toCampaignDTO(c: DailyCampaign, slides: StorySlide[]): CampaignD
     }
   }
 
+  const triggerKeyword = c.triggerKeyword || leadMagnetProtocol?.keyword || null;
+  if (leadMagnetProtocol && !leadMagnetProtocol.keyword && triggerKeyword) {
+    leadMagnetProtocol.keyword = triggerKeyword;
+  }
+
   return {
     id: c.id,
     campaignDate: c.campaignDate,
     campaignType: (c.campaignType as CampaignType) || "DAILY_AUTONOMOUS",
     themeTopic: c.themeTopic,
+    triggerKeyword,
     rawInputNotes: c.rawInputNotes ? c.rawInputNotes.split("---LEAD_MAGNET_PROTOCOL_JSON---")[0].trim() : null,
     coreInsight: c.coreInsight,
     generationSource: c.generationSource,
@@ -91,6 +97,52 @@ export async function getCampaign(id: string): Promise<CampaignDTO | null> {
   if (!campaign) return null;
   const slides = await db.select().from(storySlides).where(eq(storySlides.campaignId, id));
   return toCampaignDTO(campaign, slides);
+}
+
+export async function getCampaignByKeyword(keyword: string): Promise<CampaignDTO | null> {
+  const clean = keyword.trim().toUpperCase();
+  if (!clean) return null;
+
+  // 1. Direct match on triggerKeyword column
+  const [row] = await db
+    .select()
+    .from(dailyCampaigns)
+    .where(sql`UPPER(${dailyCampaigns.triggerKeyword}) = ${clean}`)
+    .orderBy(desc(dailyCampaigns.createdAt))
+    .limit(1);
+
+  if (row) {
+    const slides = await db.select().from(storySlides).where(eq(storySlides.campaignId, row.id));
+    return toCampaignDTO(row, slides);
+  }
+
+  // 2. Match rawInputNotes JSON containing the keyword
+  const [jsonRow] = await db
+    .select()
+    .from(dailyCampaigns)
+    .where(sql`${dailyCampaigns.rawInputNotes} ILIKE ${'%"keyword":"' + clean + '"%'}`)
+    .orderBy(desc(dailyCampaigns.createdAt))
+    .limit(1);
+
+  if (jsonRow) {
+    const slides = await db.select().from(storySlides).where(eq(storySlides.campaignId, jsonRow.id));
+    return toCampaignDTO(jsonRow, slides);
+  }
+
+  // 3. Fallback match in themeTopic
+  const [topicRow] = await db
+    .select()
+    .from(dailyCampaigns)
+    .where(sql`UPPER(${dailyCampaigns.themeTopic}) LIKE ${'%' + clean + '%'}`)
+    .orderBy(desc(dailyCampaigns.createdAt))
+    .limit(1);
+
+  if (topicRow) {
+    const slides = await db.select().from(storySlides).where(eq(storySlides.campaignId, topicRow.id));
+    return toCampaignDTO(topicRow, slides);
+  }
+
+  return null;
 }
 
 export async function getCampaignRowByDate(date: string, type: CampaignType = "DAILY_AUTONOMOUS"): Promise<DailyCampaign | null> {
@@ -155,6 +207,11 @@ export async function saveGeneratedCampaign(input: {
   campaignType?: CampaignType;
 }): Promise<string> {
   const campaignType = input.campaignType ?? "DAILY_AUTONOMOUS";
+  const protocolKeyword = input.story.lead_magnet_protocol?.keyword?.trim().toUpperCase();
+  const triggerKeyword = protocolKeyword || "RESET";
+  if (input.story.lead_magnet_protocol && !input.story.lead_magnet_protocol.keyword) {
+    input.story.lead_magnet_protocol.keyword = triggerKeyword;
+  }
   const protocolNote = input.story.lead_magnet_protocol
     ? `\n\n---LEAD_MAGNET_PROTOCOL_JSON---\n${JSON.stringify(input.story.lead_magnet_protocol)}`
     : "";
@@ -174,6 +231,7 @@ export async function saveGeneratedCampaign(input: {
           campaignDate: input.campaignDate,
           campaignType: "FLASH_PROMO",
           themeTopic,
+          triggerKeyword,
           rawInputNotes: rawNotes,
           coreInsight: input.story.core_insight || null,
           generationSource: input.info.source,
@@ -201,6 +259,7 @@ export async function saveGeneratedCampaign(input: {
           .update(dailyCampaigns)
           .set({
             themeTopic,
+            triggerKeyword,
             rawInputNotes: rawNotes,
             coreInsight: input.story.core_insight || null,
             generationSource: input.info.source,
@@ -218,6 +277,7 @@ export async function saveGeneratedCampaign(input: {
             campaignDate: input.campaignDate,
             campaignType: "DAILY_AUTONOMOUS",
             themeTopic,
+            triggerKeyword,
             rawInputNotes: rawNotes,
             coreInsight: input.story.core_insight || null,
             generationSource: input.info.source,

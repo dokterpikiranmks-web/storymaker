@@ -20,6 +20,7 @@ create table if not exists daily_campaigns (
   campaign_date      date not null,
   campaign_type      text not null default 'DAILY_AUTONOMOUS', -- 'DAILY_AUTONOMOUS' | 'FLASH_PROMO'
   theme_topic        text not null,
+  trigger_keyword    text,                          -- ext: dynamic lead magnet trigger keyword
   raw_input_notes    text,
   core_insight       text,                          -- ext: insight pemersatu 4 babak
   generation_source  text not null default 'gemini', -- ext: 'gemini' | 'offline'
@@ -29,6 +30,7 @@ create table if not exists daily_campaigns (
 );
 create index if not exists daily_campaigns_campaign_date_idx on daily_campaigns (campaign_date);
 create index if not exists daily_campaigns_campaign_type_idx on daily_campaigns (campaign_type);
+create index if not exists daily_campaigns_trigger_keyword_idx on daily_campaigns (trigger_keyword);
 
 -- ── Detail slide per babak ──────────────────────────────────────────────
 create table if not exists story_slides (

@@ -89,7 +89,18 @@ export function normalizeStory(raw: unknown, req: Omit<StoryRequest, "requestId"
 
   const phrase = deriveTopicPhrase(req.topic, req.rawThought);
   const seed = hashString(`${req.topic ?? ""}|${req.rawThought ?? ""}`);
-  const keyword = req.persona.ctaKeyword;
+
+  // Extract dynamic keyword from lead_magnet_protocol, req, or persona
+  let dynamicKeyword = (req.persona.ctaKeyword || "RESET").toUpperCase();
+  if (obj.lead_magnet_protocol && typeof obj.lead_magnet_protocol === "object") {
+    const lmpObj = obj.lead_magnet_protocol as Record<string, unknown>;
+    const rawK = str(lmpObj.keyword).replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (rawK) dynamicKeyword = rawK.slice(0, 20);
+  } else if (req.leadMagnetProtocol?.keyword) {
+    const rawK = req.leadMagnetProtocol.keyword.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (rawK) dynamicKeyword = rawK.slice(0, 20);
+  }
+  const keyword = dynamicKeyword;
   let missing = 0;
 
   const acts: GeneratedAct[] = ACT_TYPES.map((act) => {
@@ -101,8 +112,10 @@ export function normalizeStory(raw: unknown, req: Omit<StoryRequest, "requestId"
       return buildOfflineAct(act, phrase, req.persona, seed);
     }
     let cta = cleanVisualText(str(a.call_to_action), 120);
-    if (act === "ACT_4_ANCHOR" && !cta.toUpperCase().includes(keyword.toUpperCase())) {
-      cta = `KETIK '${keyword}' ${cta ? `— ${cta}` : "sekarang"}`.trim();
+    if (act === "ACT_4_ANCHOR") {
+      if (!cta.toUpperCase().includes(keyword.toUpperCase())) {
+        cta = `Ketik ${keyword} di chat WhatsApp saya sekarang untuk modul lengkapnya`;
+      }
     }
     return {
       act,
@@ -135,6 +148,7 @@ export function normalizeStory(raw: unknown, req: Omit<StoryRequest, "requestId"
 
     if (steps.length === 3) {
       leadMagnetProtocol = {
+        keyword,
         title: truncate(str(lmp.title) || `Protokol 3 Langkah: ${phrase}`, 120),
         target_issue: truncate(str(lmp.target_issue) || phrase, 200),
         steps,
@@ -145,6 +159,9 @@ export function normalizeStory(raw: unknown, req: Omit<StoryRequest, "requestId"
 
   if (!leadMagnetProtocol) {
     leadMagnetProtocol = buildDefaultLeadMagnetProtocol(phrase);
+    leadMagnetProtocol.keyword = keyword;
+  } else if (!leadMagnetProtocol.keyword) {
+    leadMagnetProtocol.keyword = keyword;
   }
 
   return {

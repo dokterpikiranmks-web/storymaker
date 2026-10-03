@@ -40,7 +40,7 @@ const STEPS = [
 ];
 
 const SCOUT_STEPS = [
-  "Dr. Mind Scout mendeteksi pilar klinis harian…",
+  "Dokter Pikiran Scout mendeteksi pilar klinis harian…",
   "Meriset 3 domain klinis (Totok Saraf, Hipnoterapi, Solusi AI)…",
   "Merumuskan 3-langkah Lead Magnet Protocol (siap PDF)…",
   "Merender 4 visual poster 9:16 via Satori…",
@@ -156,12 +156,12 @@ export function IdeaDrop({
       onGenerated(data.campaign, data.generation);
       notify(
         "success",
-        `✨ ${data.agent || "Dr. Mind Scout"} Berhasil Meriset!`,
+        `✨ ${data.agent || "Dokter Pikiran Scout"} Berhasil Meriset!`,
         `Pilar: ${data.pillar} · 4 Babak & Lead Magnet Protocol siap (Jadwal 07:15, 12:30, 18:45, 21:30)`,
       );
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 409 && !overwrite) {
-        if (window.confirm(`Campaign harian untuk ${date} sudah ada. Timpa dengan riset baru Dr. Mind Scout?`)) {
+        if (window.confirm(`Campaign harian untuk ${date} sudah ada. Timpa dengan riset baru Dokter Pikiran Scout?`)) {
           await autoPilotResearch(true);
         }
         return;
@@ -310,11 +310,11 @@ export function IdeaDrop({
               type="button"
               onClick={() => void autoPilotResearch(true)}
               disabled={loading}
-              title="Picu agen riset klinis otonom Dr. Mind Scout untuk meriset tema hari ini dan menjadwalkan 4 babak langsung"
+              title="Picu agen riset klinis otonom Dokter Pikiran Scout untuk meriset tema hari ini dan menjadwalkan 4 babak langsung"
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/25 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {scouting ? <Loader2 className="size-3.5 animate-spin text-emerald-300" /> : <Sparkles className="size-3.5 text-emerald-400" />}
-              ✨ Auto-Pilot Research (Dr. Mind Scout)
+              ✨ Auto-Pilot Research (Dokter Pikiran Scout)
             </button>
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-amber-300/90">

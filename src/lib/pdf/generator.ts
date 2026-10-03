@@ -105,9 +105,9 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
     : DEFAULT_OFFICIAL_PROTOCOL;
 
   const persona = options.persona || {
-    creatorName: "Dr. Mind",
+    creatorName: "Dokter Pikiran",
     handle: "@storymaker",
-    signature: "Hipnoterapis Klinis & Totok Saraf",
+    signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
     whatsappNumber: "",
     audience: "",
     voiceNotes: "",
@@ -119,8 +119,8 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
 
   try {
     const pdfDoc = await PDFDocument.create();
-    pdfDoc.setTitle(cleanWinAnsi(protocol.title || "Panduan Reset Saraf Dr. Mind"));
-    pdfDoc.setAuthor(cleanWinAnsi(persona.creatorName || "Dr. Mind"));
+    pdfDoc.setTitle(cleanWinAnsi(protocol.title || "Panduan Protokol Dokter Pikiran"));
+    pdfDoc.setAuthor(cleanWinAnsi(persona.creatorName || "Dokter Pikiran"));
     pdfDoc.setSubject("Clinical Self-Regulation Protocol");
 
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -142,8 +142,8 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
       color: rgb(0.02, 0.58, 0.44), // Emerald
     });
 
-    // 2. Header Branding
-    page.drawText("DR. MIND SCOUT - CLINICAL SOMATIC & COGNITIVE PROTOCOL", {
+    // 2. Header Branding & Subheader
+    page.drawText("DOKTER PIKIRAN: PROTOKOL SOMATIK & BAWAH SADAR", {
       x: marginX,
       y: cursorY,
       size: 9,
@@ -159,7 +159,17 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
       color: rgb(0.4, 0.45, 0.55),
     });
 
-    cursorY -= 22;
+    cursorY -= 12;
+
+    page.drawText("Klinik & Edukasi Kesehatan Holistik Dokter Pikiran", {
+      x: marginX,
+      y: cursorY,
+      size: 7.5,
+      font: fontItalic,
+      color: rgb(0.4, 0.45, 0.55),
+    });
+
+    cursorY -= 14;
 
     // Title
     const titleLines = wrapText(protocol.title || "Protokol 3 Menit Reset Somatik", 48);
@@ -369,10 +379,10 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
 
     cursorY -= 12;
 
-    const contactName = cleanWinAnsi(persona.creatorName || "Dr. Mind");
-    const contactSig = cleanWinAnsi(persona.signature || "Hipnoterapis Klinis & Totok Saraf");
+    const contactName = cleanWinAnsi(persona.creatorName || "Dokter Pikiran");
+    const contactSig = "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran";
     const contactWa = cleanWinAnsi(persona.whatsappNumber || "Chat WhatsApp");
-    const contactCta = cleanWinAnsi(persona.ctaKeyword || "RESET");
+    const contactCta = cleanWinAnsi(protocol.keyword || persona.ctaKeyword || "RESET");
     const contactLine = `${contactName} (${contactSig}) - WhatsApp: ${contactWa} - Ketik '${contactCta}'`;
 
     page.drawText(cleanWinAnsi(contactLine), {
@@ -393,22 +403,23 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
     const eFont = await emergencyDoc.embedFont(StandardFonts.HelveticaBold);
     const eFontReg = await emergencyDoc.embedFont(StandardFonts.Helvetica);
 
-    ePage.drawText("PANDUAN RESET SARAF DR. MIND", { x: 45, y: 780, size: 16, font: eFont });
+    ePage.drawText("DOKTER PIKIRAN: PROTOKOL SOMATIK & BAWAH SADAR", { x: 45, y: 780, size: 15, font: eFont });
+    ePage.drawText("Klinik & Edukasi Kesehatan Holistik Dokter Pikiran", { x: 45, y: 760, size: 10, font: eFontReg });
     ePage.drawText("1. Titik GB-20 Leher: Tekan cekungan pangkal tengkorak 60 detik perlahan.", {
       x: 45,
-      y: 740,
+      y: 720,
       size: 11,
       font: eFontReg,
     });
     ePage.drawText("2. Latihan Napas Diafragma 4-7-8: Tarik 4 detik, tahan 7 detik, hembus 8 detik.", {
       x: 45,
-      y: 700,
+      y: 680,
       size: 11,
       font: eFontReg,
     });
     ePage.drawText("3. Sugesti Pelepasan Beban Tidur: Sentuh dada tengah, afirmasikan ketenangan.", {
       x: 45,
-      y: 660,
+      y: 640,
       size: 11,
       font: eFontReg,
     });

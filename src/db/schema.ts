@@ -60,6 +60,7 @@ export const dailyCampaigns = pgTable(
     campaignDate: date("campaign_date").notNull(),
     campaignType: text("campaign_type").notNull().default("DAILY_AUTONOMOUS"),
     themeTopic: text("theme_topic").notNull(),
+    triggerKeyword: text("trigger_keyword"),
     rawInputNotes: text("raw_input_notes"),
     coreInsight: text("core_insight"),
     generationSource: text("generation_source").notNull().default("gemini"),
@@ -70,6 +71,7 @@ export const dailyCampaigns = pgTable(
   (t) => [
     index("daily_campaigns_date_idx").on(t.campaignDate),
     index("daily_campaigns_type_idx").on(t.campaignType),
+    index("daily_campaigns_trigger_keyword_idx").on(t.triggerKeyword),
   ],
 );
 

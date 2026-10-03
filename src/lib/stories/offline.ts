@@ -100,7 +100,7 @@ const TEMPLATES: Record<ActType, Builder[]> = {
       body_text:
         "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore: perjalanan tubuhmu hari ini luar biasa. Sentuh dadamu, rasakan kehangatannya, dan izinkan pikiranmu beristirahat damai.",
       call_to_action: `KETIK '${p.ctaKeyword}' di WA untuk panduan PDF`,
-      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...\n\nKamu sudah berjuang seharian. Malam ini tubuhmu berhak atas kedamaian dan pemulihan utuh.\n\nKetik '${p.ctaKeyword}' di WhatsApp kalau kamu ingin dokumen panduan PDF lengkapnya 🤍\n\n#pemulihantubuh #afirmasimalam #drMind`,
+      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...\n\nKamu sudah berjuang seharian. Malam ini tubuhmu berhak atas kedamaian dan pemulihan utuh.\n\nKetik '${p.ctaKeyword}' di WhatsApp kalau kamu ingin dokumen panduan PDF lengkapnya 🤍\n\n#pemulihantubuh #afirmasimalam #dokterPikiran`,
       technique: "Rangkuman narasi + anchoring damai + CTA",
       key_element: "Sugesti malam: merangkum perjalanan seharian, penanaman rasa aman, CTA WhatsApp.",
     }),
@@ -114,7 +114,17 @@ export function buildOfflineAct(act: ActType, topicPhrase: string, persona: Pers
 }
 
 export function buildDefaultLeadMagnetProtocol(topicPhrase: string): LeadMagnetProtocol {
+  const upper = topicPhrase.toUpperCase();
+  let keyword = "RESET";
+  if (upper.includes("LEHER")) keyword = "LEHER";
+  else if (upper.includes("LAMBUNG") || upper.includes("BEGAH")) keyword = "LAMBUNG";
+  else if (upper.includes("TIDUR") || upper.includes("INSOMNIA")) keyword = "INSOMNIA";
+  else if (upper.includes("FOKUS") || upper.includes("MIKIR") || upper.includes("OTAK")) keyword = "FOKUS";
+  else if (upper.includes("BELIKAT") || upper.includes("PUNDAK")) keyword = "BELIKAT";
+  else if (upper.includes("MIGRAIN") || upper.includes("KEPALA")) keyword = "MIGRAIN";
+
   return {
+    keyword,
     title: `Panduan Saku Reset Somatik & Saraf Vagus: ${topicPhrase}`,
     target_issue: `Meredakan otot leher kaku, rem darurat tubuh, dan overthinking terkait ${topicPhrase}`,
     steps: [

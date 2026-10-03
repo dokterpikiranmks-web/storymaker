@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const campaignId = searchParams.get("campaignId")?.trim();
     const dateParam = searchParams.get("date")?.trim();
+    const keywordParam = searchParams.get("keyword")?.trim();
     const wantsJson = searchParams.get("json") === "1" || searchParams.get("json") === "true";
     const wantsUpload = searchParams.get("upload") === "1" || searchParams.get("upload") === "true";
 
@@ -25,6 +26,9 @@ export async function GET(req: NextRequest) {
     try {
       if (campaignId) {
         campaign = await getCampaign(campaignId);
+      } else if (keywordParam) {
+        const { getCampaignByKeyword } = await import("@/lib/campaigns");
+        campaign = await getCampaignByKeyword(keywordParam);
       } else if (dateParam) {
         const row = await getCampaignRowByDate(dateParam, "DAILY_AUTONOMOUS");
         if (row) {
@@ -44,9 +48,20 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Ambil persona dengan fail-safe
-    let persona: PersonaSettings = defaultPersona();
+    let persona: PersonaSettings = {
+      ...defaultPersona(),
+      creatorName: "Dokter Pikiran",
+      signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
+    };
     try {
-      persona = await getPersona();
+      const fetched = await getPersona();
+      if (fetched) {
+        persona = {
+          ...fetched,
+          creatorName: fetched.creatorName || "Dokter Pikiran",
+          signature: fetched.signature || "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
+        };
+      }
     } catch (personaErr) {
       console.warn("[protocol/pdf] getPersona failed, using defaultPersona:", personaErr);
     }
@@ -67,6 +82,8 @@ export async function GET(req: NextRequest) {
 
     const campaignDate = campaign?.campaignDate || todayInTimezone(getAppTimezone());
     const themeTopic = campaign?.themeTopic || protocol.target_issue || "Regulasi Sistem Saraf Otonom";
+    const activeKeyword = (protocol.keyword || campaign?.triggerKeyword || keywordParam || "").trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
+    const pdfFilename = activeKeyword ? `Panduan_${activeKeyword}_DokterPikiran.pdf` : "Panduan_Protokol_DokterPikiran.pdf";
 
     // 4. Generate binary PDF buffer
     const pdfBuffer = await generateProtocolPdf({
@@ -82,7 +99,7 @@ export async function GET(req: NextRequest) {
 
       if (isSupabaseStorageConfigured()) {
         try {
-          const fileName = `protokol-${campaignDate}-${campaign?.id ? campaign.id.slice(0, 8) : "default"}.pdf`;
+          const fileName = `protokol-${campaignDate}-${activeKeyword || (campaign?.id ? campaign.id.slice(0, 8) : "default")}.pdf`;
           publicPdfUrl = await uploadLeadMagnetPdf(`lead-magnets/${fileName}`, pdfBuffer);
         } catch (storageErr: unknown) {
           const errMessage = storageErr instanceof Error ? storageErr.message : String(storageErr);
@@ -94,6 +111,7 @@ export async function GET(req: NextRequest) {
         ok: true,
         url: publicPdfUrl,
         title: protocol.title,
+        keyword: activeKeyword || protocol.keyword || "RESET",
         target_issue: protocol.target_issue,
         campaignId: campaign?.id ?? null,
         campaignDate,
@@ -107,7 +125,7 @@ export async function GET(req: NextRequest) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Length": String(pdfBuffer.length),
-        "Content-Disposition": 'inline; filename="Panduan_Reset_Saraf_DrMind.pdf"',
+        "Content-Disposition": `inline; filename="${pdfFilename}"`,
         "Cache-Control": "public, max-age=3600, s-maxage=86400",
       },
     });
@@ -117,7 +135,11 @@ export async function GET(req: NextRequest) {
     try {
       const emergencyBuffer = await generateProtocolPdf({
         protocol: DEFAULT_OFFICIAL_PROTOCOL,
-        persona: defaultPersona(),
+        persona: {
+          ...defaultPersona(),
+          creatorName: "Dokter Pikiran",
+          signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
+        },
         campaignDate: new Date().toISOString().slice(0, 10),
         themeTopic: "Regulasi Saraf Vagus & Reset Somatik",
       });
@@ -127,7 +149,7 @@ export async function GET(req: NextRequest) {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Length": String(emergencyBuffer.length),
-          "Content-Disposition": 'inline; filename="Panduan_Reset_Saraf_DrMind.pdf"',
+          "Content-Disposition": 'inline; filename="Panduan_Protokol_DokterPikiran.pdf"',
           "Cache-Control": "no-store",
         },
       });
@@ -138,7 +160,7 @@ export async function GET(req: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
-          "Content-Disposition": 'inline; filename="Panduan_Reset_Saraf_DrMind.pdf"',
+          "Content-Disposition": 'inline; filename="Panduan_Protokol_DokterPikiran.pdf"',
         },
       });
     }

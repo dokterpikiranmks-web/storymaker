@@ -330,6 +330,122 @@ function isKeywordMatched(text) {
   return KEYWORDS.some((k) => cleanText.includes(k));
 }
 
+// ── Supabase Client Initialization & Historical Evergreen Lookup ───────────
+let supabaseClient = null;
+async function getSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      supabaseClient = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      return supabaseClient;
+    } catch (err) {
+      log("⚠️ [Supabase Client] Gagal import @supabase/supabase-js:", err.message);
+    }
+  }
+  return null;
+}
+
+/**
+ * Historical Evergreen Lookup:
+ * Mencari kampanye (termasuk kampanye lampau) yang memiliki trigger_keyword cocok dengan teks.
+ */
+async function findCampaignByKeyword(keyword) {
+  if (!keyword || typeof keyword !== "string") return null;
+  const clean = keyword.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!clean || clean.length < 2) return null;
+
+  // 1. Query ke Supabase via Supabase Client
+  try {
+    const sb = await getSupabaseClient();
+    if (sb) {
+      const { data, error } = await sb
+        .from("daily_campaigns")
+        .select("id, trigger_keyword, raw_input_notes, theme_topic")
+        .eq("trigger_keyword", clean)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const row = data[0];
+        let protocol = null;
+        if (row.raw_input_notes && row.raw_input_notes.includes("---LEAD_MAGNET_PROTOCOL_JSON---")) {
+          try {
+            protocol = JSON.parse(row.raw_input_notes.split("---LEAD_MAGNET_PROTOCOL_JSON---")[1].trim());
+          } catch {}
+        }
+        return {
+          id: row.id,
+          trigger_keyword: row.trigger_keyword || clean,
+          topic: row.theme_topic,
+          lead_magnet_protocol: protocol,
+        };
+      }
+    }
+  } catch (sbErr) {
+    log("⚠️ [Supabase Lookup Error]:", sbErr.message);
+  }
+
+  // 2. Query ke Supabase via direct PostgreSQL pool (getDbPool)
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      const res = await pool.query(
+        `SELECT id, trigger_keyword, theme_topic, raw_input_notes 
+         FROM daily_campaigns 
+         WHERE UPPER(trigger_keyword) = $1 
+            OR raw_input_notes ILIKE $2
+         ORDER BY created_at DESC 
+         LIMIT 1`,
+        [clean, `%"keyword":"${clean}"%`]
+      );
+      if (res.rows && res.rows.length > 0) {
+        const row = res.rows[0];
+        let protocol = null;
+        if (row.raw_input_notes && row.raw_input_notes.includes("---LEAD_MAGNET_PROTOCOL_JSON---")) {
+          try {
+            protocol = JSON.parse(row.raw_input_notes.split("---LEAD_MAGNET_PROTOCOL_JSON---")[1].trim());
+          } catch {}
+        }
+        return {
+          id: row.id,
+          trigger_keyword: row.trigger_keyword || clean,
+          topic: row.theme_topic,
+          lead_magnet_protocol: protocol,
+        };
+      }
+    }
+  } catch (pgErr) {
+    log("⚠️ [Postgres Pool Lookup Error]:", pgErr.message);
+  }
+
+  // 3. Fallback via Next.js REST API (/api/campaigns/lookup)
+  try {
+    const baseUrl = CONFIG.storyMakerUrl || "https://storymaker-jet.vercel.app";
+    const apiRes = await fetch(`${baseUrl}/api/campaigns/lookup?keyword=${encodeURIComponent(clean)}`, {
+      headers: {
+        Authorization: `Bearer ${CONFIG.secret}`,
+        "x-worker-secret": CONFIG.workerSecret || "",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (apiRes.ok) {
+      const json = await apiRes.json();
+      if (json.matched && json.campaign) {
+        return json.campaign;
+      }
+    }
+  } catch (apiErr) {
+    log("⚠️ [API Lookup Error]:", apiErr.message);
+  }
+
+  return null;
+}
+
 // ── WhatsApp socket & Lifecycle ────────────────────────────────────────────
 let sock = null;
 let connected = false;
@@ -440,14 +556,30 @@ async function startWorker() {
                         '';
 
         const cleanText = rawText.trim().toUpperCase();
+        if (!cleanText) continue;
         console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} | Teks: "${rawText}"`);
 
-        // 3. Pencocokan kata kunci
-        const KEYWORDS = ['RESET', 'VAGUS', 'SOMATIK', 'PANDUAN', 'PROTOKOL', 'KONSUL'];
-        const isMatched = KEYWORDS.some(k => cleanText.includes(k));
+        // Logika Pencocokan Berlapis
+        // Tahap 1: Query ke Supabase / DB / API untuk mencari kampanye (termasuk kampanye lampau) yang memiliki trigger_keyword cocok
+        let matchedCampaign = await findCampaignByKeyword(cleanText);
+        let matchedKeyword = cleanText;
 
-        if (isMatched) {
-          console.log(`🎯 [TRIGGER MATCHED] Kata kunci cocok untuk ${remoteJid}! Memproses balasan...`);
+        if (!matchedCampaign) {
+          // Cari kata per kata jika audiens mengetik kalimat (misal: "Ketik LEHER" atau "Saya mau modul LAMBUNG")
+          const words = cleanText.split(/[\s,.:;!?-]+/).filter((w) => w.length >= 3);
+          for (const w of words) {
+            const found = await findCampaignByKeyword(w);
+            if (found) {
+              matchedCampaign = found;
+              matchedKeyword = w;
+              break;
+            }
+          }
+        }
+
+        // Tahap 2: Jika ditemukan kampanye yang cocok
+        if (matchedCampaign) {
+          console.log(`🎯 [TRIGGER MATCHED] Kampanye cocok ditemukan untuk kata kunci "${matchedKeyword}" (${matchedCampaign.topic || "spesifik"})!`);
 
           // Cek in-memory debounce anti-spam (5 menit TTL)
           if (isInDebounce(remoteJid)) {
@@ -456,10 +588,61 @@ async function startWorker() {
           }
           setDebounce(remoteJid);
 
-          // LANGKAH 1: Balas pesan teks instan detik itu juga
+          const topicTitle = matchedCampaign.topic || matchedKeyword;
+          const safeKey = matchedKeyword.replace(/[^A-Za-z0-9]/g, "") || "Protokol";
+
+          // 2.a Kirim pesan teks hangat
           try {
             await sock.sendMessage(remoteJid, {
-              text: `Halo! Salam hangat dari Dr. Mind. 🌿\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
+              text: `Halo! Salam hangat dari Dokter Pikiran. 🌿\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkahnya.`
+            });
+            console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
+          } catch (err) {
+            console.error(`❌ Gagal kirim teks inbound:`, err);
+          }
+
+          // 2.b Ambil buffer PDF dengan parameter campaignId: ${baseUrl}/api/protocol/pdf?campaignId=${matchedCampaign.id}
+          try {
+            const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
+            const pdfUrl = `${baseUrl}/api/protocol/pdf?campaignId=${encodeURIComponent(matchedCampaign.id)}`;
+            const pdfRes = await fetch(pdfUrl, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
+            if (pdfRes.ok) {
+              const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+              await sock.sendMessage(remoteJid, {
+                document: pdfBuffer,
+                mimetype: 'application/pdf',
+                fileName: `Panduan_${safeKey}_DokterPikiran.pdf`,
+                caption: `📄 Panduan Saku Praktis: ${topicTitle} (PDF)`
+              });
+              console.log(`✅ [PDF SENT] File PDF dinamis Panduan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
+            } else {
+              console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} untuk campaignId ${matchedCampaign.id}`);
+            }
+          } catch (pdfErr) {
+            console.error(`⚠️ Gagal kirim PDF dokumen spesifik:`, pdfErr);
+          }
+          continue;
+        }
+
+        // Tahap 3 (Fallback Universal):
+        // Jika cleanText mencakup kata kunci umum ('RESET', 'KONSUL', 'PANDUAN', 'SOMATIK', 'VAGUS'), layani dengan kampanye aktif hari ini atau protokol somatik default Dokter Pikiran.
+        const FALLBACK_KEYWORDS = ['RESET', 'KONSUL', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'];
+        const isFallback = FALLBACK_KEYWORDS.some(k => cleanText.includes(k));
+
+        if (isFallback) {
+          console.log(`🎯 [UNIVERSAL FALLBACK] Kata kunci umum cocok untuk ${remoteJid}! Memproses balasan...`);
+
+          // Cek in-memory debounce anti-spam (5 menit TTL)
+          if (isInDebounce(remoteJid)) {
+            console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
+            continue;
+          }
+          setDebounce(remoteJid);
+
+          // LANGKAH 1: Balas pesan teks hangat dari Dokter Pikiran
+          try {
+            await sock.sendMessage(remoteJid, {
+              text: `Halo! Salam hangat dari Dokter Pikiran. 🌿\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
             });
             console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
           } catch (err) {
@@ -475,10 +658,10 @@ async function startWorker() {
               await sock.sendMessage(remoteJid, {
                 document: pdfBuffer,
                 mimetype: 'application/pdf',
-                fileName: 'Panduan_Reset_Saraf_DrMind.pdf',
+                fileName: 'Panduan_Protokol_DokterPikiran.pdf',
                 caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
               });
-              console.log(`✅ [PDF SENT] File PDF berhasil dikirim ke ${remoteJid}`);
+              console.log(`✅ [PDF SENT] File PDF universal berhasil dikirim ke ${remoteJid}`);
             }
           } catch (pdfErr) {
             console.error(`⚠️ Gagal kirim PDF dokumen:`, pdfErr);

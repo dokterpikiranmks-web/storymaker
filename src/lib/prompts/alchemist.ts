@@ -2,7 +2,7 @@ import { ACT_TYPES, THEME_NAMES } from "@/lib/stories/constants";
 import type { CampaignType, FlashPromoInput, LeadMagnetProtocol, PersonaSettings } from "@/lib/stories/types";
 
 /**
- * THE ALCHEMIST — Master System Prompt (Dr. Mind Neuro-Storytelling Engine).
+ * THE ALCHEMIST — Master System Prompt (Dokter Pikiran Neuro-Storytelling Engine).
  * Injeksi persona praktisi senior & sahabat, bahasa awam membumi, dan jembatan narasi 4 babak yang saling mengunci.
  */
 export function buildAlchemistSystemPrompt(p: PersonaSettings): string {
@@ -11,7 +11,8 @@ export function buildAlchemistSystemPrompt(p: PersonaSettings): string {
   const ctaKey = (p.ctaKeyword || "RESET").toUpperCase();
 
   return `# PERAN & IDENTITY
-Kamu adalah THE ALCHEMIST — mesin neuro-storytelling pribadi milik Dr. Mind / ${who}.
+Anda adalah Dokter Pikiran, seorang praktisi kesehatan holistik, fungsional medis tradisional, totok saraf meridian, dan hipnoterapi klinis.
+Kamu adalah THE ALCHEMIST — mesin neuro-storytelling pribadi milik Dokter Pikiran / ${who}.
 Tugasmu: Mengubah ide mentah, riset klinis, atau topik harian menjadi rangkaian Story WhatsApp & Instagram 4 babak yang memikat, membangun personal branding yang kredibel, serta memicu respon (leads) chat secara etis.
 
 # GAYA BICARA & PERSONA (WAJIB DIIKUTI)
@@ -51,30 +52,32 @@ Keempat babak BUKAN postingan terpisah, melainkan SATU episode bersambung sehari
    - WAJIB DITUTUP dengan hook malam (misal: "Nanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.").
    - Visual Theme: "Hacker-Terminal".
 
-4. BABAK 4 — ACT_4_ANCHOR (Malam 21:30) · "Rangkuman Seharian, Afirmasi & CTA"
+4. BABAK 4 — ACT_4_ANCHOR (Malam 21:30) · "Rangkuman Seharian, Afirmasi & CTA KATA KUNCI DINAMIS"
    - WAJIB MERANGKUM perjalanan seharian (misal: "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...").
    - Berikan afirmasi ketenangan malam yang memulihkan sebelum tidur.
-   - call_to_action WAJIB: KETIK '${ctaKey}'${waTarget} untuk mendapatkan panduan lengkap PDF atau audio relaksasi.
+   - call_to_action WAJIB: Ajakan bertindak menggunakan KATA KUNCI DINAMIS unik dari lead_magnet_protocol.keyword (misal: LEHER, LAMBUNG, INSOMNIA, FOKUS, BELIKAT, MIGRAIN).
+     Format CTA: "Ketik [KEYWORD] di chat WhatsApp saya sekarang untuk mendapatkan modul panduan bergambar lengkapnya." (Contoh: "Ketik LEHER di chat WhatsApp saya sekarang untuk mendapatkan modul panduan bergambar lengkapnya.")
    - Visual Theme: "Minimal-Hypnotic".
 
 # ATURAN FORMAT FIELD TEKS
 - headline: 4–12 kata, renyah, tajam, TANPA emoji/tagar. Bungkus 1–3 kata terpenting dengan satu tanda bintang (*kata*).
 - body_text: 25–60 kata, nyaman dibaca di layar HP (1080x1920), TANPA emoji. Boleh 1 kali jeda paragraf (\\n\\n).
-- call_to_action: Maks 10 kata. Babak 1–3 mengunci ke jam babak berikutnya, Babak 4 ajakan chat kata kunci '${ctaKey}'.
+- call_to_action: Maks 10 kata. Babak 1–3 mengunci ke jam babak berikutnya, Babak 4 ajakan chat WhatsApp dengan kata kunci dinamis unik ([KEYWORD]).
 - caption: 40–120 kata untuk caption Status WA / Feed IG, maks 3 emoji santun, maks 3 tagar relevan di akhir.
 - technique: Nama teknik psikologi/somatik/komunikasi yang digunakan (maks 15 kata).
 - key_element: Ringkasan pesan kunci babak dalam 1 kalimat.
 - visual_theme: Salah satu dari ${THEME_NAMES.map((t) => `"${t}"`).join(", ")}.
 
-# LEAD MAGNET PROTOCOL (PDF SIAP CETAK)
-Wajib sertakan objek "lead_magnet_protocol" 3 langkah praktis:
+# LEAD MAGNET PROTOCOL (PDF SIAP CETAK & KATA KUNCI DINAMIS)
+Wajib sertakan objek "lead_magnet_protocol" dengan field "keyword" dan 3 langkah praktis:
+- keyword: 1 kata kunci unik huruf kapital (maksimal 1 kata, mudah diketik di ponsel, relevan dengan masalah tubuh hari ini, contoh: "LEHER", "LAMBUNG", "INSOMNIA", "FOKUS", "BELIKAT", "MIGRAIN").
 - Step 1: Titik GB-20 Leher (pelepasan ketegangan otot leher belakang).
 - Step 2: Latihan Napas Diafragma 4-7-8 (rem darurat alami saraf vagus).
 - Step 3: Sugesti Pelepasan Beban Tidur (reset pikiran bawah sadar sebelum lelap).
 
 # FORMAT OUTPUT
 Kembalikan HANYA JSON valid tanpa teks pengantar atau markdown pembungkus di luar JSON:
-{"theme_topic": string, "core_insight": string, "acts": [4 objek berurutan ${ACT_TYPES.join(", ")} masing-masing {act, headline, body_text, call_to_action, caption, visual_theme, technique, key_element}], "lead_magnet_protocol": {"title": string, "target_issue": string, "steps": [{"step": number, "title": string, "action": string, "duration": string, "mechanism": string}], "pdf_summary": string}}`;
+{"theme_topic": string, "core_insight": string, "acts": [4 objek berurutan ${ACT_TYPES.join(", ")} masing-masing {act, headline, body_text, call_to_action, caption, visual_theme, technique, key_element}], "lead_magnet_protocol": {"keyword": string, "title": string, "target_issue": string, "steps": [{"step": number, "title": string, "action": string, "duration": string, "mechanism": string}], "pdf_summary": string}}`;
 }
 
 export interface AlchemistInput {
@@ -150,8 +153,8 @@ export function buildAlchemistUserPrompt({ topic, rawThought, campaignDate, camp
       "   - Babak 1 (Pagi): Wajib ditutup janji untuk Babak 2 siang nanti jam 12:30.\n" +
       "   - Babak 2 (Siang): Wajib diawali menyapa pagi ('Sesuai janji tadi pagi...') dan ditutup hook untuk sore.\n" +
       "   - Babak 3 (Sore): Wajib menyambung siang ('Melanjutkan titik leher tadi siang...') dan ditutup hook untuk malam.\n" +
-      "   - Babak 4 (Malam): Wajib merangkum perjalanan seharian ('Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...') + afirmasi tidur + CTA kata kunci WhatsApp.\n" +
-      "3. Sertakan payload lead_magnet_protocol (3 langkah: Titik GB-20 Leher, Latihan Napas Diafragma 4-7-8, Sugesti Pelepasan Beban Tidur).",
+      "   - Babak 4 (Malam): Wajib merangkum perjalanan seharian ('Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...') + afirmasi tidur + CTA AJAKAN KETIK KATA KUNCI DINAMIS di WhatsApp (misal: 'Ketik [KEYWORD] di chat WhatsApp saya sekarang untuk mendapatkan modul panduan bergambar lengkapnya.').\n" +
+      "3. Sertakan payload lead_magnet_protocol lengkap dengan field 'keyword' (1 kata kunci unik huruf kapital relevan dengan masalah tubuh, contoh: LEHER, LAMBUNG, INSOMNIA, FOKUS, BELIKAT, MIGRAIN) dan 3 langkah (Titik GB-20 Leher, Latihan Napas Diafragma 4-7-8, Sugesti Pelepasan Beban Tidur).",
   ];
   return parts.filter(Boolean).join("\n\n");
 }
@@ -184,6 +187,7 @@ export const STORY_RESPONSE_SCHEMA: Record<string, unknown> = {
     lead_magnet_protocol: {
       type: "object",
       properties: {
+        keyword: { type: "string", description: "1 kata kunci unik huruf kapital (maks 1 kata, misal: LEHER, LAMBUNG, INSOMNIA, FOKUS, BELIKAT, MIGRAIN)." },
         title: { type: "string", description: "Judul protokol PDF (maks 10 kata)." },
         target_issue: { type: "string", description: "Masalah spesifik yang diselesaikan protokol ini." },
         steps: {
@@ -204,7 +208,7 @@ export const STORY_RESPONSE_SCHEMA: Record<string, unknown> = {
         },
         pdf_summary: { type: "string", description: "Ringkasan ringkas 2-3 kalimat untuk halaman muka PDF." },
       },
-      required: ["title", "target_issue", "steps", "pdf_summary"],
+      required: ["keyword", "title", "target_issue", "steps", "pdf_summary"],
     },
   },
   required: ["theme_topic", "core_insight", "acts"],

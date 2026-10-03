@@ -10,13 +10,13 @@ export const WORKER_HEARTBEAT_KEY = "worker:whatsapp";
 
 export function defaultPersona(): PersonaSettings {
   return {
-    creatorName: process.env.CREATOR_NAME?.trim() || "Sang Alchemist",
-    handle: process.env.CREATOR_HANDLE?.trim() || "@storymaker",
+    creatorName: process.env.CREATOR_NAME?.trim() || "Dokter Pikiran",
+    handle: process.env.CREATOR_HANDLE?.trim() || "@dokterpikiran",
     ctaKeyword: (process.env.CTA_KEYWORD?.trim() || "RESET").toUpperCase(),
     whatsappNumber: "",
     audience:
       "Profesional & pebisnis usia 25–45 tahun yang lelah mental, sulit tidur, overthinking, dan ingin performa tinggi tanpa burnout.",
-    signature: "Hipnoterapis Klinis · Totok Saraf · Solo AI Agent Dev · Trainer",
+    signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
     voiceNotes: "",
   };
 }
