@@ -11,6 +11,8 @@ import { stripEmoji, truncate } from "@/lib/utils";
  * 4. Colors use hex, rgba, and linear-gradient/radial-gradient on backgroundImage.
  */
 
+export type BackgroundCategory = "HERBAL_ORGANIC" | "SOMATIC_SPINE" | "ZEN_CLINIC" | "NEURO_MIND";
+
 export interface SlideRenderInput {
   headline: string;
   body: string;
@@ -21,6 +23,7 @@ export interface SlideRenderInput {
   signature?: string;
   technique?: string | null;
   keyElement?: string | null;
+  backgroundCategory?: BackgroundCategory;
 }
 
 interface Segment {
@@ -73,6 +76,343 @@ function headlineSize(text: string, base: number): number {
   if (len <= 65) return Math.round(base * 0.76);
   if (len <= 90) return Math.round(base * 0.65);
   return Math.round(base * 0.58);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SATORI VISUAL ENGINE: DYNAMIC CURATED BACKGROUNDS & DARK GRADIENT OVERLAY
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 1. HERBAL_ORGANIC Background (Visual Tanaman Herbal & Seduhan Estetik)
+ * Renders high-resolution botanical silhouettes, therapeutic leaf foliage, and warm steam spirals.
+ */
+function HerbalOrganicArt() {
+  return (
+    <svg width={SLIDE_WIDTH} height={SLIDE_HEIGHT} viewBox="0 0 1080 1920" fill="none" style={{ position: "absolute", top: 0, left: 0 }}>
+      <defs>
+        <radialGradient id="herbalGlow1" cx="30%" cy="20%" r="50%">
+          <stop offset="0%" stopColor="#10B981" stopOpacity="0.28" />
+          <stop offset="70%" stopColor="#047857" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#047857" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="herbalGlow2" cx="80%" cy="75%" r="45%">
+          <stop offset="0%" stopColor="#34D399" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#064E3B" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="leafGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#34D399" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#065F46" stopOpacity="0.08" />
+        </linearGradient>
+        <linearGradient id="steamGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0" />
+          <stop offset="50%" stopColor="#6EE7B7" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#6EE7B7" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Atmospheric Ambient Glows */}
+      <rect width="1080" height="1920" fill="url(#herbalGlow1)" />
+      <rect width="1080" height="1920" fill="url(#herbalGlow2)" />
+
+      {/* Elegant Curving Herbal Botanical Branches (Top Right) */}
+      <path
+        d="M1120 180 C920 220, 840 380, 860 560 C880 720, 780 840, 680 920 C580 1000, 490 1150, 520 1320"
+        stroke="url(#leafGrad1)"
+        strokeWidth="4"
+        strokeDasharray="12 8"
+        fill="none"
+      />
+      {/* Floating Botanical Leaf Silhouettes */}
+      <path d="M860 380 C820 320, 750 340, 760 400 C770 460, 840 440, 860 380 Z" fill="url(#leafGrad1)" />
+      <path d="M910 490 C960 440, 1020 480, 990 530 C960 580, 900 550, 910 490 Z" fill="url(#leafGrad1)" />
+      <path d="M780 700 C720 660, 680 720, 710 770 C740 820, 800 760, 780 700 Z" fill="url(#leafGrad1)" />
+      <path d="M700 860 C640 820, 600 880, 630 930 C660 980, 720 920, 700 860 Z" fill="url(#leafGrad1)" />
+      <path d="M540 1180 C480 1140, 440 1200, 470 1250 C500 1300, 560 1240, 540 1180 Z" fill="url(#leafGrad1)" />
+
+      {/* Gentle Rising Warm Tea Steam Waves (Center Bottom) */}
+      <path
+        d="M260 1850 C290 1700, 240 1580, 270 1440 C300 1300, 260 1180, 290 1040"
+        stroke="url(#steamGrad)"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M320 1880 C360 1720, 310 1600, 350 1460 C390 1320, 340 1200, 380 1060"
+        stroke="url(#steamGrad)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Lower Left Organic Foliage Motif */}
+      <path
+        d="M-50 1750 C120 1680, 240 1740, 320 1880"
+        stroke="url(#leafGrad1)"
+        strokeWidth="3.5"
+        fill="none"
+      />
+      <path d="M120 1680 C160 1620, 230 1640, 210 1710 C190 1770, 130 1740, 120 1680 Z" fill="url(#leafGrad1)" />
+      <path d="M220 1730 C270 1680, 330 1710, 310 1770 C290 1830, 230 1790, 220 1730 Z" fill="url(#leafGrad1)" />
+
+      {/* Floating Micro Spore Accents */}
+      <circle cx="640" cy="480" r="4" fill="#34D399" fillOpacity="0.4" />
+      <circle cx="780" cy="590" r="5" fill="#34D399" fillOpacity="0.3" />
+      <circle cx="480" cy="940" r="3.5" fill="#6EE7B7" fillOpacity="0.35" />
+      <circle cx="360" cy="1380" r="4.5" fill="#6EE7B7" fillOpacity="0.3" />
+      <circle cx="820" cy="1420" r="5" fill="#34D399" fillOpacity="0.25" />
+    </svg>
+  );
+}
+
+/**
+ * 2. SOMATIC_SPINE Background (Visual Anatomi Tulang Belakang & Meridian Minimalis)
+ * Renders vertebral segment column, cervical trapezius nerves, and luminous acupoints.
+ */
+function SomaticSpineArt() {
+  return (
+    <svg width={SLIDE_WIDTH} height={SLIDE_HEIGHT} viewBox="0 0 1080 1920" fill="none" style={{ position: "absolute", top: 0, left: 0 }}>
+      <defs>
+        <radialGradient id="spineGlow1" cx="50%" cy="35%" r="48%">
+          <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.22" />
+          <stop offset="70%" stopColor="#0369A1" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#0369A1" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="nervePathGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.4" />
+          <stop offset="50%" stopColor="#0284C7" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#0369A1" stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill="url(#spineGlow1)" />
+
+      {/* Central Spinal Column Axis (Governing Vessel Meridian) */}
+      <line x1="540" y1="120" x2="540" y2="1820" stroke="url(#nervePathGrad)" strokeWidth="3" strokeDasharray="14 10" />
+
+      {/* Bilateral Bladder Meridian Lines */}
+      <line x1="470" y1="240" x2="470" y2="1760" stroke="#0284C7" strokeWidth="1.5" strokeOpacity="0.2" strokeDasharray="8 8" />
+      <line x1="610" y1="240" x2="610" y2="1760" stroke="#0284C7" strokeWidth="1.5" strokeOpacity="0.2" strokeDasharray="8 8" />
+
+      {/* Cervical Vertebrae Curvature & Acupressure Nodes (C1 - C7) */}
+      {[220, 290, 360, 430, 500, 570, 640].map((y, idx) => (
+        <g key={`cervical-${idx}`}>
+          {/* Vertebral Body Contour */}
+          <rect
+            x={510}
+            y={y - 14}
+            width="60"
+            height="28"
+            rx="8"
+            stroke="#38BDF8"
+            strokeWidth="1.8"
+            strokeOpacity="0.35"
+            fill="rgba(14, 165, 233, 0.06)"
+          />
+          {/* Bilateral Transverse Process Wings */}
+          <path
+            d={`M510 ${y} C460 ${y - 8}, 420 ${y + 6}, 390 ${y + 16}`}
+            stroke="#38BDF8"
+            strokeWidth="1.5"
+            strokeOpacity="0.28"
+            fill="none"
+          />
+          <path
+            d={`M570 ${y} C620 ${y - 8}, 660 ${y + 6}, 690 ${y + 16}`}
+            stroke="#38BDF8"
+            strokeWidth="1.5"
+            strokeOpacity="0.28"
+            fill="none"
+          />
+        </g>
+      ))}
+
+      {/* Thoracic Vertebral Contours (T1 - T6) */}
+      {[730, 820, 910, 1000, 1090, 1180].map((y, idx) => (
+        <g key={`thoracic-${idx}`}>
+          <rect
+            x={502}
+            y={y - 18}
+            width="76"
+            height="36"
+            rx="10"
+            stroke="#0284C7"
+            strokeWidth="1.8"
+            strokeOpacity="0.3"
+            fill="rgba(2, 132, 199, 0.05)"
+          />
+          {/* Intercostal Rib Nerve Rays */}
+          <path d={`M502 ${y} C430 ${y + 10}, 340 ${y + 35}, 260 ${y + 60}`} stroke="#0284C7" strokeWidth="1.5" strokeOpacity="0.18" fill="none" />
+          <path d={`M578 ${y} C650 ${y + 10}, 740 ${y + 35}, 820 ${y + 60}`} stroke="#0284C7" strokeWidth="1.5" strokeOpacity="0.18" fill="none" />
+        </g>
+      ))}
+
+      {/* Highlighted GB-20 Acupoint Meridian Glows (Suboccipital Base) */}
+      <circle cx="390" cy="236" r="14" fill="rgba(56, 189, 248, 0.2)" />
+      <circle cx="390" cy="236" r="6" fill="#38BDF8" fillOpacity="0.8" />
+      <circle cx="690" cy="236" r="14" fill="rgba(56, 189, 248, 0.2)" />
+      <circle cx="690" cy="236" r="6" fill="#38BDF8" fillOpacity="0.8" />
+
+      {/* GV-14 Da Zhui Master Point (Base of C7 Cervical Spine) */}
+      <circle cx="540" cy="640" r="18" fill="rgba(56, 189, 248, 0.22)" />
+      <circle cx="540" cy="640" r="7" fill="#38BDF8" fillOpacity="0.9" />
+    </svg>
+  );
+}
+
+/**
+ * 3. ZEN_CLINIC Background (Suasana Ruang Klinik Relaksasi Hangat Bernuansa Kayu)
+ * Renders architectural timber louvers, warm clinic ambient lantern spheres, and calm textures.
+ */
+function ZenClinicArt() {
+  return (
+    <svg width={SLIDE_WIDTH} height={SLIDE_HEIGHT} viewBox="0 0 1080 1920" fill="none" style={{ position: "absolute", top: 0, left: 0 }}>
+      <defs>
+        <radialGradient id="lanternGlow" cx="75%" cy="30%" r="55%">
+          <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.28" />
+          <stop offset="60%" stopColor="#D97706" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#78350F" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="warmHearth" cx="20%" cy="80%" r="50%">
+          <stop offset="0%" stopColor="#B45309" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#451A03" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill="url(#lanternGlow)" />
+      <rect width="1080" height="1920" fill="url(#warmHearth)" />
+
+      {/* Vertical Japanese Timber Louver Slats (Kumiko Aesthetic) */}
+      {[60, 120, 180, 240, 300, 780, 840, 900, 960, 1020].map((x, idx) => (
+        <rect
+          key={`louver-${idx}`}
+          x={x}
+          y={0}
+          width={18}
+          height={1920}
+          fill="rgba(180, 83, 9, 0.08)"
+          stroke="rgba(245, 158, 11, 0.12)"
+          strokeWidth="1"
+        />
+      ))}
+
+      {/* Elegant Horizontal Architectural Timber Ties */}
+      <line x1="0" y1="280" x2="1080" y2="280" stroke="rgba(245, 158, 11, 0.18)" strokeWidth="3" />
+      <line x1="0" y1="880" x2="1080" y2="880" stroke="rgba(245, 158, 11, 0.12)" strokeWidth="2" strokeDasharray="16 12" />
+      <line x1="0" y1="1540" x2="1080" y2="1540" stroke="rgba(245, 158, 11, 0.18)" strokeWidth="3" />
+
+      {/* Floating Bamboo Flora Silhouette at Left Edge */}
+      <path
+        d="M-20 450 C80 430, 140 480, 200 540 C140 560, 60 520, -20 450 Z"
+        fill="rgba(245, 158, 11, 0.14)"
+      />
+      <path
+        d="M-10 620 C110 590, 190 650, 250 720 C180 740, 90 700, -10 620 Z"
+        fill="rgba(245, 158, 11, 0.12)"
+      />
+      <path
+        d="M-30 800 C90 770, 160 830, 220 900 C150 920, 70 880, -30 800 Z"
+        fill="rgba(245, 158, 11, 0.10)"
+      />
+
+      {/* Soft Luminous Clinic Paper Lantern Outline (Top Right) */}
+      <ellipse cx="860" cy="380" rx="90" ry="120" stroke="rgba(245, 158, 11, 0.35)" strokeWidth="2.5" fill="rgba(245, 158, 11, 0.04)" />
+      <line x1="860" y1="260" x2="860" y2="180" stroke="rgba(245, 158, 11, 0.35)" strokeWidth="2" />
+      <circle cx="860" cy="380" r="16" fill="#F59E0B" fillOpacity="0.45" />
+    </svg>
+  );
+}
+
+/**
+ * 4. NEURO_MIND Background (Visual Konsep Sinapsis Saraf & Ketenangan Pikiran)
+ * Renders interconnected neural network synapses, axon dendrites, and theta wave ripples.
+ */
+function NeuroMindArt() {
+  return (
+    <svg width={SLIDE_WIDTH} height={SLIDE_HEIGHT} viewBox="0 0 1080 1920" fill="none" style={{ position: "absolute", top: 0, left: 0 }}>
+      <defs>
+        <radialGradient id="neuroCoreGlow" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.25" />
+          <stop offset="60%" stopColor="#8B5CF6" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#09090B" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="synapseLine" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#A855F7" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill="url(#neuroCoreGlow)" />
+
+      {/* Concentric Theta Mental Stillness Wave Ripples */}
+      <circle cx="540" cy="680" r="220" stroke="rgba(245, 158, 11, 0.16)" strokeWidth="2" strokeDasharray="12 8" />
+      <circle cx="540" cy="680" r="380" stroke="rgba(245, 158, 11, 0.12)" strokeWidth="1.5" strokeDasharray="16 12" />
+      <circle cx="540" cy="680" r="540" stroke="rgba(168, 85, 247, 0.10)" strokeWidth="1.5" strokeDasharray="20 16" />
+      <circle cx="540" cy="680" r="700" stroke="rgba(168, 85, 247, 0.08)" strokeWidth="1" strokeDasharray="24 20" />
+
+      {/* Interconnecting Synaptic Axon Network */}
+      <path d="M540 680 L380 480 L220 540 L160 380" stroke="url(#synapseLine)" strokeWidth="2" fill="none" />
+      <path d="M540 680 L700 480 L860 540 L920 380" stroke="url(#synapseLine)" strokeWidth="2" fill="none" />
+      <path d="M540 680 L420 900 L280 980 L180 1140" stroke="url(#synapseLine)" strokeWidth="2" fill="none" />
+      <path d="M540 680 L660 900 L800 980 L900 1140" stroke="url(#synapseLine)" strokeWidth="2" fill="none" />
+      <path d="M380 480 L540 340 L700 480" stroke="url(#synapseLine)" strokeWidth="1.5" strokeDasharray="8 6" fill="none" />
+      <path d="M420 900 L540 1020 L660 900" stroke="url(#synapseLine)" strokeWidth="1.5" strokeDasharray="8 6" fill="none" />
+
+      {/* Radiant Synaptic Nodes */}
+      <circle cx="540" cy="680" r="14" fill="#F59E0B" fillOpacity="0.85" />
+      <circle cx="540" cy="680" r="28" fill="rgba(245, 158, 11, 0.25)" />
+      
+      <circle cx="380" cy="480" r="8" fill="#FBBF24" fillOpacity="0.75" />
+      <circle cx="700" cy="480" r="8" fill="#FBBF24" fillOpacity="0.75" />
+      <circle cx="220" cy="540" r="6" fill="#C084FC" fillOpacity="0.7" />
+      <circle cx="860" cy="540" r="6" fill="#C084FC" fillOpacity="0.7" />
+      <circle cx="540" cy="340" r="7" fill="#F59E0B" fillOpacity="0.7" />
+
+      <circle cx="420" cy="900" r="8" fill="#FBBF24" fillOpacity="0.75" />
+      <circle cx="660" cy="900" r="8" fill="#FBBF24" fillOpacity="0.75" />
+      <circle cx="280" cy="980" r="6" fill="#C084FC" fillOpacity="0.7" />
+      <circle cx="800" cy="980" r="6" fill="#C084FC" fillOpacity="0.7" />
+      <circle cx="540" cy="1020" r="7" fill="#F59E0B" fillOpacity="0.7" />
+    </svg>
+  );
+}
+
+/**
+ * Curated Visual Background Dispatcher
+ */
+function CuratedBackground({ category }: { category: BackgroundCategory }) {
+  switch (category) {
+    case "HERBAL_ORGANIC":
+      return <HerbalOrganicArt />;
+    case "SOMATIC_SPINE":
+      return <SomaticSpineArt />;
+    case "ZEN_CLINIC":
+      return <ZenClinicArt />;
+    case "NEURO_MIND":
+      return <NeuroMindArt />;
+    default:
+      return <HerbalOrganicArt />;
+  }
+}
+
+/**
+ * Dark Gradient Overlay — linear-gradient: rgba(10, 15, 13, 0.82)
+ * Ensures 100% text, badge, and card legibility without glare over backgrounds.
+ */
+function DarkGradientOverlay() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: SLIDE_WIDTH,
+        height: SLIDE_HEIGHT,
+        backgroundImage:
+          "linear-gradient(180deg, rgba(10, 15, 13, 0.82) 0%, rgba(10, 15, 13, 0.85) 45%, rgba(10, 15, 13, 0.90) 80%, rgba(6, 10, 8, 0.96) 100%)",
+      }}
+    />
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -538,6 +878,7 @@ function parseLeadMagnetContent(headline: string, body: string, cta?: string | n
 function ThumbStopperChecklist(input: SlideRenderInput): ReactElement {
   const act = ACTS[input.actType] ?? ACTS.ACT_1_HOOK;
   const { items, teaser } = parseChecklistContent(input.body, input.cta);
+  const bgCategory: BackgroundCategory = input.backgroundCategory || "HERBAL_ORGANIC";
 
   const bgGradient = "linear-gradient(180deg, #04140F 0%, #07231B 50%, #03120D 100%)";
   const emeraldAccent = "#34D399";
@@ -559,6 +900,12 @@ function ThumbStopperChecklist(input: SlideRenderInput): ReactElement {
         padding: "88px 84px 96px",
       }}
     >
+      {/* ── DYNAMIC CURATED BACKGROUND ── */}
+      <CuratedBackground category={bgCategory} />
+
+      {/* ── DARK GRADIENT OVERLAY (rgba(10, 15, 13, 0.82)) ── */}
+      <DarkGradientOverlay />
+
       {/* Ambient Radial Lighting Glow */}
       <div
         style={{
@@ -751,6 +1098,7 @@ function ThumbStopperChecklist(input: SlideRenderInput): ReactElement {
 function ThreeStepActionCards(input: SlideRenderInput): ReactElement {
   const act = ACTS[input.actType] ?? ACTS.ACT_2_SOMATIC;
   const steps = parseActionStepsContent(input.body);
+  const bgCategory: BackgroundCategory = input.backgroundCategory || "SOMATIC_SPINE";
 
   const bgGradient = "linear-gradient(180deg, #090E17 0%, #0F172A 55%, #0B1120 100%)";
   const iceBlue = "#38BDF8";
@@ -772,6 +1120,12 @@ function ThreeStepActionCards(input: SlideRenderInput): ReactElement {
         padding: "88px 84px 96px",
       }}
     >
+      {/* ── DYNAMIC CURATED BACKGROUND ── */}
+      <CuratedBackground category={bgCategory} />
+
+      {/* ── DARK GRADIENT OVERLAY (rgba(10, 15, 13, 0.82)) ── */}
+      <DarkGradientOverlay />
+
       {/* Clinical Ambient Radial */}
       <div
         style={{
@@ -997,6 +1351,7 @@ function ThreeStepActionCards(input: SlideRenderInput): ReactElement {
 function SplitComparison(input: SlideRenderInput): ReactElement {
   const act = ACTS[input.actType] ?? ACTS.ACT_3_CLINICAL_AI;
   const comparison = parseComparisonContent(input.body);
+  const bgCategory: BackgroundCategory = input.backgroundCategory || "ZEN_CLINIC";
 
   const bgGradient = "linear-gradient(180deg, #110F0D 0%, #1A1613 50%, #110E0C 100%)";
   const warmOchre = "#F59E0B";
@@ -1019,6 +1374,12 @@ function SplitComparison(input: SlideRenderInput): ReactElement {
         padding: "88px 84px 96px",
       }}
     >
+      {/* ── DYNAMIC CURATED BACKGROUND ── */}
+      <CuratedBackground category={bgCategory} />
+
+      {/* ── DARK GRADIENT OVERLAY (rgba(10, 15, 13, 0.82)) ── */}
+      <DarkGradientOverlay />
+
       {/* Atmospheric Warm Ochre Glow */}
       <div
         style={{
@@ -1291,6 +1652,7 @@ function SplitComparison(input: SlideRenderInput): ReactElement {
 function LeadMagnetMockupCard(input: SlideRenderInput): ReactElement {
   const act = ACTS[input.actType] ?? ACTS.ACT_4_ANCHOR;
   const leadMagnet = parseLeadMagnetContent(input.headline, input.body, input.cta);
+  const bgCategory: BackgroundCategory = input.backgroundCategory || "NEURO_MIND";
 
   const bgGradient = "linear-gradient(180deg, #09090B 0%, #0D0D12 50%, #050508 100%)";
   const goldPrimary = "#FBBF24";
@@ -1313,6 +1675,12 @@ function LeadMagnetMockupCard(input: SlideRenderInput): ReactElement {
         padding: "84px 80px 92px",
       }}
     >
+      {/* ── DYNAMIC CURATED BACKGROUND ── */}
+      <CuratedBackground category={bgCategory} />
+
+      {/* ── DARK GRADIENT OVERLAY (rgba(10, 15, 13, 0.82)) ── */}
+      <DarkGradientOverlay />
+
       {/* Luxury Gold Ambient Lighting */}
       <div
         style={{

@@ -14,25 +14,36 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 interface RotatingPillar {
-  domainKey: "DOMAIN_A_TOTOK_SARAF" | "DOMAIN_B_HIPNOTERAPI" | "DOMAIN_C_SOLUSI_AI" | "DOMAIN_RESET";
+  domainKey: string;
   category: string;
   pillar: string;
   focus: string;
   clinicalKnowledge: string;
+  herbalFormula: {
+    recipeName: string;
+    ingredients: string;
+    waterVolume: string;
+    brewMethod: string;
+    timing: string;
+  };
   curatedCase: {
     topic: string;
     clinicalComplaint: string;
     coreInsight: string;
+    socialProofCase: string;
     lead_magnet_protocol: LeadMagnetProtocol;
   };
 }
 
 /**
- * Rotasi Kategori Harian Dokter Pikiran Scout (WITA / Asia/Makassar):
- * - Senin & Kamis : Domain A — Totok Saraf & Stimulasi Titik Leher (GB-20) & Rem Alami Tubuh (Keyword: LEHER)
- * - Selasa & Jumat: Domain B — Hipnoterapi Klinis & Ketenangan Bawah Sadar Menjelang Tidur (Keyword: INSOMNIA)
- * - Rabu & Sabtu  : Domain C — Solusi AI & Mengurai Otak Nge-hang Kebanyakan Mikir (Keyword: FOKUS)
- * - Minggu        : Deep Rest — Melepaskan Beban Tubuh & Pikiran Sepekan (Keyword: RESET)
+ * Rotasi 7 Tema Mingguan Dokter Pikiran Scout (WITA / Asia/Makassar):
+ * - Senin : Metabolisme & Energi Harian (Keyword: ENERGI)
+ * - Selasa: Kesehatan Pencernaan, GERD & Gut Health (Keyword: LAMBUNG)
+ * - Rabu  : Postur Kerja, Tulang Belakang & Saraf Kejepit (Keyword: POSTUR)
+ * - Kamis : Kognitif, Fokus Otak & Mental Burnout (Keyword: FOKUS)
+ * - Jumat : Ritme Sirkadian, Kualitas Tidur & Insomnia (Keyword: INSOMNIA)
+ * - Sabtu : Studi Kasus Nyata Meja Terapi & Detoks Fungsional (Keyword: TERAPI)
+ * - Minggu: Mindset Bawah Sadar & Batasan Mental (Keyword: RESET)
  */
 function getPillarForDate(date: Date, tz: string): RotatingPillar {
   const formatter = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" });
@@ -40,166 +51,343 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
 
   switch (weekday) {
     case "monday":
-    case "thursday":
       return {
-        domainKey: "DOMAIN_A_TOTOK_SARAF",
-        category: "Totok Saraf & Rem Darurat Alami Tubuh",
-        pillar: "Pelepasan Otot Leher Kaku (Titik GB-20) & Hubungan Perut Begah dengan Pikiran Cemas",
+        domainKey: "SENIN_METABOLISME_ENERGI",
+        category: "Metabolisme & Energi Harian",
+        pillar: "Membangunkan Sistem Energi & Mengatasi Tubuh Lesu Bangun Tidur",
         focus:
-          "Meredakan otot leher belakang yang kaku tegang, mengatasi sakit kepala berat seperti diikat, mengaktifkan rem darurat alami tubuh (saraf vagus), dan menenangkan asam lambung/perut begah saat banyak pikiran.",
+          "Mengatasi kelelahan kronis saat bangun pagi, mengaktifkan metabolisme tanpa kafein berlebih, dan meredakan peradangan sendi/otot leher.",
         clinicalKnowledge:
-          "Saat stres dan dikejar beban kerjaan, otot leher belakang kita mengunci kencang dan rem darurat alami tubuh (saraf vagus) mati. Akibatnya, kepala terasa berat dan perut ikut begah. Menekan lembut cekungan di pangkal leher (titik GB-20) dan menghela napas panjang mengirim sinyal aman langsung ke tubuh, membuat nafas kembali enteng dan otot lemas seketika.",
+          "Rasa lemas dan berat saat bangun pagi seringkali bukan karena kurang tidur, melainkan mitokondria sel kekurangan oksigen akibat pernapasan dangkal dan penumpukan asam metabolik. Formulasi jahe merah hangat dan stimulasi meridian membangkitkan panas alami tubuh seketika.",
+        herbalFormula: {
+          recipeName: "Seduhan Hangat Jahe Merah & Lada Hitam (Metabolic Igniter)",
+          ingredients: "2 ruas jahe merah iris geprek + 3 butir lada hitam tumbuk kasar + 1 sdm madu murni",
+          waterVolume: "250ml air panas 80°C",
+          brewMethod: "Seduh air panas dalam cangkir tertutup selama 10 menit (jangan direbus mendidih agar minyak atsiri piperin & gingerol tidak menguap)",
+          timing: "Minum hangat di pagi hari sebelum sarapan untuk membakar energi dan melancarkan mikrosirkulasi",
+        },
         curatedCase: {
-          topic: "Otot Leher Kaku & Perut Begah: Rahasia Titik Leher GB-20 dan Rem Darurat Alami Tubuh",
+          topic: "Metabolisme & Energi Pagi: Rahasia Bangun Segar Tanpa Candu Kopi",
           clinicalComplaint:
-            "Klien datang dengan keluhan pundak seperti memikul beban berat, otot leher belakang kaku mengunci, dan perut sering begah atau kembung saat pekerjaan menumpuk. Tubuhnya terkunci di mode siaga sehingga pencernaan terganggu dan kepala terasa berat.",
+            "Klien pria 38 tahun mengeluh selalu lemas bangun pagi, pundak kaku seperti memikul batu, dan harus minum 3 cangkir kopi hanya untuk bisa berpikir jernih.",
           coreInsight:
-            "Tubuh kita tidak bisa membedakan antara kejaran deadline pekerjaan dengan bahaya sungguhan. Menekan titik GB-20 di cekungan leher belakang dan bernapas panjang langsung mengaktifkan rem darurat alami tubuh kita, memberi tahu tubuh bahwa segalanya aman.",
+            "Kopi hanya meminjam energi masa depan dengan memeras kelenjar adrenal. Stimulasi titik leher GB-20 dan seduhan jahe ber-piperin membakar energi endogen murni dari dalam sel tubuh.",
+          socialProofCase:
+            "Gejala Pasien: Bangun tidur selalu lesu kronis 8 bulan dan pundak kaku. -> Temuan di Meja Terapi: Saraf servikal C5-C6 tertekan dan sirkulasi darah lambat akibat napas dangkal. -> Hasil Pemulihan: Setelah totok dekompresi meridian dan seduhan jahe-lada hitam, leher terasa ringan kapas dan energi pulih dalam 15 menit.",
           lead_magnet_protocol: {
-            keyword: "LEHER",
-            title: "Panduan Saku Reset Somatik & Saraf Vagus 3 Menit",
-            target_issue: "Otot leher kaku, kepala berat akibat layar, dan perut begah saat cemas",
+            keyword: "ENERGI",
+            title: "Panduan Saku Aktivasi Metabolisme & Energi Alami 3 Menit",
+            target_issue: "Tubuh lemas bangun pagi, leher kaku, dan ketergantungan kafein",
             steps: [
               {
                 step: 1,
-                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
-                action:
-                  "Letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil memejamkan mata dan bernapas santai.",
+                title: "Titik GB-20 Leher Belakang: Stimulasi Mikrosirkulasi Otak",
+                action: "Tekan lembut cekungan bawah tengkorak leher belakang selama 60 detik sambil bernapas diafragma teratur.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengendurkan otot leher belakang yang kaku tegang, melancarkan aliran darah ke otak, dan mematikan alarm siaga tubuh.",
+                mechanism: "Membuka arteri vertebralis sehingga suplai oksigen dan glukosa ke korteks otak meningkat seketika.",
               },
               {
                 step: 2,
-                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
-                action:
-                  "Tarik napas lembut lewat hidung 4 detik, tahan santai 7 detik, lalu hembuskan perlahan lewat mulut seperti meniup lilin selama 8 detik. Ulangi 4 hingga 5 siklus.",
+                title: "Formulasi Herbal Klinis: Seduhan Jahe Merah & Lada Hitam",
+                action: "Seduh 2 iris jahe merah + seujung sendok lada hitam dengan 250ml air panas 80°C tertutup 10 menit. Minum selagi hangat.",
                 duration: "60 detik",
-                mechanism:
-                  "Hembusan napas yang panjang merangsang rem alami tubuh untuk menurunkan denyut jantung dan memicu rasa rileks seketika.",
+                mechanism: "Kombinasi gingerol dan piperin meningkatkan bioavailabilitas antioksidan dan memacu termogenesis sel.",
               },
               {
                 step: 3,
-                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
-                action:
-                  "Letakkan telapak tangan kanan di tengah dada. Rasakan kehangatan napasmu, turunkan bahu santai, dan katakan dalam hati: 'Hari ini sudah selesai, tubuhku aman untuk beristirahat.'",
+                title: "Sugesti Afirmasi Pagi: Pemrograman Vitalitas Bawah Sadar",
+                action: "Tegakkan tulang belakang, sentuh ulu hati, dan afirmasikan: 'Tubuhku penuh energi alami, setiap selku bangun dengan segar.'",
                 duration: "60 detik",
-                mechanism:
-                  "Menanamkan rasa aman di pikiran bawah sadar dan memindahkan gelombang otak ke status tenang untuk istirahat optimal.",
+                mechanism: "Menyelaraskan reticular activating system (RAS) otak menuju kesiagaan mental yang tenang dan fokus.",
               },
             ],
             pdf_summary:
-              "Protokol 3 langkah mandiri untuk meredakan ketegangan leher, mengaktifkan rem darurat alami tubuh, dan menenangkan perut begah dalam 3 menit.",
+              "Protokol 3 langkah aktivasi energi biologis pagi hari: akupresur leher, formula seduhan jahe-lada hitam, dan priming fokus bawah sadar.",
           },
         },
       };
 
     case "tuesday":
-    case "friday":
       return {
-        domainKey: "DOMAIN_B_HIPNOTERAPI",
-        category: "Hipnoterapi Klinis & Ketenangan Bawah Sadar",
-        pillar: "Melepaskan Beban Pikiran Menjelang Tidur & Pemrograman Ulang Ketenangan",
+        domainKey: "SELASA_PENCERNAAN_GERD",
+        category: "Kesehatan Pencernaan, GERD & Gut Health",
+        pillar: "Saraf Vagus Pencernaan & Penyelarasan Katup Lambung Alami",
         focus:
-          "Memutus kebiasaan overthinking malam hari, meredakan dada berdebar cemas saat terbangun malam, dan menanamkan sugesti ketenangan sebelum tidur.",
+          "Meredakan asam lambung naik (GERD), perut kembung begah saat stres pekerjaan, dan memulihkan komunikasi sehat saraf usus-otak (gut-brain axis).",
         clinicalKnowledge:
-          "Pikiran sadar kita sering kali lelah mendebat kecemasan di kepala. Saat tubuh rileks dan mata mulai mengantuk, sensor kritis pikiran kita melunak. Di momen transisi inilah sugesti ketenangan bisa masuk langsung ke pikiran bawah sadar tanpa bantahan.",
+          "Katup kerongkongan bawah (LES) dan asam lambung dikendalikan langsung oleh saraf vagus. Saat otak cemas dan dikejar target, darah dialihkan dari organ cerna, memicu kejang lambung dan asam naik ke dada.",
+        herbalFormula: {
+          recipeName: "Seduhan Rimpang Kunyit & Temulawak Pelindung Mukosa",
+          ingredients: "1 ruas kunyit segar parut + 1 ruas temulawak geprek + sejumput garam laut murni",
+          waterVolume: "200ml air panas 80°C",
+          brewMethod: "Seduh air panas tertutup selama 8 menit lalu saring (jangan direbus agar zat kurkuminoid pelindung lambung tetap aktif utuh)",
+          timing: "Minum hangat 30 menit sebelum makan siang atau saat perut mulai terasa perih begah",
+        },
         curatedCase: {
-          topic: "Melepaskan Beban Pikiran Jam 11 Malam & Ketenangan Menjelang Tidur",
+          topic: "Asam Lambung & Cemas: Memutus Lingkaran Setan GERD & Saraf Vagus",
           clinicalComplaint:
-            "Klien selalu terjaga jam 11 malam dihantui skenario terburuk proyek esok hari dan terbangun dengan dada berdebar cemas jam 3 pagi. Pikiran sadarnya tahu semuanya aman, tetapi pikiran bawah sadarnya masih menjalankan instruksi lama: 'jangan rileks dulu, nanti ada masalah'.",
+            "Klien wanita 32 tahun mengeluh dada terasa terbakar, ulu hati tertusuk, dan tenggorokan mengganjal setiap kali memikirkan deadline kantor.",
           coreInsight:
-            "Mendebat pikiran cemas saat mau tidur hanya bikin semakin terjaga. Kuncinya adalah menenangkan fisik terlebih dahulu lewat titik leher dan napas lambat, lalu memberi izin pada pikiran bawah sadar bahwa hari ini sudah tuntas.",
+            "Lambung adalah cermin pikiran emosional. Menekan titik akupresur ulu hati CV-12 dan merangsang rem alami tubuh saraf vagus langsung menenangkan asam lambung.",
+          socialProofCase:
+            "Gejala Pasien: Asam lambung naik menahun dan dada terasa sesak panas. -> Temuan di Meja Terapi: Spasme diafragma akibat menahan cemas bawah sadar yang mengunci katup lambung. -> Hasil Pemulihan: Totok meridian vagus dan seduhan kunyit-temulawak membuat dada plong seketika tanpa perih.",
           lead_magnet_protocol: {
-            keyword: "INSOMNIA",
-            title: "Panduan Saku Reset Somatik & Ketenangan Tidur 3 Menit",
-            target_issue: "Overthinking malam hari, susah tidur, dan rasa cemas berlebih",
+            keyword: "LAMBUNG",
+            title: "Panduan Saku Regulasi Saraf Vagus & Katup Lambung 3 Menit",
+            target_issue: "GERD, asam lambung naik, perut begah, dan dada terasa sesak",
             steps: [
               {
                 step: 1,
-                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
-                action:
-                  "Rebahkan kepala, letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil bernapas perlahan.",
+                title: "Titik CV-12 Ulu Hati & GB-20: Pelepasan Spasme Lambung",
+                action: "Pijat lembut titik 4 jari di atas pusar (ulu hati) melingkar searah jarum jam selama 60 detik dibarengi napas perut.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengendurkan otot leher belakang yang kaku tegang dan menghentikan loop sinyal bahaya ke otak.",
+                mechanism: "Menstimulasi pleksus celiacus dan meredakan ketegangan sfingter esofagus.",
               },
               {
                 step: 2,
-                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
-                action:
-                  "Tarik napas lembut lewat hidung 4 detik, tahan santai 7 detik, lalu hembuskan perlahan lewat mulut selama 8 detik. Ulangi 4 kali.",
+                title: "Formulasi Herbal Klinis: Seduhan Kunyit Temulawak 200ml",
+                action: "Seduh parutan kunyit dan temulawak dengan 200ml air panas 80°C tertutup 8 menit. Minum hangat perlahan.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengaktifkan rem darurat alami tubuh untuk menurunkan ritme detak jantung dan menenangkan pikiran yang gelisah.",
+                mechanism: "Kurkumin dan kurkuminoid meredakan peradangan mukosa lambung dan memperkuat lapisan lendir lambung.",
               },
               {
                 step: 3,
-                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
-                action:
-                  "Letakkan telapak tangan kanan di dada. Saat kelopak mata mulai memberat, ucapkan lembut dalam hati: 'Hari ini sudah selesai sempurna. Tubuhku aman beristirahat, pikiranku pulih malam ini.'",
+                title: "Napas Diafragma Dekompresi: Mengunci Sinyal Rileks",
+                action: "Tarik napas perut 4 detik, tahan 7 detik, hembuskan 8 detik lewat mulut santai. Ulangi 4 kali.",
                 duration: "60 detik",
-                mechanism:
-                  "Menanamkan rasa aman di pikiran bawah sadar tepat sebelum terlelap agar tidur nyenyak berkualitas.",
+                mechanism: "Tekanan ritmis diafragma mengembalikan posisi katup lambung dan mengaktifkan cabang parasimpatis.",
               },
             ],
             pdf_summary:
-              "Panduan praktis 3 langkah untuk menuntaskan overthinking malam hari dan memprogram ulang ketenangan pikiran bawah sadar sebelum tidur.",
+              "Protokol mandiri 3 menit pemulihan GERD dan perut begah: akupresur ulu hati, seduhan kunyit temulawak tertutup, dan napas diafragma saraf vagus.",
           },
         },
       };
 
     case "wednesday":
-    case "saturday":
       return {
-        domainKey: "DOMAIN_C_SOLUSI_AI",
-        category: "Solusi AI & Mengurai Otak Nge-hang",
-        pillar: "Bongkar Beban Pikiran Kebanyakan Mikir & Reset Instruksi Lama",
+        domainKey: "RABU_POSTUR_TULANG_BELAKANG",
+        category: "Postur Kerja, Tulang Belakang & Saraf Kejepit",
+        pillar: "Dekompresi Servikal Leher, Belikat & Penyelarasan Tulang Belakang",
         focus:
-          "Bagaimana automasi dan teknologi AI mengosongkan beban pikiran yang menumpuk, analogi otak manusia seperti sistem komputer yang butuh restart, dan cara cerdas mengembalikan fokus tajam.",
+          "Membebaskan leher kaku akibat posisi kepala maju ke layar (text neck), nyeri belikat menjalar ke tangan, dan saraf kejepit punggung bawah.",
         clinicalKnowledge:
-          "Kapasitas memori kerja otak kita sangat terbatas. Ketika kita membuka 30 tab di laptop dan 50 urusan di kepala sekaligus, otak mengalami gejala 'nge-hang'. Memindahkan isi kepala ke catatan luar dan merestart instruksi lama adalah cara biologis mengembalikan energi mental.",
+          "Setiap kemiringan kepala 15 derajat ke depan menambah beban gravitasi setara 12 kg pada tulang servikal. Bantalan saraf tertekan dan otot trapezius mengeras seperti kawat baja.",
+        herbalFormula: {
+          recipeName: "Seduhan Serai Wangi & Kayu Manis Pelega Spasme Otot",
+          ingredients: "2 batang serai wangi memarkan + 1 ruas jahe emprit geprek + 1 batang kecil kayu manis",
+          waterVolume: "250ml air panas 80°C",
+          brewMethod: "Seduh dalam wadah tertutup selama 10 menit (uap atsiri serai yang kaya sitronelal merilekskan otot lurik)",
+          timing: "Minum hangat di sore hari setelah selesai duduk berjam-jam di depan komputer",
+        },
         curatedCase: {
-          topic: "Otak Nge-hang Kebanyakan Mikir: Saat Kapasitas Pikiran Perlu Di-Reset",
+          topic: "Leher Kaku & Belikat Terjepit: Menyelaraskan Postur Layar Komputer",
           clinicalComplaint:
-            "Klien merasa otaknya seperti komputer nge-hang setelah membuka puluhan tab kerjaan dan pesan chat tanpa henti. Dia merasa bersalah dan mengira dirinya lambat, padahal otaknya hanya kelebihan beban informasi yang belum dibongkar.",
+            "Klien programmer 29 tahun merasakan nyeri menusuk di belikat kanan menjalar ke jemari tangan setelah bekerja marathon 10 jam di depan laptop.",
           coreInsight:
-            "Pikiran kita seperti sistem yang menjalankan instruksi lama. Saat beban kerjaan berlebih, kita perlu me-reset instruksinya, memindahkan catatan ke luar kepala, dan mengistirahatkan saraf leher agar kepala kembali enteng.",
+            "Saraf terjepit bukan hanya masalah tulang, melainkan otot penyangga yang mengalami iskemia (kurang aliran darah). Dekompresi titik leher mengalirkan kembali darah segar.",
+          socialProofCase:
+            "Gejala Pasien: Nyeri belikat tajam dan kesemutan di jari tangan saat mengetik. -> Temuan di Meja Terapi: Spasme hebat muskulus trapezius dan kompresi servikal C6-C7. -> Hasil Pemulihan: Totok dekompresi tulang belakang dan peregangan meridian membuat kesemutan lenyap seketika.",
           lead_magnet_protocol: {
-            keyword: "FOKUS",
-            title: "Panduan Saku Reset Somatik & Kognitif 3 Menit",
-            target_issue: "Otak nge-hang, kepala berat kebanyakan mikir, dan kelelahan mental",
+            keyword: "POSTUR",
+            title: "Panduan Saku Dekompresi Servikal & Saraf Belikat 3 Menit",
+            target_issue: "Leher kaku menatap layar, pundak membulat, dan nyeri belikat",
             steps: [
               {
                 step: 1,
-                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
-                action:
-                  "Duduk tegak, letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan dorongan lembut ke atas selama 60 detik sambil memejamkan mata.",
+                title: "Titik GB-20 & Chin Tuck: Traksi Mandiri Tulang Leher",
+                action: "Tarik dagu lurus ke belakang (chin tuck) sambil kedua jempol menekan lembut cekungan tengkorak leher belakang 60 detik.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengendurkan otot leher belakang yang kaku tegang akibat menatap layar dan melancarkan aliran darah ke otak.",
+                mechanism: "Membuka foramen intervertebralis servikal dan meredakan jepitan akar saraf leher.",
               },
               {
                 step: 2,
-                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
-                action:
-                  "Tarik napas lembut lewat hidung 4 detik, tahan 7 detik, lalu hembuskan perlahan lewat mulut selama 8 detik. Ulangi 4 kali.",
+                title: "Formulasi Herbal: Seduhan Serai & Kayu Manis 250ml",
+                action: "Nikmati seduhan serai dan kayu manis hangat untuk membantu relaksasi spasme jaringan myofascial.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengaktifkan rem darurat alami tubuh untuk menghentikan kebiasaan panik multitasking dan memulihkan fokus jernih.",
+                mechanism: "Senyawa sinamaldehid dan sitronelal bekerja sebagai relaksan otot alami dan anti-radang perifer.",
               },
               {
                 step: 3,
-                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
-                action:
-                  "Sentuh telapak tangan di dada tengah, ambil jeda hening, dan katakan dalam hati: 'Saya melepaskan semua tab yang terbuka di kepala. Satu hal pada satu waktu.'",
+                title: "Retraksi Belikat & Reset Pundak: Membuka Rongga Dada",
+                action: "Putar kedua bahu ke belakang dan kebawah, tahan 5 detik, hembuskan napas panjang. Ulangi 6 kali.",
                 duration: "60 detik",
-                mechanism:
-                  "Menanamkan fokus mono-tasking di pikiran bawah sadar dan memulihkan kapasitas berpikir optimal.",
+                mechanism: "Mengaktifkan kembali otot romboid dan trapezius bawah yang melemah akibat duduk membungkuk.",
               },
             ],
             pdf_summary:
-              "Protokol ergonomi pikiran 3 langkah untuk mengosongkan beban kepala yang nge-hang dan memulihkan fokus tajam dalam 3 menit.",
+              "Protokol 3 langkah dekompresi leher dan belikat: traksi servikal mandiri, seduhan serai kayu manis, dan retraksi postur ergonomis.",
+          },
+        },
+      };
+
+    case "thursday":
+      return {
+        domainKey: "KAMIS_KOGNITIF_MENTAL_BURNOUT",
+        category: "Kognitif, Fokus Otak & Mental Burnout",
+        pillar: "Mengosongkan Beban Otak Nge-hang & Mengurai Cognitive Overflow",
+        focus:
+          "Mengatasi otak nge-hang kebanyakan mikir, kelelahan mental (mental burnout), sulit fokus, dan kepala berat seperti diikat kencang.",
+        clinicalKnowledge:
+          "Memori kerja manusia hanya sanggup menampung 4-7 informasi sekaligus. Saat puluhan tugas mengantre di kepala tanpa struktur, sirkuit prefrontal korteks mengalami panas berlebih (overheating).",
+        herbalFormula: {
+          recipeName: "Seduhan Daun Pegagan & Perasan Jeruk Nipis (Neuro-Clarity)",
+          ingredients: "1 sdt daun pegagan kering (Centella asiatica) atau rosemary + 1 sdt madu + perasan 1/2 jeruk nipis",
+          waterVolume: "200ml air panas 75°C",
+          brewMethod: "Seduh tertutup selama 7 menit lalu tambahkan perasan jeruk nipis dan madu saat sudah hangat kuku",
+          timing: "Minum di jam rawan kantuk / lelah otak (jam 14:00 - 15:30) untuk mengembalikan fokus tajam",
+        },
+        curatedCase: {
+          topic: "Otak Nge-hang Kebanyakan Mikir: Mengembalikan Fokus Tajam & Jernih",
+          clinicalComplaint:
+            "Klien profesional 42 tahun merasa otaknya seperti komputer hang, tidak sanggup mengambil keputusan, dan sering lupa seketika di tengah obrolan.",
+          coreInsight:
+            "Otak bukan wadah penyimpanan tak terbatas. Kita harus me-restart instruksi lama di pikiran bawah sadar dan mematikan tab pikiran yang tidak relevan.",
+          socialProofCase:
+            "Gejala Pasien: Otak nge-hang, konsentrasi buyar, dan kepala berat diikat. -> Temuan di Meja Terapi: Gelombang otak terkunci di frekuensi beta tinggi tanpa istirahat. -> Hasil Pemulihan: Totok titik hening dahi dan hipno-reset instruksi lama membuat kepala kosong plong seketika.",
+          lead_magnet_protocol: {
+            keyword: "FOKUS",
+            title: "Panduan Saku Reset Kognitif & Kejernihan Berpikir 3 Menit",
+            target_issue: "Otak nge-hang, mental burnout, sulit fokus, dan kepala berat",
+            steps: [
+              {
+                step: 1,
+                title: "Titik Yintang (Dahi Tengah) & Pelipis: Tombol Jeda Pikiran",
+                action: "Letakkan telunjuk di antara kedua alis (titik Yintang), putar lembut searah jarum jam sambil memejamkan mata 60 detik.",
+                duration: "60 detik",
+                mechanism: "Menurunkan aktivitas amigdala dan memindahkan fokus saraf pusat ke mode kejernihan meditatif.",
+              },
+              {
+                step: 2,
+                title: "Formulasi Herbal Klinis: Seduhan Daun Pegagan 200ml",
+                action: "Minum seduhan daun pegagan hangat untuk merangsang sintesis brain-derived neurotrophic factor (BDNF).",
+                duration: "60 detik",
+                mechanism: "Kandungan asiatikosida dan madekasosida memperlancar aliran darah kapiler serebral otak.",
+              },
+              {
+                step: 3,
+                title: "Sugesti Penutupan Tab Pikiran: Mengosongkan Memori Kerja",
+                action: "Katakan dalam hati: 'Semua urusan hari ini ada waktunya masing-masing. Kepalaku jernih, tenang, dan fokus pada satu hal.'",
+                duration: "60 detik",
+                mechanism: "Memprogram ulang pikiran bawah sadar untuk melepaskan kecemasan multitasking yang melelahkan.",
+              },
+            ],
+            pdf_summary:
+              "Protokol 3 langkah ergonomi kognitif: akupresur titik hening dahi, seduhan pegagan neuroprotektif, dan sugesti pengosongan tab pikiran.",
+          },
+        },
+      };
+
+    case "friday":
+      return {
+        domainKey: "JUMAT_RITME_SIRKADIAN_INSOMNIA",
+        category: "Ritme Sirkadian, Kualitas Tidur & Insomnia",
+        pillar: "Regulasi Gelombang Otak Menjelang Tidur & Pemulihan Insomnia Kronis",
+        focus:
+          "Memutus overthinking jam 11 malam, meredakan dada berdebar cemas saat terbangun dini hari, dan memicu tidur lelap gelombang delta alami.",
+        clinicalKnowledge:
+          "Pikiran sadar yang overthinking menghambat produksi melatonin di kelenjar pineal. Merangsang titik meridian penenang dan seduhan herbal GABA melunakkan sensor kritis otak.",
+        herbalFormula: {
+          recipeName: "Seduhan Bunga Telang & Sejumput Pala Murni (Deep Sleep Elixir)",
+          ingredients: "5 kuntum bunga telang biru kering + sejumput kecil bubuk biji pala murni (Myristica fragrans) + madu",
+          waterVolume: "200ml air panas 80°C",
+          brewMethod: "Seduh bunga telang dan pala bubuk dalam air panas tertutup selama 7 menit hingga air berwarna biru tua safir",
+          timing: "Minum hangat 45-60 menit sebelum waktu tidur di ruangan berpencahayaan redup",
+        },
+        curatedCase: {
+          topic: "Insomnia & Overthinking Malam: Cara Memprogram Ketenangan Sebelum Tidur",
+          clinicalComplaint:
+            "Klien wanita 45 tahun mengalami insomnia kronis 2 tahun, hanya bisa tidur 2 jam per malam dan selalu terbangun dengan dada berdebar jam 3 pagi.",
+          coreInsight:
+            "Mendebat kecemasan di atas kasur justru bikin makin terjaga. Fisik harus dibuat rileks terlebih dahulu lewat stimulasi saraf vagus dan induksi gelombang theta.",
+          socialProofCase:
+            "Gejala Pasien: Insomnia kronis 2 tahun dan ketergantungan obat penenang. -> Temuan di Meja Terapi: Sensor kritis pikiran menolak tidur karena trauma alarm masa lalu. -> Hasil Pemulihan: Totok meridian vagus dan hipnoterapi theta membuat beliau tertidur lelap pulas dalam 10 menit.",
+          lead_magnet_protocol: {
+            keyword: "INSOMNIA",
+            title: "Panduan Saku Reset Somatik & Ketenangan Tidur 3 Menit",
+            target_issue: "Susah tidur, overthinking malam hari, dan dada berdebar cemas",
+            steps: [
+              {
+                step: 1,
+                title: "Titik Shenmen (Pergelangan Tangan) & GB-20 Leher",
+                action: "Tekan lembut titik di lipatan pergelangan tangan bagian dalam sejajar kelingking (Shenmen) selama 60 detik bergantian.",
+                duration: "60 detik",
+                mechanism: "Merangsang jalur meridian jantung untuk meredakan palpitasi dada dan mendinginkan sistem saraf.",
+              },
+              {
+                step: 2,
+                title: "Formulasi Herbal: Seduhan Bunga Telang & Pala Bubuk 200ml",
+                action: "Minum seduhan bunga telang hangat beraroma pala untuk menstimulasi reseptor GABA alami.",
+                duration: "60 detik",
+                mechanism: "Miristisin pada pala dan antosianin bunga telang bekerja sinergis menidurkan sensor siaga otak.",
+              },
+              {
+                step: 3,
+                title: "Sugesti Gelombang Theta: Izin Tubuh untuk Terlelap",
+                action: "Letakkan telapak tangan di dada, pejamkan mata, katakan dalam hati: 'Hari ini sudah tuntas sempurna. Tubuhku aman beristirahat lelap.'",
+                duration: "60 detik",
+                mechanism: "Menanamkan perintah aman ke pikiran bawah sadar tepat saat transisi menuju fase tidur dalam.",
+              },
+            ],
+            pdf_summary:
+              "Protokol 3 langkah tidur lelap alami: stimulasi titik akupresur Shenmen, seduhan bunga telang pala penenang GABA, dan sugesti tidur theta.",
+          },
+        },
+      };
+
+    case "saturday":
+      return {
+        domainKey: "SABTU_KASUS_MEJA_TERAPI_DETOKS",
+        category: "Studi Kasus Meja Terapi & Detoks Fungsional",
+        pillar: "Pembersihan Ketegangan Fisik Menumpuk & Penyelarasan Meridian Tubuh",
+        focus:
+          "Membongkar timbunan ketegangan otot sepekan kerja, memperlancar drainase limfatik, dan detoksifikasi fungsional tubuh-pikiran terpadu.",
+        clinicalKnowledge:
+          "Asam laktat dan hormon kortisol yang terperangkap di fascia otot punggung selama sepekan memicu kekakuan menyeluruh. Meja terapi fungsional memadukan totok saraf fisik dengan pelepasan bawah sadar.",
+        herbalFormula: {
+          recipeName: "Seduhan Daun Salam, Jahe Merah & Ketumbar (Lymphatic Cleanse)",
+          ingredients: "3 lembar daun salam tua remas + 1 ruas jahe merah memarkan + 1/2 sdt biji ketumbar sangrai memarkan",
+          waterVolume: "300ml air panas 80°C",
+          brewMethod: "Seduh tertutup selama 10 menit lalu saring (aroma eugenol dan linalool membantu pembersihan metabolit asam)",
+          timing: "Minum sore hari di akhir pekan untuk mendukung detoksifikasi ginjal dan peredaran limfatik",
+        },
+        curatedCase: {
+          topic: "Meja Terapi Holistik: Membongkar Ketegangan Tubuh yang Mengunci Sepekan",
+          clinicalComplaint:
+            "Klien pengusaha 50 tahun datang dengan seluruh punggung keras membatu, sesak napas saat lelah, dan rasa pegal menahun yang tak kunjung hilang.",
+          coreInsight:
+            "Tubuh menyimpan memori emosi beban tanggung jawab. Ketika meridian totok dibuka dan pikiran bawah sadar diajak melepaskan, tubuh langsung lemas rileks.",
+          socialProofCase:
+            "Gejala Pasien: Punggung mengeras seperti papan dan napas pendek menahun. -> Temuan di Meja Terapi: Blokade meridian kandung kemih dan ketegangan fascia emosional. -> Hasil Pemulihan: Totok saraf meridian limfatik membuat otot punggung seketika lemas dan tekanan darah stabil normal.",
+          lead_magnet_protocol: {
+            keyword: "TERAPI",
+            title: "Panduan Saku Detoks Somatik & Drainase Meridian 3 Menit",
+            target_issue: "Punggung kaku menumpuk sepekan, pegal linu kronis, dan badan berat",
+            steps: [
+              {
+                step: 1,
+                title: "Titik Meridian Belikat & Pangkal Tengkorak: Rilis Fascia",
+                action: "Gunakan bola tenis atau jempol untuk menekan lembut titik antara tulang belikat dan tulang belakang 60 detik.",
+                duration: "60 detik",
+                mechanism: "Merilis trigger point myofascial yang mengunci aliran darah dan cairan limfatik punggung.",
+              },
+              {
+                step: 2,
+                title: "Formulasi Herbal: Seduhan Daun Salam & Ketumbar 300ml",
+                action: "Konsumsi seduhan daun salam dan ketumbar hangat untuk membantu eliminasi asam sisa metabolisme.",
+                duration: "60 detik",
+                mechanism: "Kandungan flavonoid dan minyak atsiri memperlancar pembuangan toksin melalui sistem ekskresi.",
+              },
+              {
+                step: 3,
+                title: "Sugesti Pelepasan Beban Tanggung Jawab: Reset Utuh",
+                action: "Hembuskan napas panjang lewat mulut, katakan dalam hati: 'Saya melepaskan semua beban yang bukan milik saya hari ini.'",
+                duration: "60 detik",
+                mechanism: "Memutus pola somatisasi stres emosional ke jaringan otot fisik di pikiran bawah sadar.",
+              },
+            ],
+            pdf_summary:
+              "Protokol 3 langkah pemulihan akhir pekan: rilis titik myofascial belikat, ramuan daun salam ketumbar, dan afirmasi pelepasan beban emosi.",
           },
         },
       };
@@ -207,54 +395,57 @@ function getPillarForDate(date: Date, tz: string): RotatingPillar {
     case "sunday":
     default:
       return {
-        domainKey: "DOMAIN_RESET",
-        category: "Deep Rest & Pemulihan Menyeluruh",
-        pillar: "Melepaskan Ketegangan Tubuh & Pikiran Menjelang Pekan Baru",
+        domainKey: "MINGGU_MINDSET_BATASAN_MENTAL",
+        category: "Mindset Bawah Sadar & Batasan Mental",
+        pillar: "Ketenangan Menghadapi Pekan Baru & Penataan Ulang Batasan Mental",
         focus:
-          "Integrasi totok titik leher, pelepasan beban cemas menghadapi hari Senin (Sunday Scaries), dan istirahat berkualitas untuk memulihkan energi.",
+          "Mengatasi kecemasan Minggu sore menjelang Senin (Sunday Scaries), menetapkan batasan mental yang sehat (mental boundaries), dan istirahat sejati.",
         clinicalKnowledge:
-          "Istirahat sejati bukan sekadar rebahan pasif sambil terus menatap layar HP, melainkan mengizinkan tubuh melepaskan leher yang kaku dan memberi tahu pikiran bawah sadar bahwa hari ini adalah waktu pemulihan penuh.",
+          "Istirahat sejati bukan sekadar berbaring pasif sambil terus scroll layar ponsel. Pikiran bawah sadar membutuhkan instruksi tegas bahwa akhir pekan adalah ruang aman yang sakral.",
+        herbalFormula: {
+          recipeName: "Seduhan Aromatik Daun Pandan & Kapulaga (Tranquil Mind)",
+          ingredients: "2 lembar daun pandan wangi potong kecil + 3 butir kapulaga memarkan + 1 sdm madu",
+          waterVolume: "250ml air panas 75°C",
+          brewMethod: "Seduh tertutup selama 8 menit (aroma pandan dan minyak atsiri kapulaga langsung merelaksasi pusat limbik otak)",
+          timing: "Minum santai di Minggu sore sambil jeda dari layar gawai untuk menyambut ketenangan malam",
+        },
         curatedCase: {
-          topic: "Ketenangan Utuh: Menuntaskan Lelah Fisik dan Pikiran Menjelang Pekan Baru",
+          topic: "Sunday Scaries & Batasan Diri: Damai Menyambut Pekan Baru Tanpa Cemas",
           clinicalComplaint:
-            "Klien merasa libur akhir pekan tidak terasa karena pikiran tetap tegang memikirkan hari Senin. Tubuh tidak pernah benar-benar masuk mode istirahat mendalam dan bangun dengan leher kaku.",
+            "Klien ibu pekerja 36 tahun selalu merasa cemas dan sesak napas setiap Minggu jam 4 sore karena membayangkan beban pekerjaan hari Senin.",
           coreInsight:
-            "Istirahat sejati bukan pasif di depan layar HP, melainkan mengizinkan tubuh melepaskan leher yang kaku dan memberi tahu pikiran bawah sadar bahwa hari ini adalah waktu pemulihan penuh.",
+            "Cemas hari Minggu adalah tanda batas mental yang bocor. Kita perlu membangun benteng ketenangan bawah sadar agar istirahat kita utuh berkualitas.",
+          socialProofCase:
+            "Gejala Pasien: Selalu panik dan cemas hebat setiap Minggu sore menjelang Senin. -> Temuan di Meja Terapi: Pemrograman bawah sadar yang merasa bersalah jika rileks santai. -> Hasil Pemulihan: Pemrograman ulang batas mental dan totok meridian dada menghasilkan rasa damai mendalam yang bertahan.",
           lead_magnet_protocol: {
             keyword: "RESET",
-            title: "Panduan Saku Reset Somatik Akhir Pekan 3 Menit",
-            target_issue: "Kelelahan fisik sepekan dan cemas menghadapi hari Senin",
+            title: "Panduan Saku Reset Pikiran Bawah Sadar & Batasan Diri 3 Menit",
+            target_issue: "Cemas menjelang hari Senin, lelah mental, dan rasa bersalah saat santai",
             steps: [
               {
                 step: 1,
-                title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
-                action:
-                  "Berbaring santai, letakkan kedua jempol di cekungan pangkal tengkorak belakang leher. Berikan tekanan lembut mengarah ke atas selama 60 detik sambil bernapas perlahan.",
+                title: "Titik CV-17 (Dada Tengah) & GB-20: Penyeimbang Emosi",
+                action: "Letakkan telapak tangan di tengah dada (titik CV-17), beri tekanan lembut melingkar 60 detik sambil bernapas tenang.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengendurkan otot leher belakang yang kaku tegang dan menguras ketegangan fisik sisa sepekan.",
+                mechanism: "Menenangkan gejolak saraf otonom dan memulihkan rasa damai di pusat emosional dada.",
               },
               {
                 step: 2,
-                title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
-                action:
-                  "Tarik napas lembut lewat hidung 4 detik, tahan santai 7 detik, lalu hembuskan perlahan lewat mulut selama 8 detik. Ulangi 4 kali.",
+                title: "Formulasi Herbal: Seduhan Aromatik Pandan Kapulaga 250ml",
+                action: "Hirup aroma harum pandan kapulaga lalu nikmati seduhannya hangat perlahan.",
                 duration: "60 detik",
-                mechanism:
-                  "Mengaktifkan rem darurat alami tubuh untuk menurunkan hormon stres dan mengizinkan tubuh beristirahat penuh.",
+                mechanism: "Fitokimia aromatik pandan merangsang pelepasan endorfin dan meredakan ketegangan sistem limbik.",
               },
               {
                 step: 3,
-                title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
-                action:
-                  "Letakkan telapak tangan di dada. Rasakan kehangatannya dan ucapkan dalam hati: 'Pekan lalu sudah tuntas. Tubuhku berhak istirahat, besok aku menyambut hari baru dengan tenang.'",
+                title: "Sugesti Batasan Mental: Menjaga Kedamaian Batin",
+                action: "Pejamkan mata dan afirmasikan: 'Pekan lalu sudah selesai. Besok ada waktunya sendiri. Saat ini tubuh dan pikiranku berhak damai.'",
                 duration: "60 detik",
-                mechanism:
-                  "Mengunci ketenangan di pikiran bawah sadar agar tidur lelap dan bangun dalam kondisi segar bertenaga.",
+                mechanism: "Menanamkan batas mental yang kokoh di pikiran bawah sadar agar tidur malam berkualitas penuh.",
               },
             ],
             pdf_summary:
-              "Protokol pemulihan mingguan 3 langkah untuk menguras kelelahan fisik sepekan dan mengisi ulang baterai pikiran menyambut hari baru.",
+              "Protokol 3 langkah pemulihan utuh hari Minggu: stimulasi titik dada CV-17, seduhan pandan kapulaga aromatik, dan afirmasi batasan mental bawah sadar.",
           },
         },
       };
@@ -285,6 +476,8 @@ Matriks Inspirasi Hari Ini:
 - Domain Utama: ${pillar.category}
 - Fokus Bahasan: ${pillar.pillar}
 - Intisari Solusi: ${pillar.focus}
+- Formulasi Herbal Teruji: ${pillar.herbalFormula.recipeName} (${pillar.herbalFormula.ingredients}, ${pillar.herbalFormula.waterVolume}, ${pillar.herbalFormula.brewMethod}, waktu: ${pillar.herbalFormula.timing})
+- Bukti Sosial Meja Terapi: ${pillar.curatedCase.socialProofCase}
 ${customTopic ? `- Topik Arahan Khusus: "${customTopic}"` : ""}
 
 Kriteria Wajib Output:

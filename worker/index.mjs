@@ -40,6 +40,7 @@ const CONFIG = {
   pollMs: Math.max(15, Number(process.env.POLL_INTERVAL_SECONDS) || 60) * 1000,
   authDir: path.resolve(process.env.WA_AUTH_DIR || path.join(__dirname, "auth_info_baileys")),
   contactsFile: path.resolve(process.env.WA_CONTACTS_FILE || path.join(__dirname, "contacts.json")),
+  leadNurturingFile: path.resolve(process.env.WA_LEAD_NURTURING_FILE || path.join(__dirname, "lead_nurturing.json")),
   audience: (process.env.WA_STATUS_AUDIENCE || "")
     .split(",")
     .map((s) => s.trim())
@@ -182,6 +183,100 @@ const phoneToJid = (value) => {
   return digits ? `${digits}@s.whatsapp.net` : null;
 };
 
+// ── Lead Magnet Auto-Nurturing Queue (3-Hour Follow-Up) ──────────────────────
+let leadNurturingQueue = [];
+let saveNurturingTimer = null;
+
+async function loadLeadNurturingQueue() {
+  try {
+    const raw = JSON.parse(await fsp.readFile(CONFIG.leadNurturingFile, "utf8"));
+    if (Array.isArray(raw)) leadNurturingQueue = raw;
+    log(`🌱 ${leadNurturingQueue.length} prospek lead nurturing dimuat dari antrean`);
+  } catch {
+    leadNurturingQueue = [];
+  }
+}
+
+async function saveLeadNurturingQueue() {
+  clearTimeout(saveNurturingTimer);
+  saveNurturingTimer = setTimeout(async () => {
+    try {
+      await fsp.writeFile(CONFIG.leadNurturingFile, JSON.stringify(leadNurturingQueue, null, 2));
+    } catch (err) {
+      log("⚠️ Gagal menyimpan antrean lead nurturing:", err.message);
+    }
+  }, 1000);
+}
+
+function addLeadToNurturing(remoteJid, senderName) {
+  if (!remoteJid) return;
+  const now = Date.now();
+  // Cegah duplikasi dengan memperbarui jika sudah ada
+  leadNurturingQueue = leadNurturingQueue.filter((e) => e.remoteJid !== remoteJid);
+  leadNurturingQueue.push({
+    remoteJid,
+    senderName: senderName || "",
+    sentAt: now,
+    followedUp: false,
+    repliedAfter: false,
+  });
+  void saveLeadNurturingQueue();
+  log(`📋 [LEAD NURTURING] JID ${remoteJid} (${senderName || "Anonim"}) dijadwalkan follow-up 3 jam`);
+}
+
+function markLeadReplied(remoteJid) {
+  if (!remoteJid) return;
+  let modified = false;
+  for (const entry of leadNurturingQueue) {
+    if (entry.remoteJid === remoteJid && !entry.repliedAfter) {
+      entry.repliedAfter = true;
+      modified = true;
+      log(`💬 [LEAD REPLIED] Prospek ${remoteJid} telah merespons. Follow-up 3 jam dibatalkan.`);
+    }
+  }
+  if (modified) void saveLeadNurturingQueue();
+}
+
+async function processLeadNurturingFollowUps() {
+  if (!sock || !connected) return;
+  const now = Date.now();
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  let modified = false;
+
+  for (const entry of leadNurturingQueue) {
+    if (entry.followedUp || entry.repliedAfter) continue;
+    if (now - entry.sentAt >= THREE_HOURS_MS) {
+      const followUpGreeting = entry.senderName
+        ? `Salam hangat, Bapak/Ibu ${entry.senderName} 🌿`
+        : "Salam hangat, Bapak/Ibu 🌿";
+
+      const followUpText = `${followUpGreeting}\n\nSemoga panduan saku yang kami kirimkan tadi bermanfaat. Apakah sudah sempat mempraktikkan langkah penanganan mandirinya?\n\nJika ketegangan atau keluhan tubuh Anda sudah berlangsung kronis dan butuh penyelarasan langsung di meja terapi, silakan balas chat ini untuk konsultasi jadwal klinik minggu ini.`;
+
+      try {
+        await sock.sendMessage(entry.remoteJid, { text: followUpText });
+        log(`📬 [LEAD NURTURING SENT] Follow-up 3 jam terkirim ke ${entry.remoteJid} (${entry.senderName || "Anonim"})`);
+        entry.followedUp = true;
+        entry.followedUpAt = now;
+        modified = true;
+      } catch (err) {
+        log(`⚠️ [LEAD NURTURING] Gagal mengirim follow-up ke ${entry.remoteJid}:`, err.message);
+      }
+    }
+  }
+
+  // Bersihkan data yang sudah lewat 48 jam agar memory & storage tetap hemat
+  const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+  const initialLength = leadNurturingQueue.length;
+  leadNurturingQueue = leadNurturingQueue.filter((e) => now - e.sentAt < FORTY_EIGHT_HOURS_MS);
+  if (leadNurturingQueue.length !== initialLength) {
+    modified = true;
+  }
+
+  if (modified) {
+    void saveLeadNurturingQueue();
+  }
+}
+
 // ── In-memory anti-spam debounce cache for inbound auto-responder (5 mins TTL) ──
 const autoReplyCooldowns = new Map();
 const DEBOUNCE_TTL_MS = 5 * 60 * 1000;
@@ -304,7 +399,9 @@ function makeCachedAuthState(state, { batchSize = 50 } = {}) {
 }
 
 // ── Deep Inbound Message Extractor & Keyword Matcher ───────────────────────
-const KEYWORDS = ["RESET", "VAGUS", "SOMATIK", "PANDUAN", "PROTOKOL", "KONSUL"];
+const BOOKING_KEYWORDS = ["SLOT", "TERAPI", "KONSUL", "DAFTAR", "JADWAL", "BIAYA"];
+const LEAD_KEYWORDS = ["RESET", "VAGUS", "SOMATIK", "PANDUAN", "PROTOKOL"];
+const KEYWORDS = [...BOOKING_KEYWORDS, ...LEAD_KEYWORDS];
 
 function extractMessageText(msg) {
   return (
@@ -322,6 +419,15 @@ function extractMessageText(msg) {
     msg?.documentMessage?.caption ||
     ""
   );
+}
+
+function isBookingKeywordMatched(text) {
+  if (!text || typeof text !== "string") return false;
+  const cleanText = text.trim().toUpperCase();
+  return BOOKING_KEYWORDS.some((k) => {
+    const rx = new RegExp(`(^|[^A-Z0-9])${k}([^A-Z0-9]|$)`, "i");
+    return rx.test(cleanText) || cleanText.includes(k);
+  });
 }
 
 function isKeywordMatched(text) {
@@ -542,6 +648,10 @@ async function startWorker() {
         const remoteJid = m.key?.remoteJid || '';
         if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
 
+        // Ekstraksi nama dari pesan masuk Baileys & sapaan sopan
+        const senderName = m.pushName?.trim() || '';
+        const greeting = senderName ? `Salam hangat, Bapak/Ibu ${senderName} 🌿` : 'Salam hangat, Bapak/Ibu 🌿';
+
         // 2. Ekstraksi naskah dari m.message (dengan penanganan unwrapping lengkap)
         const msg = m.message;
         if (!msg) continue;
@@ -557,9 +667,33 @@ async function startWorker() {
 
         const cleanText = rawText.trim().toUpperCase();
         if (!cleanText) continue;
-        console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} | Teks: "${rawText}"`);
+        console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} (${senderName || "Anonim"}) | Teks: "${rawText}"`);
 
-        // Logika Pencocokan Berlapis
+        // Prospek aktif membalas -> batalkan auto follow-up 3 jam
+        markLeadReplied(remoteJid);
+
+        // ── INBOUND TRIGGER KHUSUS BOOKING (SLOT / TERAPI / KONSUL / DAFTAR / JADWAL / BIAYA) ──
+        if (isBookingKeywordMatched(cleanText)) {
+          console.log(`🛎️ [BOOKING TRIGGER] Kata kunci booking terdeteksi dari ${remoteJid} (${senderName || "Anonim"}): "${cleanText}"`);
+
+          if (isInDebounce(`booking:${remoteJid}`)) {
+            console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang booking. Lewati.`);
+            continue;
+          }
+          setDebounce(`booking:${remoteJid}`);
+
+          const bookingResponseText = `${greeting}\n\nTerima kasih telah menghubungi Klinik Dokter Pikiran. Berikut informasi layanan dan jadwal sesi tatap muka kami:\n\n1. 🌿 Fungsional Holistik & Totok Saraf\n   - Tarif: Rp 150.000 / sesi (±45-60 menit)\n   - Fokus: Pelepasan ketegangan fisik, saraf leher/belikat, penyelarasan meridian & fungsi pencernaan.\n\n2. 🧠 Hipnoterapi Klinis & Pemulihan Bawah Sadar\n   - Tarif: Rp 650.000 / sesi tunggal\n   - Paket Transformasi (3 Sesi): Rp 1.500.000\n   - Fokus: Penanganan trauma, anxiety/kecemasan, psikosomatis menahun, & insomnia kronis.\n\n📍 Jadwal Praktek (WITA):\n- Senin s/d Jumat: 16.00 - 21.00 WITA\n- Sabtu: 09.00 - 12.00 WITA\n- Ahad: Libur / OFF\n\nUntuk reservasi slot, silakan balas pesan ini dengan format:\nNama / Layanan / Pilihan Hari & Jam\n\nTim kami akan segera mengonfirmasi ketersediaan jadwal Anda.`;
+
+          try {
+            await sock.sendMessage(remoteJid, { text: bookingResponseText });
+            console.log(`✅ [BOOKING SENT] Info layanan & tarif terkirim ke ${remoteJid}`);
+          } catch (err) {
+            console.error(`❌ Gagal kirim info booking:`, err);
+          }
+          continue;
+        }
+
+        // Logika Pencocokan Berlapis Lead Magnet
         // Tahap 1: Query ke Supabase / DB / API untuk mencari kampanye (termasuk kampanye lampau) yang memiliki trigger_keyword cocok
         let matchedCampaign = await findCampaignByKeyword(cleanText);
         let matchedKeyword = cleanText;
@@ -594,7 +728,7 @@ async function startWorker() {
           // 2.a Kirim pesan teks hangat
           try {
             await sock.sendMessage(remoteJid, {
-              text: `Halo! Salam hangat dari Dokter Pikiran. 🌿\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkahnya.`
+              text: `${greeting}\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkahnya.`
             });
             console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
           } catch (err) {
@@ -615,6 +749,8 @@ async function startWorker() {
                 caption: `📄 Panduan Saku Praktis: ${topicTitle} (PDF)`
               });
               console.log(`✅ [PDF SENT] File PDF dinamis Panduan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
+              // Catat pengiriman lead magnet untuk follow-up 3 jam
+              addLeadToNurturing(remoteJid, senderName);
             } else {
               console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} untuk campaignId ${matchedCampaign.id}`);
             }
@@ -625,8 +761,8 @@ async function startWorker() {
         }
 
         // Tahap 3 (Fallback Universal):
-        // Jika cleanText mencakup kata kunci umum ('RESET', 'KONSUL', 'PANDUAN', 'SOMATIK', 'VAGUS'), layani dengan kampanye aktif hari ini atau protokol somatik default Dokter Pikiran.
-        const FALLBACK_KEYWORDS = ['RESET', 'KONSUL', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'];
+        // Jika cleanText mencakup kata kunci umum ('RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'), layani dengan kampanye aktif hari ini atau protokol somatik default Dokter Pikiran.
+        const FALLBACK_KEYWORDS = ['RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'];
         const isFallback = FALLBACK_KEYWORDS.some(k => cleanText.includes(k));
 
         if (isFallback) {
@@ -642,7 +778,7 @@ async function startWorker() {
           // LANGKAH 1: Balas pesan teks hangat dari Dokter Pikiran
           try {
             await sock.sendMessage(remoteJid, {
-              text: `Halo! Salam hangat dari Dokter Pikiran. 🌿\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
+              text: `${greeting}\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
             });
             console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
           } catch (err) {
@@ -662,6 +798,8 @@ async function startWorker() {
                 caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
               });
               console.log(`✅ [PDF SENT] File PDF universal berhasil dikirim ke ${remoteJid}`);
+              // Catat pengiriman lead magnet untuk follow-up 3 jam
+              addLeadToNurturing(remoteJid, senderName);
             }
           } catch (pdfErr) {
             console.error(`⚠️ Gagal kirim PDF dokumen:`, pdfErr);
@@ -687,6 +825,8 @@ function startWatchdog() {
       log("🐕 [WATCHDOG] Baileys socket tidak aktif / belum terhubung. Memicu inisialisasi ulang...");
       startWorker().catch((err) => log("✖ [WATCHDOG] Reconnect error:", err.message));
     }
+    // Cek antrean follow-up 3 jam secara periodik
+    void processLeadNurturingFollowUps().catch((err) => log("⚠️ [NURTURING CHECK ERROR]:", err.message));
   }, 60_000);
 }
 
@@ -928,6 +1068,7 @@ async function main() {
   startHealthServer();
   startSelfPing();
   await loadContacts();
+  await loadLeadNurturingQueue();
   
   try {
     await api(`/api/worker/queue?connected=0&version=${VERSION}`);
@@ -976,6 +1117,9 @@ export {
   getLocalDateString,
   extractMessageText,
   isKeywordMatched,
+  isBookingKeywordMatched,
+  BOOKING_KEYWORDS,
+  LEAD_KEYWORDS,
   KEYWORDS,
   CONFIG,
   startWorker,
@@ -984,4 +1128,8 @@ export {
   startSelfPing,
   isInDebounce,
   setDebounce,
+  addLeadToNurturing,
+  markLeadReplied,
+  processLeadNurturingFollowUps,
+  loadLeadNurturingQueue,
 };

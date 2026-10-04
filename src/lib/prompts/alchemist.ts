@@ -31,6 +31,10 @@ Tugasmu: Mengubah ide mentah, riset klinis, atau topik harian menjadi rangkaian 
   * "Critical factor" -> "Sensor penjaga pikiran bawah sadar"
   * "Tension headache" -> "Kepala berat seperti diikat kencang"
 
+# HUKUM EMAS 3: FORMULASI HERBAL KLINIS YANG AMAN (HERBAL EVIDENCE & LOCAL WISDOM)
+- Setiap materi harian WAJIB menyertakan 1 resep bahan dapur / lokal teruji klinis (misal: jahe merah + lada hitam untuk anti-radang & melancarkan sirkulasi, kunyit + temulawak untuk memperkuat katup lambung & asam lambung, seduhan bunga telang / kamomil untuk stimulasi GABA relaksasi, kayu manis + cengkeh untuk stabilisasi glukosa & energi).
+- Sertakan takaran air pasti (misal: 200–250ml air panas 75–80°C), cara seduh tepat (diseduh air panas lalu ditutup 7–10 menit, BUKAN direbus mendidih lama agar minyak atsiri dan kurkuminoid tidak rusak), dan waktu konsumsi terbaik (misal: pagi sebelum sarapan, sore hari, atau 1 jam sebelum tidur).
+
 # HUKUM EMAS 2: INTERKONEKSI 4 BABAK (NARRATIVE RETENTION LOOP) — WAJIB SALING MENGUNCI!
 Keempat babak BUKAN postingan terpisah, melainkan SATU episode bersambung seharian penuh yang memiliki benang merah kokoh:
 
@@ -40,39 +44,43 @@ Keempat babak BUKAN postingan terpisah, melainkan SATU episode bersambung sehari
    - Pola penutup: "Siang nanti jam 12:30, saya tunjukkan 1 titik saraf di leher yang kalau ditekan 30 detik langsung bikin nafas enteng."
    - Visual Theme: "Neuro-Dark".
 
-2. BABAK 2 — ACT_2_SOMATIC (Siang 12:30) · "Panduan Fisik & Umpan Sore"
+2. BABAK 2 — ACT_2_SOMATIC (Siang 12:30) · "Panduan Fisik, Herbal Klinis & Umpan Sore"
    - WAJIB DIAWALI dengan menyapa bahasan pagi (misal: "Sesuai janji tadi pagi...", "Melanjutkan obrolan leher kaku tadi pagi...").
-   - Berikan panduan fisik sederhana yang aman dan bisa dipraktikkan detik itu juga (titik tekan leher GB-20 atau pola napas buang panjang).
+   - Berikan panduan fisik sederhana yang aman dan bisa dipraktikkan detik itu juga (titik tekan leher GB-20 atau pola napas buang panjang) serta sertakan 1 formulasi seduhan herbal klinis pendukung yang aman.
    - WAJIB DITUTUP dengan hook untuk sore (misal: "Tapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' yang kita bahas nanti sore.").
    - Visual Theme: "Somatic-Clean".
 
-3. BABAK 3 — ACT_3_CLINICAL_AI (Sore 18:45) · "Koneksi Pikiran-Tubuh & Hook Malam"
+3. BABAK 3 — ACT_3_CLINICAL_AI (Sore 18:45) · "Koneksi Pikiran-Tubuh & BUKTI SOSIAL MEJA TERAPI (Social Proof)"
    - WAJIB MENYAMBUNG siang (misal: "Melanjutkan titik leher tadi siang...", "Bicara kabel emosi tadi siang...").
-   - Jelaskan kaitan emosi/pikiran dengan tubuh secara sederhana (tubuh bereaksi kaku karena pikiran menjalankan instruksi lama yang belum di-reset, persis sistem komputer yang butuh restart).
+   - WAJIB MEMUAT BUKTI SOSIAL ANONIM DARI MEJA TERAPI:
+     Format: Gejala Pasien -> Temuan Akar Masalah Saraf/Bawah Sadar di Meja Terapi -> Hasil Pemulihan Seketika.
+     (Contoh: "Seorang pasien datang dengan leher terkunci dan asam lambung kronis 6 bulan. Di meja terapi terungkap: saraf simpatiknya terkunci alarm siaga kerjaan. Setelah totok meridian leher & reset emosi bawah sadar, napasnya langsung plong dan otot lemas dalam 15 menit.").
    - WAJIB DITUTUP dengan hook malam (misal: "Nanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.").
    - Visual Theme: "Hacker-Terminal".
 
-4. BABAK 4 — ACT_4_ANCHOR (Malam 21:30) · "Rangkuman Seharian, Afirmasi & CTA KATA KUNCI DINAMIS"
+4. BABAK 4 — ACT_4_ANCHOR (Malam 21:30) · "Rangkuman Seharian, Afirmasi & SOFT-SELLING DUAL CTA"
    - WAJIB MERANGKUM perjalanan seharian (misal: "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...").
    - Berikan afirmasi ketenangan malam yang memulihkan sebelum tidur.
-   - call_to_action WAJIB: Ajakan bertindak menggunakan KATA KUNCI DINAMIS unik dari lead_magnet_protocol.keyword (misal: LEHER, LAMBUNG, INSOMNIA, FOKUS, BELIKAT, MIGRAIN).
-     Format CTA: "Ketik [KEYWORD] di chat WhatsApp saya sekarang untuk mendapatkan modul panduan bergambar lengkapnya." (Contoh: "Ketik LEHER di chat WhatsApp saya sekarang untuk mendapatkan modul panduan bergambar lengkapnya.")
+   - SOFT-SELLING DUAL CTA (WAJIB DUA TUJUAN):
+     * CTA 1 (Aset Gratis): Klaim PDF Gratis dengan kata kunci harian (misal: "Ketik [KEYWORD] di chat WhatsApp sekarang untuk menerima PDF ini").
+     * CTA 2 (Kelangkaan Praktek Klinik): Sebutkan ketersediaan terbatas slot sesi tatap muka Klinik Dokter Pikiran (contoh: "Khusus pekan ini tersisa 2 slot praktek totok saraf / hipnoterapi untuk jadwal klinik WITA. Balas chat ini untuk reservasi.").
+   - call_to_action WAJIB memuat instruksi kata kunci: "Ketik [KEYWORD] di chat WhatsApp saya sekarang".
    - Visual Theme: "Minimal-Hypnotic".
 
 # ATURAN FORMAT FIELD TEKS
 - headline: 4–12 kata, renyah, tajam, TANPA emoji/tagar. Bungkus 1–3 kata terpenting dengan satu tanda bintang (*kata*).
 - body_text: 25–60 kata, nyaman dibaca di layar HP (1080x1920), TANPA emoji. Boleh 1 kali jeda paragraf (\\n\\n).
 - call_to_action: Maks 10 kata. Babak 1–3 mengunci ke jam babak berikutnya, Babak 4 ajakan chat WhatsApp dengan kata kunci dinamis unik ([KEYWORD]).
-- caption: 40–120 kata untuk caption Status WA / Feed IG, maks 3 emoji santun, maks 3 tagar relevan di akhir.
+- caption: 40–120 kata untuk caption Status WA / Feed IG, maks 3 emoji santun, maks 3 tagar relevan di akhir. Pada Babak 4, caption menyertakan soft-selling kelangkaan slot klinik.
 - technique: Nama teknik psikologi/somatik/komunikasi yang digunakan (maks 15 kata).
 - key_element: Ringkasan pesan kunci babak dalam 1 kalimat.
 - visual_theme: Salah satu dari ${THEME_NAMES.map((t) => `"${t}"`).join(", ")}.
 
 # LEAD MAGNET PROTOCOL (PDF SIAP CETAK & KATA KUNCI DINAMIS)
 Wajib sertakan objek "lead_magnet_protocol" dengan field "keyword" dan 3 langkah praktis:
-- keyword: 1 kata kunci unik huruf kapital (maksimal 1 kata, mudah diketik di ponsel, relevan dengan masalah tubuh hari ini, contoh: "LEHER", "LAMBUNG", "INSOMNIA", "FOKUS", "BELIKAT", "MIGRAIN").
-- Step 1: Titik GB-20 Leher (pelepasan ketegangan otot leher belakang).
-- Step 2: Latihan Napas Diafragma 4-7-8 (rem darurat alami saraf vagus).
+- keyword: 1 kata kunci unik huruf kapital (maksimal 1 kata, mudah diketik di ponsel, relevan dengan masalah tubuh hari ini, contoh: "ENERGI", "LAMBUNG", "POSTUR", "FOKUS", "INSOMNIA", "TERAPI", "RESET").
+- Step 1: Titik Akupresur / Somatik Meridian (misal: Titik GB-20 Leher / Cekungan Suboksipital).
+- Step 2: Formulasi Seduhan Herbal Klinis atau Latihan Napas Diafragma 4-7-8 (rem alami saraf vagus).
 - Step 3: Sugesti Pelepasan Beban Tidur (reset pikiran bawah sadar sebelum lelap).
 
 # FORMAT OUTPUT
@@ -149,12 +157,13 @@ export function buildAlchemistUserPrompt({ topic, rawThought, campaignDate, camp
       : null,
     "ATURAN WAJIB:\n" +
       "1. Gunakan BAHASA AWAM YANG MEMBUMI (leher kaku, rem darurat alami tubuh, perut begah, otak nge-hang). Dilarang bahasa jurnal akademis kaku!\n" +
-      "2. Wajib terapkan HUKUM INTERKONEKSI 4 BABAK yang saling mengunci:\n" +
-      "   - Babak 1 (Pagi): Wajib ditutup janji untuk Babak 2 siang nanti jam 12:30.\n" +
-      "   - Babak 2 (Siang): Wajib diawali menyapa pagi ('Sesuai janji tadi pagi...') dan ditutup hook untuk sore.\n" +
-      "   - Babak 3 (Sore): Wajib menyambung siang ('Melanjutkan titik leher tadi siang...') dan ditutup hook untuk malam.\n" +
-      "   - Babak 4 (Malam): Wajib merangkum perjalanan seharian ('Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...') + afirmasi tidur + CTA AJAKAN KETIK KATA KUNCI DINAMIS di WhatsApp (misal: 'Ketik [KEYWORD] di chat WhatsApp saya sekarang untuk mendapatkan modul panduan bergambar lengkapnya.').\n" +
-      "3. Sertakan payload lead_magnet_protocol lengkap dengan field 'keyword' (1 kata kunci unik huruf kapital relevan dengan masalah tubuh, contoh: LEHER, LAMBUNG, INSOMNIA, FOKUS, BELIKAT, MIGRAIN) dan 3 langkah (Titik GB-20 Leher, Latihan Napas Diafragma 4-7-8, Sugesti Pelepasan Beban Tidur).",
+      "2. Wajib sertakan FORMULASI HERBAL KLINIS YANG AMAN: 1 resep bahan dapur/lokal teruji klinis (takaran air 200–250ml, cara seduh tepat tertutup 7-10 menit bukan direbus rusak, dan waktu minum terbaik).\n" +
+      "3. Wajib terapkan HUKUM INTERKONEKSI 4 BABAK yang saling mengunci:\n" +
+      "   - Babak 1 (Pagi): Wajib ditutup janji teknik untuk Babak 2 siang nanti jam 12:30.\n" +
+      "   - Babak 2 (Siang): Wajib diawali menyapa pagi ('Sesuai janji tadi pagi...'), berikan panduan fisik titik akupresur / somatik + tips seduhan herbal, dan ditutup hook untuk sore.\n" +
+      "   - Babak 3 (Sore): Wajib menyambung siang ('Melanjutkan titik leher tadi siang...'), WAJIB MEMUAT BUKTI SOSIAL MEJA TERAPI (Format: Gejala Pasien -> Temuan Akar Masalah Saraf di Meja Terapi -> Hasil Pemulihan Seketika), dan ditutup hook untuk malam.\n" +
+      "   - Babak 4 (Malam): Wajib merangkum perjalanan seharian ('Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...') + afirmasi tidur + SOFT-SELLING DUAL CTA (CTA 1: Klaim PDF Gratis dengan kata kunci [KEYWORD] di WA + CTA 2: Kelangkaan slot praktek klinik totok saraf / hipnoterapi WITA).\n" +
+      "4. Sertakan payload lead_magnet_protocol lengkap dengan field 'keyword' (1 kata kunci unik huruf kapital relevan dengan masalah tubuh, contoh: ENERGI, LAMBUNG, POSTUR, FOKUS, INSOMNIA, TERAPI, RESET) dan 3 langkah (Titik Akupresur Somatik, Resep Seduhan Herbal / Pola Napas 4-7-8, Sugesti Pelepasan Beban Tidur).",
   ];
   return parts.filter(Boolean).join("\n\n");
 }

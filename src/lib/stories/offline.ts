@@ -48,61 +48,61 @@ const TEMPLATES: Record<ActType, Builder[]> = {
     () => ({
       headline: `Tekan titik ini, *nafas langsung enteng*`,
       body_text:
-        "Sesuai janji tadi pagi: letakkan dua jempol di cekungan pangkal tengkorak leher belakang. Tekan lembut 30 detik sambil hembuskan napas panjang.\n\nTapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' yang kita bahas nanti sore.",
+        "Sesuai janji tadi pagi: tekan lembut cekungan pangkal tengkorak leher (titik GB-20) 30 detik. Lengkapi dengan seduhan rimpang hangat 200ml tertutup.\n\nTapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' meja terapi sore nanti.",
       call_to_action: "Coba sekarang, lalu tunggu sore jam 18:45.",
       caption:
-        "Sesuai janji tadi pagi 🙏\n\nTitik GB-20 di cekungan leher belakang ini langsung menyalakan rem darurat alami tubuh (saraf vagus). Nafas seketika terasa plong dan bahu turun santai.\n\nPenasaran kenapa leher bisa kaku tanpa sebab fisik? Kita kupas sore nanti jam 18:45 ✨\n\n#totokleher #remdarurat #nafasplong",
-      technique: "Somatic release + jembatan sore",
-      key_element: "Teknik siang: menyapa pagi, tekan titik leher GB-20, lempar hook kabel emosi sore.",
+        "Sesuai janji tadi pagi 🙏\n\nTitik GB-20 di leher belakang langsung menyalakan rem darurat alami tubuh (saraf vagus). Dipadu seduhan rimpang hangat tertutup, tubuh seketika rileks.\n\nPenasaran temuan meja terapi sore nanti jam 18:45? Kita kupas tuntas ✨\n\n#totokleher #herbalmedis #remdarurat",
+      technique: "Somatic release + herbal klinis + jembatan sore",
+      key_element: "Teknik siang: menyapa pagi, tekan titik leher GB-20 & seduhan herbal, lempar hook sore.",
     }),
     (t) => ({
       headline: `Sesuai janji pagi: *rem darurat tubuh*`,
-      body_text: `Untuk ${t}, kita mulai dari fisik: tekan lembut titik cekungan leher belakang sambil buang napas perlahan lewat mulut seperti meniup lilin.\n\nTapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' yang kita bahas nanti sore.`,
+      body_text: `Untuk ${t}, kita mulai dari fisik: tekan lembut titik leher belakang sambil buang napas perlahan. Minum seduhan herbal hangat 200ml tertutup.\n\nTapi kenapa keluhan ini menahun? Temuan meja terapi sore jam 18:45 akan membuka mata Anda.`,
       call_to_action: "Praktikkan sekarang, kita sambung sore nanti.",
       caption:
-        "Sesuai janji tadi pagi, ini rahasianya.\n\nPikiran yang panik tidak bisa didebat dengan kata-kata, tapi tubuh bisa diajak melambat lewat rem alami tubuh.\n\nLalu apa hubungan leher kaku ini dengan emosi yang tertahan? Sore nanti jam 18:45 kita bahas tuntas 🌿\n\n#remalami #leherkaku #sarafvagus",
-      technique: "Bottom-up regulation + open loop sore",
-      key_element: "Teknik siang: menyapa pagi, panduan napas & titik leher, lempar hook sore.",
+        "Sesuai janji tadi pagi, ini rahasianya.\n\nPikiran cemas tidak bisa didebat dengan logika, tapi tubuh bisa ditenangkan lewat rem alami dan seduhan herbal teruji.\n\nBagaimana akar masalahnya di meja terapi? Sore nanti jam 18:45 kita bahas 🌿\n\n#remalami #leherkaku #sarafvagus",
+      technique: "Bottom-up regulation + herbal + open loop sore",
+      key_element: "Teknik siang: menyapa pagi, panduan napas & herbal, lempar hook sore.",
     }),
   ],
   ACT_3_CLINICAL_AI: [
     (t) => ({
-      headline: `Tubuh kaku karena *instruksi lama*`,
-      body_text: `Melanjutkan titik leher tadi siang: seorang klien datang dengan keluhan ${t}. Lehernya kaku bukan karena beban fisik, melainkan 'kabel emosinya' terus mengirim alarm siaga.\n\nNanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.`,
+      headline: `Kasus meja terapi: *akar masalah saraf*`,
+      body_text: `Melanjutkan bahasan siang tadi. Gejala Pasien: Leher kaku & keluhan ${t} menahun. -> Temuan Meja Terapi: Saraf simpatik terkunci instruksi lama. -> Hasil Pemulihan: Totok meridian membuat otot lemas seketika dan napas plong dalam 15 menit.\n\nNanti malam jam 21:30, kita reset pikiran bawah sadarmu.`,
       call_to_action: "Siapkan dirimu malam ini jam 21:30.",
       caption:
-        "Melanjutkan titik leher tadi siang...\n\nSama seperti sistem komputer yang butuh restart saat nge-hang, tubuh kita kaku tegang karena pikiran bawah sadar masih menjalankan instruksi lama yang usang.\n\nMalam ini jam 21:30 kita reset bersama sebelum tidur 🌙\n\n#kabelemosi #instruksilama #resetpikiran",
-      technique: "Reframing bahasa awam + jembatan malam",
-      key_element: "Koneksi sore: menyambung titik leher siang, analogi instruksi lama, lempar hook malam.",
+        "Melanjutkan titik leher tadi siang...\n\nBukti nyata di meja terapi: tubuh kita kaku tegang karena pikiran bawah sadar masih menjalankan instruksi lama yang usang.\n\nMalam ini jam 21:30 kita reset bersama sebelum tidur 🌙\n\n#kasusterapi #instruksilama #resetbawahsadar",
+      technique: "Social proof meja terapi + jembatan malam",
+      key_element: "Koneksi sore: bukti sosial meja terapi (Gejala -> Temuan -> Hasil), lempar hook malam.",
     }),
     (t) => ({
       headline: `Di meja terapi, kita *restart sistem*`,
-      body_text: `Melanjutkan bahasan siang tadi: leher kaku pada kasus ${t} adalah sinyal kabel emosi yang korslet. Pikiran terus bekerja lembur tanpa sadar.\n\nNanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.`,
+      body_text: `Melanjutkan bahasan siang. Gejala Pasien: Ketegangan ${t} berbulan-bulan. -> Temuan Meja Terapi: Kabel saraf bawah sadar korslet akibat alarm kerjaan. -> Hasil Pemulihan: Penyelarasan totok saraf & sugesti membuat tubuh enteng seketika.\n\nNanti malam jam 21:30 kita tuntaskan sebelum tidur.`,
       call_to_action: "Tunggu panduannya malam ini jam 21:30.",
       caption:
-        "Melanjutkan titik leher tadi siang...\n\nKita tidak perlu melawan rasa cemasnya. Yang kita lakukan adalah merestart sistem dari akar: memutus instruksi lama yang bikin leher mengunci.\n\nMalam ini jam 21:30 ada panduan relaksasi tidur untukmu 💤\n\n#terapisaraf #restartotak #ketenanganmalam",
-      technique: "Metafora restart sistem + hook malam",
-      key_element: "Koneksi sore: menyambung siang, analogi restart otak, hook malam jam 21:30.",
+        "Melanjutkan siang tadi...\n\nKita tidak perlu mendebat kecemasan di kepala. Yang kita lakukan di meja terapi adalah merestart sistem dari akar: memutus instruksi lama yang bikin tubuh mengunci.\n\nMalam ini jam 21:30 ada panduan relaksasi tidur untukmu 💤\n\n#terapisaraf #restartotak #ketenanganmalam",
+      technique: "Social proof meja terapi + metafora restart sistem",
+      key_element: "Koneksi sore: bukti sosial meja terapi, analogi restart otak, hook malam jam 21:30.",
     }),
   ],
   ACT_4_ANCHOR: [
     (_t, p) => ({
       headline: `Malam ini, *izinkan tubuhmu* beristirahat`,
       body_text:
-        "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore... malam ini letakkan tangan di dadamu. Izinkan bahumu melepas semua beban hari ini.\n\nBesok pagi kamu bangun dengan kepala yang jauh lebih enteng.",
+        `Dari leher kaku pagi, totok siang, sampai temuan meja terapi sore... malam ini sentuh dadamu. Izinkan bahumu melepas semua beban.\n\nKetik '${p.ctaKeyword}' untuk PDF gratis. Tersisa 2 slot praktek totok saraf / hipnoterapi klinik WITA pekan ini.`,
       call_to_action: `KETIK '${p.ctaKeyword}' untuk panduan lengkap PDF`,
-      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore... sekarang saatnya tubuhmu pulih sepenuhnya.\n\nSentuh dadamu, bernapas perlahan, izinkan tidurmu lelap malam ini.\n\nMau panduan lengkap PDF 3 langkahnya? KETIK '${p.ctaKeyword}' di chat WhatsApp 🌙\n\n#tidurnyenyak #afirmasitidur #resetvagus`,
-      technique: "Rangkuman seharian + afirmasi tidur + CTA",
-      key_element: "Sugesti malam: merangkum seharian (pagi-siang-sore), afirmasi dada, CTA kata kunci WhatsApp.",
+      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai temuan meja terapi tadi sore... sekarang saatnya tubuhmu pulih sepenuhnya.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk modul PDF gratisnya 🌙\n\n📌 Bagi yang membutuhkan penanganan tatap muka, tersisa 2 slot praktek totok saraf / hipnoterapi untuk klinik WITA pekan ini.\n\n#tidurnyenyak #afirmasitidur #totoksaraf #hipnoterapi`,
+      technique: "Rangkuman seharian + afirmasi tidur + Soft-Selling Dual CTA",
+      key_element: "Sugesti malam: merangkum seharian, afirmasi dada, dual CTA (klaim PDF + kelangkaan slot klinik).",
     }),
     (_t, p) => ({
       headline: `Sentuh dadamu. *Hari ini sudah tuntas.*`,
       body_text:
-        "Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore: perjalanan tubuhmu hari ini luar biasa. Sentuh dadamu, rasakan kehangatannya, dan izinkan pikiranmu beristirahat damai.",
+        `Dari leher kaku tadi pagi sampai akar saraf tadi sore: sentuh dadamu, izinkan pikiran beristirahat damai.\n\nKetik '${p.ctaKeyword}' untuk PDF gratis. Khusus jadwal klinik WITA tersisa 2 slot praktek tatap muka pekan ini.`,
       call_to_action: `KETIK '${p.ctaKeyword}' di WA untuk panduan PDF`,
-      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai kabel emosi tadi sore...\n\nKamu sudah berjuang seharian. Malam ini tubuhmu berhak atas kedamaian dan pemulihan utuh.\n\nKetik '${p.ctaKeyword}' di WhatsApp kalau kamu ingin dokumen panduan PDF lengkapnya 🤍\n\n#pemulihantubuh #afirmasimalam #dokterPikiran`,
-      technique: "Rangkuman narasi + anchoring damai + CTA",
-      key_element: "Sugesti malam: merangkum perjalanan seharian, penanaman rasa aman, CTA WhatsApp.",
+      caption: `Dari leher kaku tadi pagi sampai akar saraf tadi sore...\n\nMalam ini tubuhmu berhak atas kedamaian utuh.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk dokumen panduan PDF lengkapnya 🤍\n\n📌 Tersisa 2 slot praktek sesi tatap muka (totok saraf / hipnoterapi) untuk klinik WITA pekan ini.\n\n#pemulihantubuh #afirmasimalam #totoksaraf #hipnoterapi`,
+      technique: "Rangkuman narasi + anchoring damai + Soft-Selling Dual CTA",
+      key_element: "Sugesti malam: merangkum seharian, afirmasi dada, dual CTA (klaim PDF + slot klinik).",
     }),
   ],
 };
@@ -116,11 +116,13 @@ export function buildOfflineAct(act: ActType, topicPhrase: string, persona: Pers
 export function buildDefaultLeadMagnetProtocol(topicPhrase: string): LeadMagnetProtocol {
   const upper = topicPhrase.toUpperCase();
   let keyword = "RESET";
-  if (upper.includes("LEHER")) keyword = "LEHER";
-  else if (upper.includes("LAMBUNG") || upper.includes("BEGAH")) keyword = "LAMBUNG";
-  else if (upper.includes("TIDUR") || upper.includes("INSOMNIA")) keyword = "INSOMNIA";
+  if (upper.includes("ENERGI") || upper.includes("LESU") || upper.includes("LELAH")) keyword = "ENERGI";
+  else if (upper.includes("LAMBUNG") || upper.includes("BEGAH") || upper.includes("GERD")) keyword = "LAMBUNG";
+  else if (upper.includes("POSTUR") || upper.includes("TULANG") || upper.includes("PUNGGUNG")) keyword = "POSTUR";
   else if (upper.includes("FOKUS") || upper.includes("MIKIR") || upper.includes("OTAK")) keyword = "FOKUS";
-  else if (upper.includes("BELIKAT") || upper.includes("PUNDAK")) keyword = "BELIKAT";
+  else if (upper.includes("TIDUR") || upper.includes("INSOMNIA")) keyword = "INSOMNIA";
+  else if (upper.includes("TERAPI") || upper.includes("DETOKS")) keyword = "TERAPI";
+  else if (upper.includes("LEHER") || upper.includes("BELIKAT")) keyword = "LEHER";
   else if (upper.includes("MIGRAIN") || upper.includes("KEPALA")) keyword = "MIGRAIN";
 
   return {
