@@ -367,24 +367,31 @@ function makeCachedAuthState(state, { batchSize = 50 } = {}) {
     },
 
     set: async (data) => {
-      const entries = [];
-      for (const category of Object.keys(data)) {
-        for (const id of Object.keys(data[category])) {
-          const value = data[category][id];
-          cache.set(`${category}:${id}`, value ?? null);
-          entries.push({ category, id, value });
+      const next = (state._keysQueue || Promise.resolve()).then(async () => {
+        const entries = [];
+        for (const category of Object.keys(data)) {
+          for (const id of Object.keys(data[category])) {
+            const value = data[category][id];
+            cache.set(`${category}:${id}`, value ?? null);
+            entries.push({ category, id, value });
+          }
         }
-      }
 
-      for (let i = 0; i < entries.length; i += batchSize) {
-        const chunk = entries.slice(i, i + batchSize);
-        const chunkData = {};
-        for (const { category, id, value } of chunk) {
-          if (!chunkData[category]) chunkData[category] = {};
-          chunkData[category][id] = value;
+        for (let i = 0; i < entries.length; i += batchSize) {
+          const chunk = entries.slice(i, i + batchSize);
+          const chunkData = {};
+          for (const { category, id, value } of chunk) {
+            if (!chunkData[category]) chunkData[category] = {};
+            chunkData[category][id] = value;
+          }
+          await originalSet(chunkData);
         }
-        await originalSet(chunkData);
-      }
+      }).catch((err) => {
+        console.error("✖ [CachedAuthState] Error in keys.set queue:", err.message);
+      });
+
+      state._keysQueue = next;
+      return next;
     },
 
     clear: async () => {
@@ -559,6 +566,10 @@ let meJid = null;
 let busy = false;
 let isConnecting = false;
 let watchdogInterval = null;
+let lastConnected = Date.now();
+let disconnectedSince = null;
+let reconnectAttempts = 0;
+let reconnectTimeout = null;
 
 async function startWorker() {
   if (isConnecting) {
@@ -568,11 +579,17 @@ async function startWorker() {
   isConnecting = true;
 
   try {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
+    }
+
     if (sock) {
       try {
         sock.ev?.removeAllListeners?.();
         sock.ws?.close?.();
       } catch {}
+      sock = null;
     }
 
     const { state: rawState, saveCreds } = await useSupabaseAuthState(CONFIG.authDir);
@@ -588,9 +605,13 @@ async function startWorker() {
       auth: state,
       version,
       logger: pino({ level: CONFIG.logLevel }),
-      browser: Browsers.macOS("Desktop"),
-      markOnlineOnConnect: false,
+      browser: ['Dokter Pikiran Worker', 'Chrome', '120.0.0'],
+      keepAliveIntervalMs: 25_000,
+      emitOwnEvents: false,
+      defaultQueryTimeoutMs: 60_000,
+      markOnlineOnConnect: true,
       syncFullHistory: false,
+      getMessage: async () => undefined,
     });
 
     sock.ev.on("creds.update", saveCreds);
@@ -604,26 +625,67 @@ async function startWorker() {
       }
       if (connection === "open") {
         connected = true;
+        reconnectAttempts = 0;
+        disconnectedSince = null;
+        lastConnected = Date.now();
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = null;
+        }
         meJid = normalizeJid(sock.user?.id ?? null);
         log(`✅ Terhubung ke WhatsApp sebagai ${meJid}`);
         void tick();
       }
       if (connection === "close") {
         connected = false;
+        if (!disconnectedSince) {
+          disconnectedSince = Date.now();
+        }
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-        console.log(`⚠️ Koneksi terputus (Status: ${statusCode}). Reconnectable: ${!isLoggedOut}`);
+        log(`⚠️ Koneksi terputus (Status: ${statusCode ?? "unknown"}, Reason: ${lastDisconnect?.error?.message || "unknown"}). Reconnectable: ${!isLoggedOut}`);
+
         if (!isLoggedOut) {
-          console.log("🔄 Menjadwalkan auto-reconnect dalam 5 detik...");
-          setTimeout(() => {
+          // Tangani restartRequired (515), connectionClosed (428), connectionLost (408), timedOut (408), dll
+          // Mekanisme auto-retry bergradasi: 3s, 5s, 10s
+          const backoffDelays = [3000, 5000, 10000];
+          let delay;
+
+          if (statusCode === DisconnectReason.restartRequired) {
+            delay = 3000;
+            log("🔄 DisconnectReason: restartRequired — melakukan reconnect cepat dalam 3 detik...");
+          } else {
+            const stepIndex = Math.min(reconnectAttempts, backoffDelays.length - 1);
+            delay = backoffDelays[stepIndex];
+            reconnectAttempts++;
+            log(`🔄 Menjadwalkan auto-reconnect ke-${reconnectAttempts} dalam ${delay / 1000} detik (Backoff 3s/5s/10s)...`);
+          }
+
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(() => {
+            reconnectTimeout = null;
             startWorker().catch((err) => log("✖ Reconnect gagal:", err.message));
-          }, 5000);
+          }, delay);
         } else {
-          console.error("❌ Sesi WhatsApp Logged Out! Perlu login ulang.");
+          reconnectAttempts = 0;
+          if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+          }
+          console.error("❌ Sesi WhatsApp Logged Out (Status 401)! Sesi dibersihkan dan status diubah menjadi DITAUTKAN_ULANG.");
           try {
             const pool = getDbPool();
-            if (pool) await pool.query("DELETE FROM wa_auth_store WHERE id = 'creds'");
-          } catch {}
+            if (pool) {
+              await pool.query("DELETE FROM wa_auth_store WHERE id = 'creds'");
+              await pool.query(`
+                INSERT INTO wa_auth_store (id, value, updated_at)
+                VALUES ('session_status', '{"status":"DITAUTKAN_ULANG"}'::jsonb, NOW())
+                ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+              `).catch(() => undefined);
+            }
+          } catch (dbErr) {
+            console.error("⚠️ Gagal membersihkan sesi Supabase:", dbErr.message);
+          }
           await fsp.rm(CONFIG.authDir, { recursive: true, force: true }).catch(() => undefined);
         }
       }
@@ -639,172 +701,180 @@ async function startWorker() {
 
     // ── Bulletproof Inbound Parser & Auto-Responder ────────────────────────
     sock.ev.on('messages.upsert', async (upsert) => {
-      const { messages, type } = upsert;
-      if (!messages || !Array.isArray(messages)) return;
+      try {
+        const { messages, type } = upsert;
+        if (!messages || !Array.isArray(messages)) return;
 
-      for (const m of messages) {
-        // 1. Abaikan pesan dari akun sendiri & status broadcast
-        if (m.key?.fromMe) continue;
-        const remoteJid = m.key?.remoteJid || '';
-        if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
-
-        // Ekstraksi nama dari pesan masuk Baileys & sapaan sopan
-        const senderName = m.pushName?.trim() || '';
-        const greeting = senderName ? `Salam hangat, Bapak/Ibu ${senderName} 🌿` : 'Salam hangat, Bapak/Ibu 🌿';
-
-        // 2. Ekstraksi naskah dari m.message (dengan penanganan unwrapping lengkap)
-        const msg = m.message;
-        if (!msg) continue;
-
-        const rawText = msg.conversation ||
-                        msg.extendedTextMessage?.text ||
-                        msg.imageMessage?.caption ||
-                        msg.videoMessage?.caption ||
-                        msg.ephemeralMessage?.message?.extendedTextMessage?.text ||
-                        msg.ephemeralMessage?.message?.conversation ||
-                        msg.viewOnceMessage?.message?.extendedTextMessage?.text ||
-                        '';
-
-        const cleanText = rawText.trim().toUpperCase();
-        if (!cleanText) continue;
-        console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} (${senderName || "Anonim"}) | Teks: "${rawText}"`);
-
-        // Prospek aktif membalas -> batalkan auto follow-up 3 jam
-        markLeadReplied(remoteJid);
-
-        // ── INBOUND TRIGGER KHUSUS BOOKING (SLOT / TERAPI / KONSUL / DAFTAR / JADWAL / BIAYA) ──
-        if (isBookingKeywordMatched(cleanText)) {
-          console.log(`🛎️ [BOOKING TRIGGER] Kata kunci booking terdeteksi dari ${remoteJid} (${senderName || "Anonim"}): "${cleanText}"`);
-
-          if (isInDebounce(`booking:${remoteJid}`)) {
-            console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang booking. Lewati.`);
-            continue;
-          }
-          setDebounce(`booking:${remoteJid}`);
-
-          const bookingResponseText = `${greeting}\n\nTerima kasih telah menghubungi Klinik Dokter Pikiran. Berikut informasi layanan dan jadwal sesi tatap muka kami:\n\n1. 🌿 Fungsional Holistik & Totok Saraf\n   - Tarif: Rp 150.000 / sesi (±45-60 menit)\n   - Fokus: Pelepasan ketegangan fisik, saraf leher/belikat, penyelarasan meridian & fungsi pencernaan.\n\n2. 🧠 Hipnoterapi Klinis & Pemulihan Bawah Sadar\n   - Tarif: Rp 650.000 / sesi tunggal\n   - Paket Transformasi (3 Sesi): Rp 1.500.000\n   - Fokus: Penanganan trauma, anxiety/kecemasan, psikosomatis menahun, & insomnia kronis.\n\n📍 Jadwal Praktek (WITA):\n- Senin s/d Jumat: 16.00 - 21.00 WITA\n- Sabtu: 09.00 - 12.00 WITA\n- Ahad: Libur / OFF\n\nUntuk reservasi slot, silakan balas pesan ini dengan format:\nNama / Layanan / Pilihan Hari & Jam\n\nTim kami akan segera mengonfirmasi ketersediaan jadwal Anda.`;
-
+        for (const m of messages) {
           try {
-            await sock.sendMessage(remoteJid, { text: bookingResponseText });
-            console.log(`✅ [BOOKING SENT] Info layanan & tarif terkirim ke ${remoteJid}`);
-          } catch (err) {
-            console.error(`❌ Gagal kirim info booking:`, err);
-          }
-          continue;
-        }
+            // 1. Abaikan pesan dari akun sendiri & status broadcast
+            if (m.key?.fromMe) continue;
+            const remoteJid = m.key?.remoteJid || '';
+            if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
 
-        // Logika Pencocokan Berlapis Lead Magnet
-        // Tahap 1: Query ke Supabase / DB / API untuk mencari kampanye (termasuk kampanye lampau) yang memiliki trigger_keyword cocok
-        let matchedCampaign = await findCampaignByKeyword(cleanText);
-        let matchedKeyword = cleanText;
+            // Ekstraksi nama dari pesan masuk Baileys & sapaan sopan
+            const senderName = m.pushName?.trim() || '';
+            const greeting = senderName ? `Salam hangat, Bapak/Ibu ${senderName} 🌿` : 'Salam hangat, Bapak/Ibu 🌿';
 
-        if (!matchedCampaign) {
-          // Cari kata per kata jika audiens mengetik kalimat (misal: "Ketik LEHER" atau "Saya mau modul LAMBUNG")
-          const words = cleanText.split(/[\s,.:;!?-]+/).filter((w) => w.length >= 3);
-          for (const w of words) {
-            const found = await findCampaignByKeyword(w);
-            if (found) {
-              matchedCampaign = found;
-              matchedKeyword = w;
-              break;
+            // 2. Ekstraksi naskah dari m.message (dengan penanganan unwrapping lengkap)
+            const msg = m.message;
+            if (!msg) continue;
+
+            const rawText = msg.conversation ||
+                            msg.extendedTextMessage?.text ||
+                            msg.imageMessage?.caption ||
+                            msg.videoMessage?.caption ||
+                            msg.ephemeralMessage?.message?.extendedTextMessage?.text ||
+                            msg.ephemeralMessage?.message?.conversation ||
+                            msg.viewOnceMessage?.message?.extendedTextMessage?.text ||
+                            '';
+
+            const cleanText = rawText.trim().toUpperCase();
+            if (!cleanText) continue;
+            console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} (${senderName || "Anonim"}) | Teks: "${rawText}"`);
+
+            // Prospek aktif membalas -> batalkan auto follow-up 3 jam
+            markLeadReplied(remoteJid);
+
+            // ── INBOUND TRIGGER KHUSUS BOOKING (SLOT / TERAPI / KONSUL / DAFTAR / JADWAL / BIAYA) ──
+            if (isBookingKeywordMatched(cleanText)) {
+              console.log(`🛎️ [BOOKING TRIGGER] Kata kunci booking terdeteksi dari ${remoteJid} (${senderName || "Anonim"}): "${cleanText}"`);
+
+              if (isInDebounce(`booking:${remoteJid}`)) {
+                console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang booking. Lewati.`);
+                continue;
+              }
+              setDebounce(`booking:${remoteJid}`);
+
+              const bookingResponseText = `${greeting}\n\nTerima kasih telah menghubungi Klinik Dokter Pikiran. Berikut informasi layanan dan jadwal sesi tatap muka kami:\n\n1. 🌿 Fungsional Holistik & Totok Saraf\n   - Tarif: Rp 150.000 / sesi (±45-60 menit)\n   - Fokus: Pelepasan ketegangan fisik, saraf leher/belikat, penyelarasan meridian & fungsi pencernaan.\n\n2. 🧠 Hipnoterapi Klinis & Pemulihan Bawah Sadar\n   - Tarif: Rp 650.000 / sesi tunggal\n   - Paket Transformasi (3 Sesi): Rp 1.500.000\n   - Fokus: Penanganan trauma, anxiety/kecemasan, psikosomatis menahun, & insomnia kronis.\n\n📍 Jadwal Praktek (WITA):\n- Senin s/d Jumat: 16.00 - 21.00 WITA\n- Sabtu: 09.00 - 12.00 WITA\n- Ahad: Libur / OFF\n\nUntuk reservasi slot, silakan balas pesan ini dengan format:\nNama / Layanan / Pilihan Hari & Jam\n\nTim kami akan segera mengonfirmasi ketersediaan jadwal Anda.`;
+
+              try {
+                await sock.sendMessage(remoteJid, { text: bookingResponseText });
+                console.log(`✅ [BOOKING SENT] Info layanan & tarif terkirim ke ${remoteJid}`);
+              } catch (err) {
+                console.error(`❌ Gagal kirim info booking:`, err);
+              }
+              continue;
             }
-          }
-        }
 
-        // Tahap 2: Jika ditemukan kampanye yang cocok
-        if (matchedCampaign) {
-          console.log(`🎯 [TRIGGER MATCHED] Kampanye cocok ditemukan untuk kata kunci "${matchedKeyword}" (${matchedCampaign.topic || "spesifik"})!`);
+            // Logika Pencocokan Berlapis Lead Magnet
+            // Tahap 1: Query ke Supabase / DB / API untuk mencari kampanye (termasuk kampanye lampau) yang memiliki trigger_keyword cocok
+            let matchedCampaign = await findCampaignByKeyword(cleanText);
+            let matchedKeyword = cleanText;
 
-          // Cek in-memory debounce anti-spam (5 menit TTL)
-          if (isInDebounce(remoteJid)) {
-            console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
-            continue;
-          }
-          setDebounce(remoteJid);
-
-          const topicTitle = matchedCampaign.topic || matchedKeyword;
-          const safeKey = matchedKeyword.replace(/[^A-Za-z0-9]/g, "") || "Protokol";
-
-          // 2.a Kirim pesan teks hangat
-          try {
-            await sock.sendMessage(remoteJid, {
-              text: `${greeting}\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkahnya.`
-            });
-            console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
-          } catch (err) {
-            console.error(`❌ Gagal kirim teks inbound:`, err);
-          }
-
-          // 2.b Ambil buffer PDF dengan parameter campaignId: ${baseUrl}/api/protocol/pdf?campaignId=${matchedCampaign.id}
-          try {
-            const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
-            const pdfUrl = `${baseUrl}/api/protocol/pdf?campaignId=${encodeURIComponent(matchedCampaign.id)}`;
-            const pdfRes = await fetch(pdfUrl, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
-            if (pdfRes.ok) {
-              const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-              await sock.sendMessage(remoteJid, {
-                document: pdfBuffer,
-                mimetype: 'application/pdf',
-                fileName: `Panduan_${safeKey}_DokterPikiran.pdf`,
-                caption: `📄 Panduan Saku Praktis: ${topicTitle} (PDF)`
-              });
-              console.log(`✅ [PDF SENT] File PDF dinamis Panduan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
-              // Catat pengiriman lead magnet untuk follow-up 3 jam
-              addLeadToNurturing(remoteJid, senderName);
-            } else {
-              console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} untuk campaignId ${matchedCampaign.id}`);
+            if (!matchedCampaign) {
+              // Cari kata per kata jika audiens mengetik kalimat (misal: "Ketik LEHER" atau "Saya mau modul LAMBUNG")
+              const words = cleanText.split(/[\s,.:;!?-]+/).filter((w) => w.length >= 3);
+              for (const w of words) {
+                const found = await findCampaignByKeyword(w);
+                if (found) {
+                  matchedCampaign = found;
+                  matchedKeyword = w;
+                  break;
+                }
+              }
             }
-          } catch (pdfErr) {
-            console.error(`⚠️ Gagal kirim PDF dokumen spesifik:`, pdfErr);
-          }
-          continue;
-        }
 
-        // Tahap 3 (Fallback Universal):
-        // Jika cleanText mencakup kata kunci umum ('RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'), layani dengan kampanye aktif hari ini atau protokol somatik default Dokter Pikiran.
-        const FALLBACK_KEYWORDS = ['RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'];
-        const isFallback = FALLBACK_KEYWORDS.some(k => cleanText.includes(k));
+            // Tahap 2: Jika ditemukan kampanye yang cocok
+            if (matchedCampaign) {
+              console.log(`🎯 [TRIGGER MATCHED] Kampanye cocok ditemukan untuk kata kunci "${matchedKeyword}" (${matchedCampaign.topic || "spesifik"})!`);
 
-        if (isFallback) {
-          console.log(`🎯 [UNIVERSAL FALLBACK] Kata kunci umum cocok untuk ${remoteJid}! Memproses balasan...`);
+              // Cek in-memory debounce anti-spam (5 menit TTL)
+              if (isInDebounce(remoteJid)) {
+                console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
+                continue;
+              }
+              setDebounce(remoteJid);
 
-          // Cek in-memory debounce anti-spam (5 menit TTL)
-          if (isInDebounce(remoteJid)) {
-            console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
-            continue;
-          }
-          setDebounce(remoteJid);
+              const topicTitle = matchedCampaign.topic || matchedKeyword;
+              const safeKey = matchedKeyword.replace(/[^A-Za-z0-9]/g, "") || "Protokol";
 
-          // LANGKAH 1: Balas pesan teks hangat dari Dokter Pikiran
-          try {
-            await sock.sendMessage(remoteJid, {
-              text: `${greeting}\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
-            });
-            console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
-          } catch (err) {
-            console.error(`❌ Gagal kirim teks inbound:`, err);
-          }
+              // 2.a Kirim pesan teks hangat
+              try {
+                await sock.sendMessage(remoteJid, {
+                  text: `${greeting}\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkahnya.`
+                });
+                console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
+              } catch (err) {
+                console.error(`❌ Gagal kirim teks inbound:`, err);
+              }
 
-          // LANGKAH 2: Kirim PDF dokumen dari Vercel
-          try {
-            const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
-            const pdfRes = await fetch(`${baseUrl}/api/protocol/pdf`, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
-            if (pdfRes.ok) {
-              const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-              await sock.sendMessage(remoteJid, {
-                document: pdfBuffer,
-                mimetype: 'application/pdf',
-                fileName: 'Panduan_Protokol_DokterPikiran.pdf',
-                caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
-              });
-              console.log(`✅ [PDF SENT] File PDF universal berhasil dikirim ke ${remoteJid}`);
-              // Catat pengiriman lead magnet untuk follow-up 3 jam
-              addLeadToNurturing(remoteJid, senderName);
+              // 2.b Ambil buffer PDF dengan parameter campaignId: ${baseUrl}/api/protocol/pdf?campaignId=${matchedCampaign.id}
+              try {
+                const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
+                const pdfUrl = `${baseUrl}/api/protocol/pdf?campaignId=${encodeURIComponent(matchedCampaign.id)}`;
+                const pdfRes = await fetch(pdfUrl, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
+                if (pdfRes.ok) {
+                  const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+                  await sock.sendMessage(remoteJid, {
+                    document: pdfBuffer,
+                    mimetype: 'application/pdf',
+                    fileName: `Panduan_${safeKey}_DokterPikiran.pdf`,
+                    caption: `📄 Panduan Saku Praktis: ${topicTitle} (PDF)`
+                  });
+                  console.log(`✅ [PDF SENT] File PDF dinamis Panduan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
+                  // Catat pengiriman lead magnet untuk follow-up 3 jam
+                  addLeadToNurturing(remoteJid, senderName);
+                } else {
+                  console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} untuk campaignId ${matchedCampaign.id}`);
+                }
+              } catch (pdfErr) {
+                console.error(`⚠️ Gagal kirim PDF dokumen spesifik:`, pdfErr);
+              }
+              continue;
             }
-          } catch (pdfErr) {
-            console.error(`⚠️ Gagal kirim PDF dokumen:`, pdfErr);
+
+            // Tahap 3 (Fallback Universal):
+            // Jika cleanText mencakup kata kunci umum ('RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'), layani dengan kampanye aktif hari ini atau protokol somatik default Dokter Pikiran.
+            const FALLBACK_KEYWORDS = ['RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'];
+            const isFallback = FALLBACK_KEYWORDS.some(k => cleanText.includes(k));
+
+            if (isFallback) {
+              console.log(`🎯 [UNIVERSAL FALLBACK] Kata kunci umum cocok untuk ${remoteJid}! Memproses balasan...`);
+
+              // Cek in-memory debounce anti-spam (5 menit TTL)
+              if (isInDebounce(remoteJid)) {
+                console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
+                continue;
+              }
+              setDebounce(remoteJid);
+
+              // LANGKAH 1: Balas pesan teks hangat dari Dokter Pikiran
+              try {
+                await sock.sendMessage(remoteJid, {
+                  text: `${greeting}\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
+                });
+                console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
+              } catch (err) {
+                console.error(`❌ Gagal kirim teks inbound:`, err);
+              }
+
+              // LANGKAH 2: Kirim PDF dokumen dari Vercel
+              try {
+                const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
+                const pdfRes = await fetch(`${baseUrl}/api/protocol/pdf`, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
+                if (pdfRes.ok) {
+                  const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+                  await sock.sendMessage(remoteJid, {
+                    document: pdfBuffer,
+                    mimetype: 'application/pdf',
+                    fileName: 'Panduan_Protokol_DokterPikiran.pdf',
+                    caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
+                  });
+                  console.log(`✅ [PDF SENT] File PDF universal berhasil dikirim ke ${remoteJid}`);
+                  // Catat pengiriman lead magnet untuk follow-up 3 jam
+                  addLeadToNurturing(remoteJid, senderName);
+                }
+              } catch (pdfErr) {
+                console.error(`⚠️ Gagal kirim PDF dokumen:`, pdfErr);
+              }
+            }
+          } catch (singleMsgErr) {
+            console.error("⚠️ [MESSAGE ERROR] Gagal memproses pesan tunggal / parsing issue:", singleMsgErr?.message || singleMsgErr);
           }
         }
+      } catch (upsertErr) {
+        console.error("🛡️ [UPSERT CRASH GUARD] Error global pada messages.upsert:", upsertErr?.message || upsertErr);
       }
     });
   } catch (err) {
@@ -820,11 +890,36 @@ const connect = startWorker;
 function startWatchdog() {
   if (watchdogInterval) clearInterval(watchdogInterval);
   watchdogInterval = setInterval(() => {
-    const isSocketOpen = Boolean(connected && sock && sock?.ws?.readyState === 1);
-    if (!isSocketOpen && !isConnecting) {
-      log("🐕 [WATCHDOG] Baileys socket tidak aktif / belum terhubung. Memicu inisialisasi ulang...");
-      startWorker().catch((err) => log("✖ [WATCHDOG] Reconnect error:", err.message));
+    const wsState = sock?.ws?.readyState;
+    const isSocketOpen = Boolean(connected && sock && wsState === 1);
+
+    if (isSocketOpen) {
+      disconnectedSince = null;
+      lastConnected = Date.now();
+    } else {
+      // readyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
+      const isHandshaking = isConnecting || wsState === 0;
+
+      if (isHandshaking) {
+        log("⏳ [WATCHDOG] Baileys socket sedang dalam tahap handshake / proses inisialisasi. Melewati reconnect.");
+      } else {
+        if (!disconnectedSince) {
+          disconnectedSince = Date.now();
+        }
+        const disconnectedDurationMs = Date.now() - disconnectedSince;
+        const THREE_MINUTES_MS = 3 * 60 * 1000;
+
+        if (disconnectedDurationMs > THREE_MINUTES_MS) {
+          log(`🐕 [WATCHDOG] Baileys socket tidak aktif / terputus konsisten selama ${Math.round(disconnectedDurationMs / 1000)}s (> 3 menit). Memicu inisialisasi ulang...`);
+          disconnectedSince = Date.now();
+          startWorker().catch((err) => log("✖ [WATCHDOG] Reconnect error:", err.message));
+        } else {
+          const waitRemainingSec = Math.round((THREE_MINUTES_MS - disconnectedDurationMs) / 1000);
+          log(`ℹ️ [WATCHDOG] Socket belum aktif (${Math.round(disconnectedDurationMs / 1000)}s terputus). Menunggu batas 3 menit (${waitRemainingSec}s tersisa) sebelum inisialisasi ulang.`);
+        }
+      }
     }
+
     // Cek antrean follow-up 3 jam secara periodik
     void processLeadNurturingFollowUps().catch((err) => log("⚠️ [NURTURING CHECK ERROR]:", err.message));
   }, 60_000);

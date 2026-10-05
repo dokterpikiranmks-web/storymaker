@@ -168,6 +168,15 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
     }
   }
 
+  // Sequential FIFO write queue & debounce timer to avoid race conditions / Bad MAC
+  let writeQueue = Promise.resolve();
+  function enqueueWrite(task) {
+    const next = writeQueue.then(task, task);
+    writeQueue = next.catch(() => {});
+    return next;
+  }
+  let credsSaveTimer = null;
+
   // 3. Bangun state interface sesuai ekspektasi Baileys
   return {
     state: {
@@ -210,59 +219,81 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
         },
 
         set: async (data) => {
-          const toUpsert = [];
-          const toDelete = [];
+          return enqueueWrite(async () => {
+            const toUpsert = [];
+            const toDelete = [];
 
-          for (const category of Object.keys(data)) {
-            for (const id of Object.keys(data[category])) {
-              const value = data[category][id];
-              const keyId = `${category}-${id}`;
-              if (value) {
-                toUpsert.push({ id: keyId, value });
-              } else {
-                toDelete.push(keyId);
+            for (const category of Object.keys(data)) {
+              for (const id of Object.keys(data[category])) {
+                const value = data[category][id];
+                const keyId = `${category}-${id}`;
+                if (value) {
+                  toUpsert.push({ id: keyId, value });
+                } else {
+                  toDelete.push(keyId);
+                }
               }
             }
-          }
 
-          try {
-            if (toUpsert.length > 0) {
-              // Batch upsert ke Supabase
-              const ids = toUpsert.map((x) => x.id);
-              const values = toUpsert.map((x) => JSON.stringify(x.value, BufferJSON.replacer));
-              await pool.query(
-                `INSERT INTO wa_auth_store (id, value, updated_at)
-                 SELECT unnest($1::text[]), unnest($2::jsonb[]), NOW()
-                 ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-                [ids, values]
-              );
-            }
+            try {
+              if (toUpsert.length > 0) {
+                // Batch upsert ke Supabase
+                const ids = toUpsert.map((x) => x.id);
+                const values = toUpsert.map((x) => JSON.stringify(x.value, BufferJSON.replacer));
+                await pool.query(
+                  `INSERT INTO wa_auth_store (id, value, updated_at)
+                   SELECT unnest($1::text[]), unnest($2::jsonb[]), NOW()
+                   ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+                  [ids, values]
+                );
+              }
 
-            if (toDelete.length > 0) {
-              await pool.query("DELETE FROM wa_auth_store WHERE id = ANY($1::text[])", [toDelete]);
+              if (toDelete.length > 0) {
+                await pool.query("DELETE FROM wa_auth_store WHERE id = ANY($1::text[])", [toDelete]);
+              }
+            } catch (err) {
+              console.error("✖ Error menyimpan keys ke Supabase:", err.message);
             }
-          } catch (err) {
-            console.error("✖ Error menyimpan keys ke Supabase:", err.message);
-          }
+          });
         },
       },
     },
 
-    saveCreds: async () => {
-      try {
-        if (creds?.me && !creds.registered) {
-          creds.registered = true;
+    saveCreds: (immediate = false) => {
+      const performSaveCreds = async () => {
+        try {
+          if (creds?.me && !creds.registered) {
+            creds.registered = true;
+          }
+          const serialized = JSON.stringify(creds, BufferJSON.replacer);
+          await pool.query(
+            `INSERT INTO wa_auth_store (id, value, updated_at)
+             VALUES ('creds', $1::jsonb, NOW())
+             ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+            [serialized]
+          );
+        } catch (err) {
+          console.error("✖ Gagal menyimpan creds ke Supabase:", err.message);
         }
-        const serialized = JSON.stringify(creds, BufferJSON.replacer);
-        await pool.query(
-          `INSERT INTO wa_auth_store (id, value, updated_at)
-           VALUES ('creds', $1::jsonb, NOW())
-           ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-          [serialized]
-        );
-      } catch (err) {
-        console.error("✖ Gagal menyimpan creds ke Supabase:", err.message);
+      };
+
+      if (immediate === true) {
+        if (credsSaveTimer) {
+          clearTimeout(credsSaveTimer);
+          credsSaveTimer = null;
+        }
+        return enqueueWrite(performSaveCreds);
       }
+
+      if (credsSaveTimer) {
+        clearTimeout(credsSaveTimer);
+      }
+      return new Promise((resolve) => {
+        credsSaveTimer = setTimeout(() => {
+          credsSaveTimer = null;
+          enqueueWrite(performSaveCreds).then(resolve);
+        }, 500);
+      });
     },
   };
 }
