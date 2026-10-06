@@ -1,0 +1,69 @@
+{
+  "success": true,
+  "date": "2026-10-07",
+  "pillar": "TUBUH",
+  "pillarTitle": "Gut-Brain, Sistem Saraf & Paradoks Tubuh",
+  "themeColor": "#1B2E24",
+  "accentColor": "#86EFAC",
+  "topic": "Kenapa Asam Lambung Kambuh Justru Bukan Karena Kelebihan Asam?",
+  "keyword": "LAMBUNG",
+  "source": "curated_fallback",
+  "model": "DokterPikiran-Curated-V2.3-Makassar",
+  "stories": [
+    {
+      "slide": 1,
+      "time": "07:00",
+      "act": "HOOK",
+      "text": "Asam lambung perih saat cemas? Lambungmu bukan kelebihan asam, tapi kekurangan asam.",
+      "visualGuide": {
+        "headline": "Paradoks Asam Lambung",
+        "palette": "Forest Sage & Warm Linen",
+        "elements": "Kartu 9:16 minimalis berwibawa, membongkar mitos asam lambung"
+      }
+    },
+    {
+      "slide": 2,
+      "time": "07:45",
+      "act": "EDUKASI",
+      "text": "Saat saraf siaga aktif, lambung kekurangan asam. Klep esofagus gagal mengunci rapat, sehingga uap asam bocor naik ke dada.",
+      "visualGuide": {
+        "headline": "Klep Gagal Mengunci",
+        "palette": "Forest Sage & Mint",
+        "elements": "Highlight box mekanisme katup lambung saat saraf simpatik aktif"
+      }
+    },
+    {
+      "slide": 3,
+      "time": "13:00",
+      "act": "PRAKTIK",
+      "text": "Jaw Release 60 Detik: Renggangkan rahang, buka mulut santai, lalu tempelkan ujung lidah ke langit-langit mulut. Ini memutus sinyal darurat lambung seketika.",
+      "visualGuide": {
+        "headline": "Trigeminal Jaw Release",
+        "palette": "Sage Green & Sand",
+        "elements": "Instruksi manuver pelepasan saraf trigeminal rahang dan lambung"
+      }
+    },
+    {
+      "slide": 4,
+      "time": "20:00",
+      "act": "BUKTI",
+      "text": "Kasus meja terapi Makassar: bertahun-tahun pasien menghindari kopi dan pantang makan, tapi lambung tetap perih. Begitu kuncian saraf rahang dan alarm paniknya direset, keluhan asamnya lenyap.",
+      "visualGuide": {
+        "headline": "Catatan Meja Terapi Makassar",
+        "palette": "Deep Forest Muted",
+        "elements": "Kutipan refleksi nyata anomali tubuh dari meja terapi Makassar"
+      }
+    },
+    {
+      "slide": 5,
+      "time": "21:00",
+      "act": "CTA HALUS",
+      "text": "Lambungmu bukan musuh, dia hanya merespons alarm darurat yang belum kamu matikan. Malam ini istirahatkan sarafmu. Mau panduan PDF 60 Detik Atasi Asam Lambung Psikosomatis? Balas story ini: LAMBUNG.",
+      "visualGuide": {
+        "headline": "Istirahatkan Saraf Malam Ini",
+        "palette": "Night Forest & Soft Sand",
+        "elements": "Pesan penutup tenang dengan pemicu keyword LAMBUNG"
+      }
+    }
+  ]
+}

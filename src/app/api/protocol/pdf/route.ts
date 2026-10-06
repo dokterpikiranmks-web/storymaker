@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jsonOk } from "@/lib/api";
 import { getCampaign, getCampaignRowByDate, getLatestCampaign } from "@/lib/campaigns";
 import { getAppTimezone, getPublicBaseUrl, todayInTimezone } from "@/lib/env";
-import { DEFAULT_OFFICIAL_PROTOCOL, generateProtocolPdf } from "@/lib/pdf/generator";
+import { DEFAULT_OFFICIAL_PROTOCOL, generateProtocolPdf, type DynamicStoryPdfData } from "@/lib/pdf/generator";
 import { defaultPersona, getPersona } from "@/lib/settings";
 import { buildDefaultLeadMagnetProtocol } from "@/lib/stories/offline";
 import type { LeadMagnetProtocol, PersonaSettings } from "@/lib/stories/types";
@@ -14,92 +14,151 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const dataParam = searchParams.get("data")?.trim();
     const campaignId = searchParams.get("campaignId")?.trim();
     const dateParam = searchParams.get("date")?.trim();
     const keywordParam = searchParams.get("keyword")?.trim();
+    const pillarParam = searchParams.get("pillar")?.trim();
+    const topicParam = searchParams.get("topic")?.trim();
     const wantsJson = searchParams.get("json") === "1" || searchParams.get("json") === "true";
     const wantsUpload = searchParams.get("upload") === "1" || searchParams.get("upload") === "true";
 
-    let campaign: Awaited<ReturnType<typeof getCampaign>> = null;
+    const campaignDate = dateParam || todayInTimezone(getAppTimezone());
 
-    // 1. Ambil data campaign dengan fail-safe DB try/catch
-    try {
-      if (campaignId) {
-        campaign = await getCampaign(campaignId);
-      } else if (keywordParam) {
-        const { getCampaignByKeyword } = await import("@/lib/campaigns");
-        campaign = await getCampaignByKeyword(keywordParam);
-      } else if (dateParam) {
-        const row = await getCampaignRowByDate(dateParam, "DAILY_AUTONOMOUS");
-        if (row) {
-          campaign = await getCampaign(row.id);
+    // 1. Ekstraksi Data Story Dinamis (Priority 1: dataParam base64url)
+    let dynamicStory: DynamicStoryPdfData | null = null;
+
+    if (dataParam) {
+      try {
+        const decodedStr = Buffer.from(dataParam, "base64url").toString("utf-8");
+        const parsed = JSON.parse(decodedStr);
+        if (parsed) {
+          dynamicStory = {
+            topic: parsed.t || parsed.topic || topicParam || "",
+            edukasi: parsed.e || parsed.edukasi || "",
+            praktik: parsed.p || parsed.praktik || "",
+            bukti: parsed.b || parsed.bukti || "",
+            keyword: (parsed.k || parsed.keyword || keywordParam || "RESET").toUpperCase(),
+            pillar: (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase(),
+            date: campaignDate,
+          };
         }
-      } else {
-        const today = todayInTimezone(getAppTimezone());
-        const row = await getCampaignRowByDate(today, "DAILY_AUTONOMOUS");
-        if (row) {
-          campaign = await getCampaign(row.id);
-        } else {
-          campaign = await getLatestCampaign();
+      } catch {
+        try {
+          const decodedStr = Buffer.from(dataParam, "base64").toString("utf-8");
+          const parsed = JSON.parse(decodedStr);
+          if (parsed) {
+            dynamicStory = {
+              topic: parsed.t || parsed.topic || topicParam || "",
+              edukasi: parsed.e || parsed.edukasi || "",
+              praktik: parsed.p || parsed.praktik || "",
+              bukti: parsed.b || parsed.bukti || "",
+              keyword: (parsed.k || parsed.keyword || keywordParam || "RESET").toUpperCase(),
+              pillar: (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase(),
+              date: campaignDate,
+            };
+          }
+        } catch (e) {
+          console.warn("[protocol/pdf] Gagal decode dataParam:", e);
         }
       }
-    } catch (dbErr) {
-      console.warn("[protocol/pdf] Database query failed or unavailable, using fallback protocol:", dbErr);
     }
 
-    // 2. Ambil persona dengan fail-safe
+    // 2. Jika dataParam tidak ada, coba baca cache data/latest-story.json (Priority 2)
+    if (!dynamicStory) {
+      try {
+        const fs = await import("node:fs");
+        const path = await import("node:path");
+        const targetPillar = (pillarParam || (keywordParam === "RESET" ? "PIKIRAN" : keywordParam === "FOKUS" ? "TEKNOLOGI" : "TUBUH")).toLowerCase();
+        const pillarCache = path.join(process.cwd(), "data", `story-${targetPillar}.json`);
+        const latestCache = path.join(process.cwd(), "data", "latest-story.json");
+
+        const targetFile = fs.existsSync(pillarCache) ? pillarCache : fs.existsSync(latestCache) ? latestCache : null;
+        if (targetFile) {
+          const fileContent = fs.readFileSync(targetFile, "utf-8");
+          const cached = JSON.parse(fileContent);
+          if (cached && cached.stories) {
+            dynamicStory = {
+              topic: topicParam || cached.topic || "",
+              edukasi: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("EDUKASI"))?.text || "",
+              praktik: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("PRAKTIK"))?.text || "",
+              bukti: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("BUKTI"))?.text || "",
+              keyword: (keywordParam || cached.keyword || "RESET").toUpperCase(),
+              pillar: (pillarParam || cached.pillar || "TUBUH").toUpperCase(),
+              date: cached.date || campaignDate,
+            };
+          }
+        }
+      } catch {
+        // Abaikan kegagalan baca file cache
+      }
+    }
+
+    // 3. Fallback ke Curated Stories V2.3 Makassar (Priority 3)
+    if (!dynamicStory) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
+      const pil = (pillarParam || (keywordParam === "RESET" ? "PIKIRAN" : keywordParam === "FOKUS" ? "TEKNOLOGI" : "TUBUH")).toUpperCase();
+      const curated = CURATED_STORIES[pil] || CURATED_STORIES.TUBUH;
+
+      dynamicStory = {
+        topic: topicParam || curated.topic,
+        edukasi: curated.stories[1].text,
+        praktik: curated.stories[2].text,
+        bukti: curated.stories[3].text,
+        keyword: (keywordParam || curated.keyword || "RESET").toUpperCase(),
+        pillar: pil,
+        date: campaignDate,
+      };
+    }
+
+    // 4. Data Persona Brand Resmi Dokter Pikiran Makassar
     let persona: PersonaSettings = {
       ...defaultPersona(),
-      creatorName: "Dokter Pikiran",
-      signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
+      creatorName: "Dokter Pikiran (Ahmad Jawahir Zain)",
+      signature: "Klinik Hipnoterapi & Pemulihan Sistem Saraf Bawah Sadar • Makassar, WITA (UTC+8)",
     };
     try {
       const fetched = await getPersona();
       if (fetched) {
         persona = {
           ...fetched,
-          creatorName: fetched.creatorName || "Dokter Pikiran",
-          signature: fetched.signature || "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
+          creatorName: fetched.creatorName || "Dokter Pikiran (Ahmad Jawahir Zain)",
+          signature: "Klinik Hipnoterapi & Pemulihan Sistem Saraf Bawah Sadar • Makassar, WITA (UTC+8)",
         };
       }
-    } catch (personaErr) {
-      console.warn("[protocol/pdf] getPersona failed, using defaultPersona:", personaErr);
+    } catch {
+      // ignore
     }
 
-    // 3. Standalone Fallback Data: JANGAN PERNAH throw error jika campaign null / kosong
-    // Gunakan template protokol default somatik & vagus resmi yang lengkap (GB-20, 4-7-8, Sugesti Tidur)
-    const protocol: LeadMagnetProtocol =
-      campaign?.leadMagnetProtocol && campaign.leadMagnetProtocol.steps?.length
-        ? campaign.leadMagnetProtocol
-        : campaign?.themeTopic
-        ? buildDefaultLeadMagnetProtocol(campaign.themeTopic)
-        : DEFAULT_OFFICIAL_PROTOCOL;
-
-    // Pastikan langkah minimal 3 langkah
-    if (!protocol.steps || !Array.isArray(protocol.steps) || protocol.steps.length === 0) {
-      protocol.steps = DEFAULT_OFFICIAL_PROTOCOL.steps;
+    // 5. Cek jika ada campaign DB khusus
+    let campaign: Awaited<ReturnType<typeof getCampaign>> = null;
+    if (campaignId) {
+      try {
+        campaign = await getCampaign(campaignId);
+      } catch {
+        // ignore
+      }
     }
 
-    const campaignDate = campaign?.campaignDate || todayInTimezone(getAppTimezone());
-    const themeTopic = campaign?.themeTopic || protocol.target_issue || "Regulasi Sistem Saraf Otonom";
-    const activeKeyword = (protocol.keyword || campaign?.triggerKeyword || keywordParam || "").trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
-    const pdfFilename = activeKeyword ? `Panduan_${activeKeyword}_DokterPikiran.pdf` : "Panduan_Protokol_DokterPikiran.pdf";
+    const activeKeyword = (dynamicStory.keyword || keywordParam || "RESET").trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
+    const pdfFilename = `Panduan_${activeKeyword}_DokterPikiran_Makassar.pdf`;
 
-    // 4. Generate binary PDF buffer
+    // 6. Generate binary PDF buffer
     const pdfBuffer = await generateProtocolPdf({
-      protocol,
+      storyData: dynamicStory,
       persona,
       campaignDate,
-      themeTopic,
+      themeTopic: dynamicStory.topic,
     });
 
     // Jika dipanggil dengan ?upload=1 atau ?json=1
     if (wantsUpload || wantsJson) {
-      let publicPdfUrl = `${getPublicBaseUrl(req)}/api/protocol/pdf?campaignId=${campaign?.id || ""}`;
+      let publicPdfUrl = `${getPublicBaseUrl(req)}/api/protocol/pdf?keyword=${activeKeyword}&pillar=${dynamicStory.pillar || "TUBUH"}`;
 
       if (isSupabaseStorageConfigured()) {
         try {
-          const fileName = `protokol-${campaignDate}-${activeKeyword || (campaign?.id ? campaign.id.slice(0, 8) : "default")}.pdf`;
+          const fileName = `panduan-${campaignDate}-${activeKeyword}.pdf`;
           publicPdfUrl = await uploadLeadMagnetPdf(`lead-magnets/${fileName}`, pdfBuffer);
         } catch (storageErr: unknown) {
           const errMessage = storageErr instanceof Error ? storageErr.message : String(storageErr);
@@ -110,16 +169,14 @@ export async function GET(req: NextRequest) {
       return jsonOk({
         ok: true,
         url: publicPdfUrl,
-        title: protocol.title,
-        keyword: activeKeyword || protocol.keyword || "RESET",
-        target_issue: protocol.target_issue,
-        campaignId: campaign?.id ?? null,
+        title: dynamicStory.topic,
+        keyword: activeKeyword,
+        pillar: dynamicStory.pillar,
         campaignDate,
-        stepsCount: protocol.steps?.length ?? 0,
       });
     }
 
-    // 5. Default: streaming response binary PDF dengan headers resmi
+    // 7. Streaming response binary PDF dengan headers resmi
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
@@ -130,18 +187,12 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (fatalErr) {
-    // 🛡️ CRITICAL SHIELD: JANGAN PERNAH lempar HTTP 500 ke klien/worker!
     console.error("[protocol/pdf] Fatal error in route handler, generating emergency standalone PDF:", fatalErr);
     try {
       const emergencyBuffer = await generateProtocolPdf({
         protocol: DEFAULT_OFFICIAL_PROTOCOL,
-        persona: {
-          ...defaultPersona(),
-          creatorName: "Dokter Pikiran",
-          signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
-        },
         campaignDate: new Date().toISOString().slice(0, 10),
-        themeTopic: "Regulasi Saraf Vagus & Reset Somatik",
+        themeTopic: "Reset Somatik & Regulasi Sistem Saraf",
       });
 
       return new NextResponse(new Uint8Array(emergencyBuffer), {
@@ -149,18 +200,17 @@ export async function GET(req: NextRequest) {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Length": String(emergencyBuffer.length),
-          "Content-Disposition": 'inline; filename="Panduan_Protokol_DokterPikiran.pdf"',
+          "Content-Disposition": 'inline; filename="Panduan_Protokol_DokterPikiran_Makassar.pdf"',
           "Cache-Control": "no-store",
         },
       });
     } catch {
-      // Jika pdf-lib sekalipun gagal, kirim buffer PDF minimal statis
       const minimalPdf = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n3 0 obj<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\n0000000101 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n178\n%%EOF";
       return new NextResponse(minimalPdf, {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
-          "Content-Disposition": 'inline; filename="Panduan_Protokol_DokterPikiran.pdf"',
+          "Content-Disposition": 'inline; filename="Panduan_Protokol_DokterPikiran_Makassar.pdf"',
         },
       });
     }

@@ -1,49 +1,67 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import type { LeadMagnetProtocol, PersonaSettings } from "@/lib/stories/types";
 
+export interface DynamicStoryPdfData {
+  topic: string;
+  pillar?: string;
+  keyword?: string;
+  edukasi?: string;
+  praktik?: string;
+  bukti?: string;
+  date?: string;
+  steps?: Array<{
+    step: number;
+    title: string;
+    action: string;
+    duration?: string;
+    mechanism?: string;
+  }>;
+}
+
 export interface GeneratePdfOptions {
   protocol?: LeadMagnetProtocol | null;
   persona?: PersonaSettings | null;
   campaignDate?: string;
   themeTopic?: string;
+  storyData?: DynamicStoryPdfData | null;
 }
 
 /**
- * Official default somatic & vagus protocol template
- * (Titik GB-20 Leher, Latihan Napas Diafragma 4-7-8, Sugesti Pelepasan Beban Tidur)
+ * Official default somatic & vagus protocol template (Dokter Pikiran Makassar V2.3)
+ * Anti-klise: Jaw Release, Sub-occipital Eye Reset, Physiological Sigh.
  */
 export const DEFAULT_OFFICIAL_PROTOCOL: LeadMagnetProtocol = {
-  title: "Panduan Saku Reset Somatik & Regulasi Saraf Vagus",
-  target_issue: "Meredakan leher kaku, overthinking, dan ketegangan sistem saraf otonom",
+  title: "Panduan Saku Reset Somatik & Regulasi Sistem Saraf Bawah Sadar",
+  target_issue: "Meredakan asam lambung psikosomatis, leher kaku, dan alarm bahaya sistem saraf",
   pdf_summary:
-    "Protokol klinis 3 langkah mandiri untuk meredakan ketegangan fisik, mengaktifkan rem darurat alami tubuh (saraf vagus), dan merestorasi ketenangan pikiran dalam 3 menit.",
+    "Panduan klinis mandiri untuk memutus kuncian saraf simpatik, merelaksasi katup lambung, dan mengembalikan rasa aman biologis tanpa klise motivasi murahan.",
   steps: [
     {
       step: 1,
-      title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
+      title: "Trigeminal Jaw Release: Pemutus Sinyal Darurat Lambung",
       action:
-        "Letakkan kedua jempol di cekungan pangkal tengkorak belakang leher (titik batas antara kepala dan leher). Berikan tekanan lembut mengarah ke atas selama 60 detik sambil memejamkan mata dan bernapas perlahan.",
+        "Renggangkan rahang, buka mulut santai, lalu tempelkan ujung lidah secara lembut ke langit-langit mulut bagian depan. Tahan posisi rileks ini selama 60 detik sambil bernapas wajar.",
       duration: "60 detik",
       mechanism:
-        "Mengendurkan otot leher belakang yang tegang kaku, melancarkan aliran darah ke otak, dan mematikan alarm siaga tubuh.",
+        "Jalur saraf trigeminal rahang terhubung ke katup lambung. Melepas kuncian rahang memutus sinyal darurat lambung dan menghentikan suara overthinking di kepala.",
     },
     {
       step: 2,
-      title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
+      title: "Sub-occipital Eye Reset: Pelepasan Kuncian Saraf Leher Belakang",
       action:
-        "Tarik napas lembut lewat hidung 4 detik, tahan napas santai 7 detik, lalu hembuskan perlahan lewat mulut seperti meniup lilin selama 8 detik. Ulangi 4 hingga 5 siklus.",
+        "Tanpa menolehkan kepala, lirikkan kedua bola mata sejauh mungkin ke sudut kanan bawah selama 30 detik sampai muncul refleks menguap, menghela napas panjang, atau menelan ludah.",
       duration: "60 detik",
       mechanism:
-        "Hembusan napas yang panjang mengaktifkan saraf vagus (rem alami tubuh) untuk menurunkan denyut jantung dan memicu rasa tenang seketika.",
+        "Mereset persarafan suboksipital di belakang leher, mematikan alarm siaga otak, dan memindahkan sistem saraf ke status restoratif tenang.",
     },
     {
       step: 3,
-      title: "Sugesti Pelepasan Beban Tidur: Reset Pikiran Bawah Sadar",
+      title: "Physiological Sigh: Stabilisasi Alveoli Paru & Denyut Jantung",
       action:
-        "Letakkan telapak tangan kanan di tengah dada. Rasakan kehangatan tanganmu, turunkan bahu santai, dan katakan dalam hati: 'Hari ini sudah selesai, tubuhku aman untuk beristirahat dan pulih sepenuhnya.'",
+        "Ambil dua tarikan napas pendek cepat lewat hidung, lalu hembuskan satu tarikan napas panjang perlahan lewat mulut seperti meniup lilin. Ulangi 3 siklus.",
       duration: "60 detik",
       mechanism:
-        "Menanamkan rasa aman di pikiran bawah sadar dan memindahkan gelombang otak ke status Alpha tenang untuk tidur lelap berkualitas.",
+        "Mekar alveoli paru-paru yang mengempis dan membuang karbon dioksida berlebih untuk melambatkan detak jantung dalam 30 detik.",
     },
   ],
 };
@@ -51,7 +69,6 @@ export const DEFAULT_OFFICIAL_PROTOCOL: LeadMagnetProtocol = {
 /**
  * Sanitizes strings for standard Helvetica in pdf-lib (WinAnsiEncoding).
  * Standard PDF fonts only support ASCII and Latin-1 characters.
- * Emojis and unmappable unicode characters must be cleaned to avoid encoding errors.
  */
 export function cleanWinAnsi(text: unknown): string {
   if (text === null || text === undefined) return "";
@@ -96,32 +113,107 @@ function wrapText(text: unknown, maxChars: number): string[] {
 }
 
 /**
- * Generates an executive A4 clinical guide PDF for Lead Magnet Protocol
- * Guaranteed bulletproof: sanitizes all text to WinAnsi and has emergency fallback.
+ * Format detail instruksi langkah latihan somatik dari teks Story 3
+ */
+function deriveSomaticSteps(praktikText: string, pillar = "TUBUH") {
+  const clean = cleanWinAnsi(praktikText);
+  const p = (pillar || "TUBUH").toUpperCase();
+
+  if (p === "TUBUH" || clean.toLowerCase().includes("rahang") || clean.toLowerCase().includes("jaw")) {
+    return [
+      {
+        step: 1,
+        title: "Langkah 1: Relaksasi Rahang",
+        desc: "Renggangkan gigitan gigi atas dan bawah, biarkan rahang bawah menggantung santai tanpa tegangan.",
+      },
+      {
+        step: 2,
+        title: "Langkah 2: Tempelkan Ujung Lidah",
+        desc: "Tempelkan ujung lidah secara lembut di langit-langit mulut depan (tepat di belakang gigi seri atas). Tahan selama 60 detik.",
+      },
+      {
+        step: 3,
+        title: "Langkah 3: Pemutusan Alarm Lambung",
+        desc: "Jalur saraf rahang terhubung ke saraf lambung. Saat lidah rileks, alarm darurat terputus dan katup esofagus mengunci rapat.",
+      },
+    ];
+  }
+
+  if (p === "PIKIRAN" || clean.toLowerCase().includes("mata") || clean.toLowerCase().includes("eye")) {
+    return [
+      {
+        step: 1,
+        title: "Langkah 1: Posisi Kepala Netral",
+        desc: "Duduk tegak dengan kepala lurus menghadap depan. Jangan menolehkan kepala Anda.",
+      },
+      {
+        step: 2,
+        title: "Langkah 2: Lirikan Lateral 30 Detik",
+        desc: "Tanpa memutar kepala, lirikkan kedua bola mata sejauh mungkin ke sudut kanan bawah selama 30 detik.",
+      },
+      {
+        step: 3,
+        title: "Langkah 3: Rilis Refleks Alami",
+        desc: "Tunggu munculnya refleks spontan: menelan ludah, menghela napas, atau menguap. Kuncian saraf leher belakang terlepas seketika.",
+      },
+    ];
+  }
+
+  // TEKNOLOGI / Physiological Sigh
+  return [
+    {
+      step: 1,
+      title: "Langkah 1: Dua Tarikan Cepat Lewat Hidung",
+      desc: "Ambil satu tarikan napas dalam lewat hidung, lalu segera sambung dengan tarikan kedua yang pendek dan cepat.",
+    },
+    {
+      step: 2,
+      title: "Langkah 2: Hembusan Panjang Lewat Mulut",
+      desc: "Buka mulut santai dan hembuskan seluruh udara secara perlahan hingga paru-paru kosong sempurna (6-8 detik).",
+    },
+    {
+      step: 3,
+      title: "Langkah 3: Ulangi 2-3 Siklus",
+      desc: "Alveoli paru-paru mekar seketika, detak jantung melambat, dan sistem saraf simpatik berpindah ke mode istirahat dalam 30 detik.",
+    },
+  ];
+}
+
+/**
+ * Generates an executive 1-page A4 clean clinical guide PDF
+ * Brand: DOKTER PIKIRAN MAKASSAR (Ahmad Jawahir Zain)
  */
 export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<Buffer> {
-  const protocol = options.protocol && options.protocol.steps?.length
-    ? options.protocol
-    : DEFAULT_OFFICIAL_PROTOCOL;
-
-  const persona = options.persona || {
-    creatorName: "Dokter Pikiran",
-    handle: "@storymaker",
-    signature: "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran",
-    whatsappNumber: "",
-    audience: "",
-    voiceNotes: "",
-    ctaKeyword: "RESET",
-  };
-
+  const storyData = options.storyData;
   const campaignDate = options.campaignDate || new Date().toISOString().slice(0, 10);
-  const themeTopic = options.themeTopic || protocol.target_issue || "Regulasi Sistem Saraf Otonom";
+
+  // Data terintegrasi
+  const title = cleanWinAnsi(
+    storyData?.topic || options.protocol?.title || options.themeTopic || "Panduan Protokol Dokter Pikiran Makassar"
+  );
+  const pillar = cleanWinAnsi(storyData?.pillar || "TUBUH").toUpperCase();
+  const keyword = cleanWinAnsi(storyData?.keyword || options.protocol?.keyword || "LAMBUNG").toUpperCase();
+  const edukasi = cleanWinAnsi(
+    storyData?.edukasi ||
+      options.protocol?.pdf_summary ||
+      "Saat saraf siaga aktif, tubuh mengalami anomali biologis. Memahami mekanisme paradoks ini adalah kunci awal pemulihan."
+  );
+  const praktik = cleanWinAnsi(
+    storyData?.praktik ||
+      (options.protocol?.steps?.[0]?.action
+        ? `${options.protocol.steps[0].title}: ${options.protocol.steps[0].action}`
+        : "Latihan fisik mikro 60 detik untuk mereset alarm bahaya sistem saraf.")
+  );
+  const bukti = cleanWinAnsi(
+    storyData?.bukti ||
+      "Kasus meja terapi Makassar: bertahun-tahun pasien mencoba solusi konvensional tanpa hasil. Begitu alarm biologis tubuhnya direset, keluhannya reda total."
+  );
 
   try {
     const pdfDoc = await PDFDocument.create();
-    pdfDoc.setTitle(cleanWinAnsi(protocol.title || "Panduan Protokol Dokter Pikiran"));
-    pdfDoc.setAuthor(cleanWinAnsi(persona.creatorName || "Dokter Pikiran"));
-    pdfDoc.setSubject("Clinical Self-Regulation Protocol");
+    pdfDoc.setTitle(title);
+    pdfDoc.setAuthor("Dokter Pikiran Makassar (Ahmad Jawahir Zain)");
+    pdfDoc.setSubject("Panduan Praktis Mandiri Sistem Saraf & Bawah Sadar");
 
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -130,8 +222,9 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
     // A4 dimensions: 595.28 x 841.89 pt
     const page = pdfDoc.addPage([595.28, 841.89]);
     const { width, height } = page.getSize();
-    const marginX = 45;
-    let cursorY = height - 45;
+    const marginX = 42;
+    const contentWidth = width - marginX * 2;
+    let cursorY = height - 36;
 
     // 1. Top Decorative Bar
     page.drawRectangle({
@@ -139,20 +232,20 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
       y: height - 8,
       width,
       height: 8,
-      color: rgb(0.02, 0.58, 0.44), // Emerald
+      color: rgb(0.04, 0.48, 0.38), // Deep Emerald Forest
     });
 
-    // 2. Header Branding & Subheader
-    page.drawText("DOKTER PIKIRAN: PROTOKOL SOMATIK & BAWAH SADAR", {
+    // 2. Header Branding & Lokasi Resmi Makassar
+    page.drawText("DOKTER PIKIRAN MAKASSAR - PANDUAN PRAKTIS MANDIRI", {
       x: marginX,
       y: cursorY,
-      size: 9,
+      size: 9.5,
       font: fontBold,
-      color: rgb(0.02, 0.58, 0.44),
+      color: rgb(0.04, 0.48, 0.38),
     });
 
-    page.drawText(cleanWinAnsi(`EDISI: ${campaignDate}`), {
-      x: width - marginX - 90,
+    page.drawText(cleanWinAnsi(`EDISI: ${campaignDate} • WITA (UTC+8)`), {
+      x: width - marginX - 145,
       y: cursorY,
       size: 8,
       font: fontRegular,
@@ -161,268 +254,265 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
 
     cursorY -= 12;
 
-    page.drawText("Klinik & Edukasi Kesehatan Holistik Dokter Pikiran", {
+    page.drawText("Klinik Hipnoterapi & Pemulihan Sistem Saraf Bawah Sadar • Ahmad Jawahir Zain", {
       x: marginX,
       y: cursorY,
-      size: 7.5,
+      size: 7.8,
       font: fontItalic,
-      color: rgb(0.4, 0.45, 0.55),
+      color: rgb(0.35, 0.4, 0.5),
     });
 
-    cursorY -= 14;
+    cursorY -= 12;
 
-    // Title
-    const titleLines = wrapText(protocol.title || "Protokol 3 Menit Reset Somatik", 48);
+    // Divider Header
+    page.drawLine({
+      start: { x: marginX, y: cursorY },
+      end: { x: width - marginX, y: cursorY },
+      thickness: 1,
+      color: rgb(0.85, 0.89, 0.93),
+    });
+
+    cursorY -= 18;
+
+    // 3. Judul Dokumen (Sesuai Topik Story Hari Itu)
+    const titleLines = wrapText(title, 48);
     for (const line of titleLines) {
-      page.drawText(cleanWinAnsi(line), {
+      page.drawText(line, {
         x: marginX,
         y: cursorY,
-        size: 18,
+        size: 15.5,
         font: fontBold,
-        color: rgb(0.06, 0.09, 0.16),
+        color: rgb(0.08, 0.12, 0.18),
       });
-      cursorY -= 22;
+      cursorY -= 20;
     }
 
-    // Topic & Target Subtitle Box
-    cursorY -= 4;
+    // Subtitle Pill (Pilar & Trigger Keyword)
+    cursorY -= 2;
     page.drawRectangle({
       x: marginX,
-      y: cursorY - 26,
-      width: width - marginX * 2,
-      height: 32,
-      color: rgb(0.95, 0.97, 0.98),
-      borderColor: rgb(0.85, 0.9, 0.93),
-      borderWidth: 1,
-    });
-
-    page.drawText(cleanWinAnsi(`Target: ${protocol.target_issue || themeTopic || "Regulasi sistem saraf otonom"}`), {
-      x: marginX + 12,
       y: cursorY - 14,
-      size: 9.5,
-      font: fontItalic,
-      color: rgb(0.2, 0.25, 0.35),
-    });
-
-    cursorY -= 46;
-
-    // Executive Summary Card
-    const summaryLines = wrapText(
-      protocol.pdf_summary || "Protokol fisik & mental 3 langkah untuk pemulihan cepat sistem saraf.",
-      72,
-    );
-    const summaryBoxHeight = Math.max(48, summaryLines.length * 13 + 22);
-
-    page.drawRectangle({
-      x: marginX,
-      y: cursorY - summaryBoxHeight + 10,
-      width: width - marginX * 2,
-      height: summaryBoxHeight,
-      color: rgb(0.96, 0.99, 0.98),
-      borderColor: rgb(0.65, 0.88, 0.78),
+      width: contentWidth,
+      height: 22,
+      color: rgb(0.94, 0.97, 0.96),
+      borderColor: rgb(0.78, 0.88, 0.84),
       borderWidth: 1,
     });
 
-    page.drawText("RINGKASAN EKSEKUTIF PROTOKOL:", {
+    const pillText = `PILAR: ${pillar} • KATA KUNCI BALAS WA STORY: '${keyword}' • MAKASSAR, SULAWESI SELATAN`;
+    page.drawText(cleanWinAnsi(pillText), {
+      x: marginX + 10,
+      y: cursorY - 7,
+      size: 8,
+      font: fontBold,
+      color: rgb(0.04, 0.45, 0.35),
+    });
+
+    cursorY -= 32;
+
+    // 4. BAGIAN 1: Inti Edukasi & Mekanisme Paradoks (Story 2)
+    const edukasiLines = wrapText(edukasi, 68);
+    const edukasiBoxHeight = Math.max(68, edukasiLines.length * 12 + 34);
+
+    page.drawRectangle({
+      x: marginX,
+      y: cursorY - edukasiBoxHeight + 10,
+      width: contentWidth,
+      height: edukasiBoxHeight,
+      color: rgb(0.96, 0.98, 1.0),
+      borderColor: rgb(0.78, 0.86, 0.96),
+      borderWidth: 1,
+    });
+
+    page.drawText("1. INTI EDUKASI & MEKANISME PARADOKS (CARA KERJA TERBALIK):", {
       x: marginX + 12,
       y: cursorY - 4,
       size: 8.5,
       font: fontBold,
-      color: rgb(0.02, 0.58, 0.44),
+      color: rgb(0.12, 0.32, 0.65),
     });
 
-    let sumY = cursorY - 18;
-    for (const sLine of summaryLines) {
-      page.drawText(cleanWinAnsi(sLine), {
+    let eY = cursorY - 18;
+    for (const el of edukasiLines) {
+      page.drawText(el, {
         x: marginX + 12,
-        y: sumY,
+        y: eY,
         size: 9,
         font: fontRegular,
-        color: rgb(0.15, 0.2, 0.25),
+        color: rgb(0.12, 0.16, 0.24),
       });
-      sumY -= 12;
+      eY -= 12;
     }
 
-    cursorY -= summaryBoxHeight + 14;
+    cursorY -= edukasiBoxHeight + 14;
 
-    // 3. 3-Step Protocol Cards
-    page.drawText("3 LANGKAH IMPLEMENTASI KLINIS:", {
+    // 5. BAGIAN 2: Panduan Tindakan: Latihan Somatik Mikro 60 Detik (Story 3)
+    const somaticSteps = deriveSomaticSteps(praktik, pillar);
+    const stepsTotalHeight = 180;
+
+    page.drawRectangle({
       x: marginX,
-      y: cursorY,
-      size: 10,
-      font: fontBold,
-      color: rgb(0.1, 0.15, 0.25),
+      y: cursorY - stepsTotalHeight + 10,
+      width: contentWidth,
+      height: stepsTotalHeight,
+      color: rgb(0.97, 0.99, 0.98),
+      borderColor: rgb(0.68, 0.88, 0.78),
+      borderWidth: 1,
     });
-    cursorY -= 16;
 
-    const rawSteps = protocol.steps?.length ? protocol.steps.slice(0, 3) : DEFAULT_OFFICIAL_PROTOCOL.steps;
+    page.drawText("2. PANDUAN TINDAKAN: MANUVER SOMATIK MIKRO 60 DETIK MANDIRI", {
+      x: marginX + 12,
+      y: cursorY - 4,
+      size: 9,
+      font: fontBold,
+      color: rgb(0.04, 0.48, 0.38),
+    });
 
-    for (let i = 0; i < rawSteps.length; i++) {
-      const fallback = DEFAULT_OFFICIAL_PROTOCOL.steps[i] || DEFAULT_OFFICIAL_PROTOCOL.steps[0];
-      const st = rawSteps[i] || fallback;
-      const actionText = st.action || fallback.action;
-      const mechanismText = st.mechanism || fallback.mechanism;
-      const stepTitle = st.title || fallback.title;
-      const durationText = st.duration || fallback.duration || "60 detik";
+    page.drawText("PRAKTIK FISIK LANGSUNG DI RUMAH / TEMPAT KERJA", {
+      x: width - marginX - 195,
+      y: cursorY - 4,
+      size: 7.5,
+      font: fontBold,
+      color: rgb(0.4, 0.5, 0.45),
+    });
 
-      const actionLines = wrapText(actionText, 68);
-      const mechanismLines = wrapText(mechanismText, 68);
-      const cardHeight = Math.max(88, actionLines.length * 12 + mechanismLines.length * 11 + 44);
+    let stepCursorY = cursorY - 24;
 
-      // Step Card Background
+    for (const st of somaticSteps) {
+      // Step number badge
       page.drawRectangle({
-        x: marginX,
-        y: cursorY - cardHeight + 8,
-        width: width - marginX * 2,
-        height: cardHeight,
-        color: rgb(0.99, 1.0, 1.0),
-        borderColor: rgb(0.88, 0.91, 0.94),
-        borderWidth: 1,
+        x: marginX + 12,
+        y: stepCursorY - 10,
+        width: 18,
+        height: 16,
+        color: rgb(0.04, 0.48, 0.38),
       });
 
-      // Step Number Badge
-      page.drawRectangle({
-        x: marginX + 10,
-        y: cursorY - 14,
-        width: 22,
-        height: 18,
-        color: rgb(0.02, 0.58, 0.44),
-      });
-
-      page.drawText(String(st.step || i + 1), {
+      page.drawText(String(st.step), {
         x: marginX + 18,
-        y: cursorY - 10,
-        size: 10,
+        y: stepCursorY - 7,
+        size: 9,
         font: fontBold,
         color: rgb(1, 1, 1),
       });
 
-      // Step Title & Duration
-      page.drawText(cleanWinAnsi(stepTitle), {
-        x: marginX + 38,
-        y: cursorY - 10,
-        size: 10.5,
+      page.drawText(cleanWinAnsi(st.title), {
+        x: marginX + 36,
+        y: stepCursorY - 6,
+        size: 9.5,
         font: fontBold,
-        color: rgb(0.08, 0.12, 0.2),
+        color: rgb(0.1, 0.15, 0.22),
       });
 
-      if (durationText) {
-        page.drawText(cleanWinAnsi(`Waktu: ${durationText}`), {
-          x: width - marginX - 90,
-          y: cursorY - 10,
+      const descLines = wrapText(st.desc, 66);
+      let dY = stepCursorY - 19;
+      for (const dl of descLines) {
+        page.drawText(dl, {
+          x: marginX + 36,
+          y: dY,
           size: 8.5,
-          font: fontBold,
-          color: rgb(0.4, 0.45, 0.55),
-        });
-      }
-
-      // Action Content
-      let textY = cursorY - 28;
-      for (const aLine of actionLines) {
-        page.drawText(cleanWinAnsi(aLine), {
-          x: marginX + 14,
-          y: textY,
-          size: 9,
           font: fontRegular,
-          color: rgb(0.18, 0.22, 0.3),
+          color: rgb(0.2, 0.25, 0.32),
         });
-        textY -= 12;
+        dY -= 11;
       }
 
-      // Mechanism Content
-      textY -= 3;
-      page.drawText("Mekanisme Biologis / Bawah Sadar:", {
-        x: marginX + 14,
-        y: textY,
-        size: 8,
-        font: fontBold,
-        color: rgb(0.02, 0.58, 0.44),
-      });
-      textY -= 11;
-
-      for (const mLine of mechanismLines) {
-        page.drawText(cleanWinAnsi(mLine), {
-          x: marginX + 14,
-          y: textY,
-          size: 8.5,
-          font: fontItalic,
-          color: rgb(0.35, 0.4, 0.48),
-        });
-        textY -= 11;
-      }
-
-      cursorY -= cardHeight + 8;
+      stepCursorY -= 48;
     }
 
-    // 4. Clinical Disclaimer & Contact Footer
-    cursorY = Math.max(cursorY, 65);
+    cursorY -= stepsTotalHeight + 14;
+
+    // 6. BAGIAN 3: Catatan Meja Terapi Makassar (Story 4)
+    const buktiLines = wrapText(bukti, 68);
+    const buktiBoxHeight = Math.max(52, buktiLines.length * 11.5 + 26);
+
+    page.drawRectangle({
+      x: marginX,
+      y: cursorY - buktiBoxHeight + 8,
+      width: contentWidth,
+      height: buktiBoxHeight,
+      color: rgb(0.98, 0.98, 0.99),
+      borderColor: rgb(0.85, 0.88, 0.92),
+      borderWidth: 1,
+    });
+
+    page.drawText("CATATAN MEJA TERAPI MAKASSAR (FAKTA KLINIS RIIL):", {
+      x: marginX + 12,
+      y: cursorY - 4,
+      size: 8,
+      font: fontBold,
+      color: rgb(0.3, 0.35, 0.45),
+    });
+
+    let bY = cursorY - 17;
+    for (const bl of buktiLines) {
+      page.drawText(bl, {
+        x: marginX + 12,
+        y: bY,
+        size: 8.5,
+        font: fontItalic,
+        color: rgb(0.2, 0.25, 0.35),
+      });
+      bY -= 11.5;
+    }
+
+    cursorY -= buktiBoxHeight + 16;
+
+    // 7. PENUTUP & FOOTER KONTAK RESMI MAKASSAR
+    cursorY = Math.max(cursorY, 68);
 
     page.drawLine({
       start: { x: marginX, y: cursorY },
       end: { x: width - marginX, y: cursorY },
       thickness: 1,
-      color: rgb(0.88, 0.91, 0.94),
+      color: rgb(0.85, 0.89, 0.93),
     });
 
     cursorY -= 12;
 
     page.drawText(
-      "CATATAN KLINIS: Protokol ini disusun untuk edukasi & regulasi sistem saraf mandiri. Hentikan jika timbul rasa tidak nyaman.",
+      "Refleksi: Tubuh dan pikiran Anda adalah sistem cerdas. Sembuh bukan memaksa diri tenang, tapi memberi sinyal aman pada saraf.",
       {
         x: marginX,
         y: cursorY,
-        size: 7.5,
+        size: 7.8,
         font: fontItalic,
-        color: rgb(0.5, 0.55, 0.65),
-      },
+        color: rgb(0.4, 0.45, 0.55),
+      }
     );
 
-    cursorY -= 12;
+    cursorY -= 13;
 
-    const contactName = cleanWinAnsi(persona.creatorName || "Dokter Pikiran");
-    const contactSig = "Klinik & Edukasi Kesehatan Holistik Dokter Pikiran";
-    const contactWa = cleanWinAnsi(persona.whatsappNumber || "Chat WhatsApp");
-    const contactCta = cleanWinAnsi(protocol.keyword || persona.ctaKeyword || "RESET");
-    const contactLine = `${contactName} (${contactSig}) - WhatsApp: ${contactWa} - Ketik '${contactCta}'`;
-
-    page.drawText(cleanWinAnsi(contactLine), {
+    const footerText = `DOKTER PIKIRAN • Ahmad Jawahir Zain • Makassar, WITA (UTC+8) • Balas Story: '${keyword}'`;
+    page.drawText(cleanWinAnsi(footerText), {
       x: marginX,
       y: cursorY,
-      size: 8,
+      size: 8.5,
       font: fontBold,
-      color: rgb(0.12, 0.16, 0.24),
+      color: rgb(0.08, 0.12, 0.2),
     });
 
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
   } catch (genErr) {
-    console.error("[generateProtocolPdf] Gagal render PDF kompleks, menggunakan emergency canvas:", genErr);
-    // Minimal emergency PDF
+    console.error("[generateProtocolPdf] Gagal render PDF dinamis, menggunakan fail-safe:", genErr);
+    // Minimal emergency PDF dengan identitas Makassar
     const emergencyDoc = await PDFDocument.create();
     const ePage = emergencyDoc.addPage([595.28, 841.89]);
     const eFont = await emergencyDoc.embedFont(StandardFonts.HelveticaBold);
     const eFontReg = await emergencyDoc.embedFont(StandardFonts.Helvetica);
 
-    ePage.drawText("DOKTER PIKIRAN: PROTOKOL SOMATIK & BAWAH SADAR", { x: 45, y: 780, size: 15, font: eFont });
-    ePage.drawText("Klinik & Edukasi Kesehatan Holistik Dokter Pikiran", { x: 45, y: 760, size: 10, font: eFontReg });
-    ePage.drawText("1. Titik GB-20 Leher: Tekan cekungan pangkal tengkorak 60 detik perlahan.", {
-      x: 45,
-      y: 720,
-      size: 11,
+    ePage.drawText("DOKTER PIKIRAN MAKASSAR: PANDUAN PRAKTIS MANDIRI", { x: 42, y: 790, size: 14, font: eFont });
+    ePage.drawText("Klinik Hipnoterapi & Pemulihan Sistem Saraf Bawah Sadar • Makassar", {
+      x: 42,
+      y: 770,
+      size: 9.5,
       font: eFontReg,
     });
-    ePage.drawText("2. Latihan Napas Diafragma 4-7-8: Tarik 4 detik, tahan 7 detik, hembus 8 detik.", {
-      x: 45,
-      y: 680,
-      size: 11,
-      font: eFontReg,
-    });
-    ePage.drawText("3. Sugesti Pelepasan Beban Tidur: Sentuh dada tengah, afirmasikan ketenangan.", {
-      x: 45,
-      y: 640,
-      size: 11,
-      font: eFontReg,
-    });
+    ePage.drawText(cleanWinAnsi(`Topik: ${title}`), { x: 42, y: 740, size: 11, font: eFont });
+    ePage.drawText("1. Inti Edukasi: Mekanisme biologis di balik alarm sistem saraf.", { x: 42, y: 700, size: 9.5, font: eFontReg });
+    ePage.drawText("2. Praktik 60 Detik: Renggangkan rahang, tempelkan lidah ke langit-langit mulut.", { x: 42, y: 670, size: 9.5, font: eFontReg });
+    ePage.drawText("3. Catatan Terapi Makassar: Alarm biologis rilis saat tubuh diberi sinyal aman.", { x: 42, y: 640, size: 9.5, font: eFontReg });
 
     const emergencyBytes = await emergencyDoc.save();
     return Buffer.from(emergencyBytes);
