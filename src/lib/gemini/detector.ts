@@ -142,7 +142,10 @@ export function getBaseCooldownMs(): number {
 
 export function getRequestTimeoutMs(): number {
   const ms = Number(process.env.GEMINI_TIMEOUT_MS);
-  return Number.isFinite(ms) && ms >= 5_000 ? ms : 45_000;
+  if (Number.isFinite(ms) && ms >= 3_000) return ms;
+  // Di serverless Vercel (Hobby limit 10-15s), batasi timeout per model ke 8.5s agar tidak terbunuh gateway 504
+  if (process.env.VERCEL) return 8_500;
+  return 45_000;
 }
 
 function parseEnvPriority(): string[] {
@@ -644,10 +647,10 @@ export async function runWithFailover<T>(
   await ensureHydrated();
   const cascade = await getModelCascade();
   const attempts: AttemptLog[] = [];
-  // Default budget leaves room for rendering inside a 60s serverless function.
-  const deadline = Date.now() + (options.deadlineMs ?? 48_000);
-  const maxPasses = options.maxPasses ?? 3;
-  const maxWait = options.maxWaitMs ?? 15_000;
+  const isVercel = Boolean(process.env.VERCEL);
+  const deadline = Date.now() + (options.deadlineMs ?? (isVercel ? 12_000 : 48_000));
+  const maxPasses = options.maxPasses ?? (isVercel ? 2 : 3);
+  const maxWait = options.maxWaitMs ?? (isVercel ? 2_000 : 15_000);
 
   for (let pass = 0; pass < maxPasses; pass++) {
     // 🛡️ Filter model-model dalam cascade yang saat ini berstatus READY di quota guard

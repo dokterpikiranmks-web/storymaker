@@ -26,7 +26,20 @@ export async function apiFetch<T>(url: string, init: ApiInit = {}): Promise<T> {
     window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
   }
   if (!res.ok) {
-    throw new ApiClientError(typeof data.error === "string" ? data.error : `HTTP ${res.status}`, res.status, data);
+    const errText = typeof data.error === "string" ? data.error : "";
+    let message = errText;
+    if (!message) {
+      if (res.status === 504) {
+        message = "Vercel Serverless Timeout (504): Eksekusi melebihi batas waktu Vercel. Gunakan skrip CLI 'npm run generate:today' sebagai fallback.";
+      } else if (res.status === 503) {
+        message = "Service Unavailable (503): Layanan Gemini atau Database sedang sibuk. Coba beberapa saat lagi atau gunakan skrip CLI.";
+      } else if (res.status === 409) {
+        message = "Konflik data (409): Campaign untuk tanggal ini sudah ada.";
+      } else {
+        message = `HTTP ${res.status}: ${res.statusText || "Permintaan gagal"}`;
+      }
+    }
+    throw new ApiClientError(message, res.status, data);
   }
   return data as T;
 }

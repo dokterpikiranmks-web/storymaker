@@ -13,11 +13,11 @@ export function isUuid(value: string): boolean {
 }
 
 export function jsonError(message: string, status = 400, extra?: Record<string, unknown>): Response {
-  return Response.json({ error: message, ...extra }, { status, headers: { "Cache-Control": "no-store" } });
+  return Response.json({ success: false, error: message, ...extra }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-export function jsonOk<T>(data: T, init?: ResponseInit): Response {
-  return Response.json(data, { ...init, headers: { "Cache-Control": "no-store", ...(init?.headers ?? {}) } });
+export function jsonOk<T extends Record<string, unknown>>(data: T, init?: ResponseInit): Response {
+  return Response.json({ success: true, ...data }, { ...init, headers: { "Cache-Control": "no-store", ...(init?.headers ?? {}) } });
 }
 
 export async function readJson(req: Request): Promise<unknown> {
@@ -47,7 +47,19 @@ export function handleRouteError(err: unknown, context: string): Response {
     );
   }
 
-  return jsonError("Terjadi kesalahan internal. Cek log server.", 500);
+  if (msg.includes("duplicate key") || msg.includes("unique constraint") || (err as { code?: string })?.code === "23505") {
+    return jsonError(`Konflik database (duplicate key): ${msg}`, 409);
+  }
+
+  if (msg.includes("503") || msg.includes("overloaded") || msg.includes("UNAVAILABLE")) {
+    return jsonError(`Gemini AI service unavailable (503): ${msg}. Silakan coba beberapa saat lagi atau jalankan CLI generator.`, 503);
+  }
+
+  if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("ETIMEDOUT") || msg.includes("DEADLINE_EXCEEDED")) {
+    return jsonError(`Waktu tunggu terlampaui (timeout): ${msg}. Gunakan skrip CLI 'npm run generate:today' sebagai fallback.`, 504);
+  }
+
+  return jsonError(msg || "Terjadi kesalahan internal pada server.", 500);
 }
 
 export function pngResponse(buffer: Buffer, opts: { filename?: string; download?: boolean; cache?: string; contentType?: string } = {}): Response {

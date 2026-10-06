@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Calendar,
   CheckCircle2,
   Circle,
@@ -12,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  X,
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -114,6 +116,7 @@ export function IdeaDrop({
   const [scouting, setScouting] = useState(false);
   const [step, setStep] = useState(0);
   const [listening, setListening] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const recognitionRef = useRef<RecognitionLike | null>(null);
   const speechSupported = useSyncExternalStore(noopSubscribe, () => getRecognitionCtor() !== null, () => false);
 
@@ -126,7 +129,8 @@ export function IdeaDrop({
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
 
-  const canSubmitDaily = !loading && (mode === "topic" ? topic.trim().length >= 3 : raw.trim().length >= 10);
+  // Biarkan tombol aktif jika tidak sedang loading (jika topik kosong, engine otomatis meriset tema harian hari ini)
+  const canSubmitDaily = !loading;
   const canSubmitPromo =
     !loading &&
     (flashSubtype === "THERAPY_SLOT"
@@ -139,6 +143,7 @@ export function IdeaDrop({
     setScouting(true);
     setStep(0);
     setLoading(true);
+    setApiError(null);
     try {
       const data = await apiFetch<{
         ok: boolean;
@@ -166,14 +171,16 @@ export function IdeaDrop({
         }
         return;
       }
-      notify("error", "Gagal Auto-Pilot Research", errorMessage(err));
+      const msg = errorMessage(err);
+      setApiError(msg);
+      notify("error", "Gagal Auto-Pilot Research", msg);
     } finally {
       setScouting(false);
       setLoading(false);
     }
   }
 
-  async function generate(overwrite = false): Promise<void> {
+  async function generate(overwrite = true): Promise<void> {
     const payload =
       campaignType === "FLASH_PROMO"
         ? {
@@ -197,14 +204,15 @@ export function IdeaDrop({
           }
         : {
             campaign_type: "DAILY_AUTONOMOUS",
-            topic: mode === "topic" ? topic.trim() : undefined,
-            raw_thought: mode === "raw" ? raw.trim() : undefined,
+            topic: mode === "topic" && topic.trim().length > 0 ? topic.trim() : undefined,
+            raw_thought: mode === "raw" && raw.trim().length > 0 ? raw.trim() : undefined,
             campaign_date: date || undefined,
             overwrite,
           };
 
     setStep(0);
     setLoading(true);
+    setApiError(null);
     try {
       const data = await apiFetch<{ campaign: CampaignDTO; generation: GenerationInfo }>("/api/stories/generate", {
         method: "POST",
@@ -226,10 +234,14 @@ export function IdeaDrop({
       );
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 409 && !overwrite) {
-        if (window.confirm(`Campaign harian untuk ${date} sudah ada. Timpa dengan cerita baru?`)) await generate(true);
-        return;
+        if (window.confirm(`Campaign harian untuk ${date} sudah ada. Timpa dengan cerita baru?`)) {
+          await generate(true);
+          return;
+        }
       }
-      notify("error", "Gagal generate story", errorMessage(err));
+      const msg = errorMessage(err);
+      setApiError(msg);
+      notify("error", "Gagal generate story", msg);
     } finally {
       setLoading(false);
     }
@@ -569,15 +581,22 @@ export function IdeaDrop({
             <Button
               variant="primary"
               size="lg"
-              onClick={() => void generate()}
-              disabled={!canSubmit}
+              onClick={() => void generate(true)}
+              disabled={loading}
               loading={loading}
               className={campaignType === "FLASH_PROMO" ? "bg-amber-500 font-bold text-slate-950 hover:bg-amber-400" : undefined}
             >
               {loading ? (
-                campaignType === "FLASH_PROMO"
-                  ? (autoSchedule ? "Merender & Menjadwalkan Promo..." : "Membuat & Mengunggah Promo...")
-                  : "Meracik 4 Babak Story..."
+                <div className="flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin text-cyan-300" />
+                  <span>
+                    {scouting
+                      ? "Sedang meriset tema..."
+                      : campaignType === "FLASH_PROMO"
+                        ? (autoSchedule ? "Merender & Menjadwalkan Promo..." : "Membuat & Mengunggah Promo...")
+                        : "Sedang meriset tema..."}
+                  </span>
+                </div>
               ) : (
                 <>
                   {campaignType === "FLASH_PROMO" ? <Zap className="size-4" /> : <Sparkles />}
@@ -589,6 +608,29 @@ export function IdeaDrop({
             </Button>
           </div>
         </div>
+
+        {/* Error Alert Box */}
+        {apiError ? (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-xs text-rose-200">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-400" />
+            <div className="flex-1">
+              <p className="font-semibold text-rose-100">Gagal Generate Story</p>
+              <p className="mt-1 leading-relaxed text-rose-200/90">{apiError}</p>
+              <p className="mt-2 text-[11px] text-rose-300/80">
+                Jika Vercel Serverless timeout (&gt;15s) atau Gemini AI sibuk, jalankan generator via terminal:{" "}
+                <code className="rounded bg-black/50 px-1.5 py-0.5 font-mono text-cyan-300">npm run generate:today</code>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setApiError(null)}
+              className="cursor-pointer text-rose-400 transition hover:text-white"
+              aria-label="Tutup error"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        ) : null}
 
         {/* Loading Progress State */}
         {loading ? (

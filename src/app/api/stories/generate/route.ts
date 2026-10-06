@@ -28,12 +28,12 @@ export async function POST(req: Request) {
   const campaignDate = parsed.data.campaign_date ?? todayInTimezone();
 
   try {
-    // Logika validasi: Jika DAILY_AUTONOMOUS, cek apakah campaign hari ini sudah ada.
-    // Jika FLASH_PROMO, simpan sebagai entri terpisah tanpa memvalidasi atau memblokir antrean tanggal hari ini.
-    if (campaignType === "DAILY_AUTONOMOUS") {
+    // UPSERT handling: jika campaign sudah ada, kita timpa (overwrite) slide lama terkait.
+    // Hanya tolak jika caller secara eksplisit mengirimkan overwrite: false.
+    if (campaignType === "DAILY_AUTONOMOUS" && overwrite === false) {
       const existing = await getCampaignRowByDate(campaignDate, "DAILY_AUTONOMOUS");
-      if (existing && !overwrite) {
-        return jsonError(`Campaign harian untuk tanggal ${campaignDate} sudah ada.`, 409, { existingCampaignId: existing.id });
+      if (existing) {
+        return jsonError(`Campaign harian untuk tanggal ${campaignDate} sudah ada. Gunakan overwrite=true untuk memperbarui.`, 409, { existingCampaignId: existing.id });
       }
     }
 

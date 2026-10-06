@@ -224,40 +224,66 @@ export async function saveGeneratedCampaign(input: {
     let campaignId: string;
 
     if (campaignType === "FLASH_PROMO") {
-      // FLASH_PROMO: Always insert as an independent separate entry without overwriting or blocking daily queue
-      const [campaign] = await tx
-        .insert(dailyCampaigns)
-        .values({
-          campaignDate: input.campaignDate,
-          campaignType: "FLASH_PROMO",
-          themeTopic,
-          triggerKeyword,
-          rawInputNotes: rawNotes,
-          coreInsight: input.story.core_insight || null,
-          generationSource: input.info.source,
-          generationModel: input.info.model,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
-      campaignId = campaign.id;
+      // FLASH_PROMO: Insert or upsert if date conflict occurs
+      try {
+        const [campaign] = await tx
+          .insert(dailyCampaigns)
+          .values({
+            campaignDate: input.campaignDate,
+            campaignType: "FLASH_PROMO",
+            themeTopic,
+            triggerKeyword,
+            rawInputNotes: rawNotes,
+            coreInsight: input.story.core_insight || null,
+            generationSource: input.info.source,
+            generationModel: input.info.model,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .returning();
+        campaignId = campaign.id;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("duplicate key") || msg.includes("unique constraint") || (err as { code?: string })?.code === "23505") {
+          // If unique constraint on campaign_date prevents multiple entries, update existing
+          const [existing] = await tx.select().from(dailyCampaigns).where(eq(dailyCampaigns.campaignDate, input.campaignDate)).limit(1);
+          if (existing) {
+            const [updated] = await tx
+              .update(dailyCampaigns)
+              .set({
+                campaignType: "FLASH_PROMO",
+                themeTopic,
+                triggerKeyword,
+                rawInputNotes: rawNotes,
+                coreInsight: input.story.core_insight || null,
+                generationSource: input.info.source,
+                generationModel: input.info.model,
+                updatedAt: now,
+              })
+              .where(eq(dailyCampaigns.id, existing.id))
+              .returning();
+            campaignId = updated.id;
+            await tx.delete(storySlides).where(eq(storySlides.campaignId, campaignId));
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
     } else {
-      // DAILY_AUTONOMOUS: Check if daily autonomous campaign already exists for this date
+      // DAILY_AUTONOMOUS: UPSERT handling. If campaign already exists for this date, overwrite and cascade delete old slides
       const [existing] = await tx
         .select()
         .from(dailyCampaigns)
-        .where(
-          and(
-            eq(dailyCampaigns.campaignDate, input.campaignDate),
-            eq(dailyCampaigns.campaignType, "DAILY_AUTONOMOUS"),
-          ),
-        )
+        .where(eq(dailyCampaigns.campaignDate, input.campaignDate))
         .limit(1);
 
       if (existing) {
         const [updated] = await tx
           .update(dailyCampaigns)
           .set({
+            campaignType: "DAILY_AUTONOMOUS",
             themeTopic,
             triggerKeyword,
             rawInputNotes: rawNotes,
@@ -271,22 +297,51 @@ export async function saveGeneratedCampaign(input: {
         campaignId = updated.id;
         await tx.delete(storySlides).where(eq(storySlides.campaignId, campaignId));
       } else {
-        const [campaign] = await tx
-          .insert(dailyCampaigns)
-          .values({
-            campaignDate: input.campaignDate,
-            campaignType: "DAILY_AUTONOMOUS",
-            themeTopic,
-            triggerKeyword,
-            rawInputNotes: rawNotes,
-            coreInsight: input.story.core_insight || null,
-            generationSource: input.info.source,
-            generationModel: input.info.model,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning();
-        campaignId = campaign.id;
+        try {
+          const [campaign] = await tx
+            .insert(dailyCampaigns)
+            .values({
+              campaignDate: input.campaignDate,
+              campaignType: "DAILY_AUTONOMOUS",
+              themeTopic,
+              triggerKeyword,
+              rawInputNotes: rawNotes,
+              coreInsight: input.story.core_insight || null,
+              generationSource: input.info.source,
+              generationModel: input.info.model,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .returning();
+          campaignId = campaign.id;
+        } catch (insertErr: unknown) {
+          const msg = insertErr instanceof Error ? insertErr.message : String(insertErr);
+          if (msg.includes("duplicate key") || msg.includes("unique constraint") || (insertErr as { code?: string })?.code === "23505") {
+            const [conflictRow] = await tx.select().from(dailyCampaigns).where(eq(dailyCampaigns.campaignDate, input.campaignDate)).limit(1);
+            if (conflictRow) {
+              const [updated] = await tx
+                .update(dailyCampaigns)
+                .set({
+                  campaignType: "DAILY_AUTONOMOUS",
+                  themeTopic,
+                  triggerKeyword,
+                  rawInputNotes: rawNotes,
+                  coreInsight: input.story.core_insight || null,
+                  generationSource: input.info.source,
+                  generationModel: input.info.model,
+                  updatedAt: now,
+                })
+                .where(eq(dailyCampaigns.id, conflictRow.id))
+                .returning();
+              campaignId = updated.id;
+              await tx.delete(storySlides).where(eq(storySlides.campaignId, campaignId));
+            } else {
+              throw insertErr;
+            }
+          } else {
+            throw insertErr;
+          }
+        }
       }
     }
 
