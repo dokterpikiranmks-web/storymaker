@@ -28,21 +28,30 @@ async function main() {
   console.log("   Brand: Dokter Pikiran (Ahmad Jawahir Zain)");
   console.log("═══════════════════════════════════════════════════════════════");
 
-  // Periksa argumen CLI untuk pilar spesifik
+  // Periksa argumen CLI untuk pilar dan topik custom
   const args = process.argv.slice(2);
   let requestedPillar = null;
+  let customTopic = null;
 
   for (const arg of args) {
-    const cleanArg = arg.replace(/^--pillar=/, "").toUpperCase();
-    if (PILLARS[cleanArg]) {
-      requestedPillar = cleanArg;
-      break;
+    if (arg.startsWith("--pillar=")) {
+      const clean = arg.replace(/^--pillar=/, "").toUpperCase();
+      if (PILLARS[clean]) requestedPillar = clean;
+    } else if (arg.startsWith("--topic=")) {
+      customTopic = arg.replace(/^--topic=/, "");
+    } else if (PILLARS[arg.toUpperCase()]) {
+      requestedPillar = arg.toUpperCase();
+    } else if (!customTopic && arg.length > 2) {
+      customTopic = arg;
     }
   }
 
   try {
     console.log("🤖 Menghasilkan naskah 5 babak Story...");
-    const storyData = await generateStoryV2({ pillar: requestedPillar });
+    const storyData = await generateStoryV2({
+      pillar: requestedPillar,
+      topic: customTopic,
+    });
 
     console.log(`📅 Tanggal : ${storyData.date}`);
     console.log(`🏛️ Pilar   : ${storyData.pillar} (${storyData.pillarTitle})`);

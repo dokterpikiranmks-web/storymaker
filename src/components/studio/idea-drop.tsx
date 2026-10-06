@@ -214,6 +214,38 @@ export function IdeaDrop({
     setLoading(true);
     setApiError(null);
     try {
+      // 1. Panggil V2 Telegram Publisher Pipeline secara otomatis
+      const v2CustomTopic =
+        mode === "topic" && topic.trim().length > 0
+          ? topic.trim()
+          : campaignType === "FLASH_PROMO"
+            ? (therapyTopic.trim() || appTopic.trim() || undefined)
+            : undefined;
+
+      fetch("/api/v2/generate-and-send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: v2CustomTopic,
+          raw_thought: mode === "raw" && raw.trim().length > 0 ? raw.trim() : undefined,
+          date: date || undefined,
+        }),
+      })
+        .then((res) => res.json())
+        .then((v2Data) => {
+          if (v2Data.success) {
+            notify(
+              "success",
+              "📱 5 Kartu Gambar Terkirim ke Telegram!",
+              `Topik: "${v2Data.topic}". Cek Telegram untuk simpan gambar 9:16 & link PDF.`
+            );
+          }
+        })
+        .catch((v2Err) => {
+          console.warn("[IdeaDrop] V2 Telegram pipeline background trigger error:", v2Err);
+        });
+
+      // 2. Generate dan simpan ke database / studio studio
       const data = await apiFetch<{ campaign: CampaignDTO; generation: GenerationInfo }>("/api/stories/generate", {
         method: "POST",
         json: payload,
@@ -223,7 +255,7 @@ export function IdeaDrop({
         "success",
         campaignType === "FLASH_PROMO"
           ? (autoSchedule ? "⚡ Flash Promo Berhasil Dibuat & Dijadwalkan!" : "⚡ Flash Promo Berhasil Dibuat!")
-          : "4 babak story siap diedit",
+          : "Story siap diedit & kartu gambar dikirim ke Telegram",
         campaignType === "FLASH_PROMO"
           ? (autoSchedule
               ? "Semua slide & gambar berhasil diunggah ke bucket story-assets serta masuk antrean tayang."
@@ -242,6 +274,45 @@ export function IdeaDrop({
       const msg = errorMessage(err);
       setApiError(msg);
       notify("error", "Gagal generate story", msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function triggerDirectTelegram() {
+    setLoading(true);
+    setApiError(null);
+    try {
+      const customTopic =
+        mode === "topic" && topic.trim().length > 0
+          ? topic.trim()
+          : campaignType === "FLASH_PROMO"
+            ? (therapyTopic.trim() || appTopic.trim() || undefined)
+            : undefined;
+
+      const res = await fetch("/api/v2/generate-and-send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: customTopic,
+          raw_thought: mode === "raw" && raw.trim().length > 0 ? raw.trim() : undefined,
+          date: date || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        notify(
+          "success",
+          "📱 5 Kartu Gambar 9:16 Terkirim ke Telegram!",
+          `Topik: "${data.topic}". Buka Telegram untuk simpan gambar ke galeri & bagikan link PDF.`
+        );
+      } else {
+        notify("error", "Gagal kirim ke Telegram", data.error || "Terjadi kesalahan.");
+      }
+    } catch (err) {
+      const msg = errorMessage(err);
+      notify("error", "Gagal memicu Telegram", msg);
     } finally {
       setLoading(false);
     }
@@ -578,34 +649,47 @@ export function IdeaDrop({
               </label>
             ) : null}
 
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => void generate(true)}
-              disabled={loading}
-              loading={loading}
-              className={campaignType === "FLASH_PROMO" ? "bg-amber-500 font-bold text-slate-950 hover:bg-amber-400" : undefined}
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin text-cyan-300" />
-                  <span>
-                    {scouting
-                      ? "Sedang meriset tema..."
-                      : campaignType === "FLASH_PROMO"
-                        ? (autoSchedule ? "Merender & Menjadwalkan Promo..." : "Membuat & Mengunggah Promo...")
-                        : "Sedang meriset tema..."}
-                  </span>
-                </div>
-              ) : (
-                <>
-                  {campaignType === "FLASH_PROMO" ? <Zap className="size-4" /> : <Sparkles />}
-                  {campaignType === "FLASH_PROMO"
-                    ? (autoSchedule ? "⚡ Buat & Jadwalkan Flash Promo" : "⚡ Generate Flash Promo (Ad-Hoc)")
-                    : "Generate 4-Act Story"}
-                </>
-              )}
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                onClick={() => void triggerDirectTelegram()}
+                disabled={loading}
+                className="border-cyan-400/30 bg-cyan-950/40 font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-900/50"
+              >
+                <span>📱 Kirim ke Telegram</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => void generate(true)}
+                disabled={loading}
+                loading={loading}
+                className={campaignType === "FLASH_PROMO" ? "bg-amber-500 font-bold text-slate-950 hover:bg-amber-400" : undefined}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="size-4 animate-spin text-cyan-300" />
+                    <span>
+                      {scouting
+                        ? "Sedang meriset tema..."
+                        : campaignType === "FLASH_PROMO"
+                          ? (autoSchedule ? "Merender & Menjadwalkan Promo..." : "Membuat & Mengunggah Promo...")
+                          : "Sedang meriset tema..."}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    {campaignType === "FLASH_PROMO" ? <Zap className="size-4" /> : <Sparkles />}
+                    {campaignType === "FLASH_PROMO"
+                      ? (autoSchedule ? "⚡ Buat & Jadwalkan Flash Promo" : "⚡ Generate Flash Promo (Ad-Hoc)")
+                      : "Generate 4-Act Story"}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 

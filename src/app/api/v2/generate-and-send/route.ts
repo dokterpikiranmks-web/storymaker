@@ -11,6 +11,9 @@ export const dynamic = "force-dynamic";
 interface GenerateAndSendPayload {
   pillar?: "PIKIRAN" | "TUBUH" | "TEKNOLOGI";
   date?: string;
+  topic?: string;
+  raw_thought?: string;
+  custom_topic?: string;
 }
 
 /**
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
       // Body kosong diperbolehkan, akan memakai default hari ini
     }
 
-    const { pillar, date } = payload;
+    const { pillar, date, topic, raw_thought, custom_topic } = payload;
     if (pillar && !PILLARS[pillar.toUpperCase()]) {
       return NextResponse.json(
         {
@@ -37,13 +40,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Generate Naskah 5 Story
+    // 1. Generate Naskah 5 Story dengan dukungan Topik Kustom User
     const storyData = await generateStoryV2({
       pillar: pillar?.toUpperCase(),
       date,
+      topic: topic || custom_topic,
+      rawThought: raw_thought,
     });
 
-    // 2. Publish ke Telegram Bot
+    // 2. Publish ke Telegram Bot (Kirim 5 Gambar 9:16 + Link PDF Panduan)
     const telegramResult = await publishToTelegram(storyData);
 
     return NextResponse.json({
