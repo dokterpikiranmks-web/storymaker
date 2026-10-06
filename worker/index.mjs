@@ -618,6 +618,7 @@ async function updateSupabaseAppState(isConnected) {
 // ── WhatsApp socket & Lifecycle ────────────────────────────────────────────
 let sock = null;
 let connected = false;
+let isSocketActive = false;
 let meJid = null;
 let busy = false;
 let isConnecting = false;
@@ -689,6 +690,7 @@ async function startWorker() {
       }
       if (connection === "open") {
         connected = true;
+        isSocketActive = true;
         reconnectAttempts = 0;
         disconnectedSince = null;
         lastConnected = Date.now();
@@ -703,6 +705,7 @@ async function startWorker() {
       }
       if (connection === "close") {
         connected = false;
+        isSocketActive = false;
         void updateSupabaseAppState(false);
         if (!disconnectedSince) {
           disconnectedSince = Date.now();
@@ -899,18 +902,19 @@ const connect = startWorker;
 function startWatchdog() {
   if (watchdogInterval) clearInterval(watchdogInterval);
   watchdogInterval = setInterval(() => {
-    const wsState = sock?.ws?.readyState;
-    const isSocketOpen = Boolean(connected && sock && wsState === 1);
+    // Sinkronisasi status aktif socket dari state terverifikasi Baileys
+    const isSocketOpen = Boolean(connected && isSocketActive && sock);
 
     if (isSocketOpen) {
       disconnectedSince = null;
       lastConnected = Date.now();
+      // Socket berstatus open & sehat — tidak perlu menghitung mundur terputus
     } else {
-      // readyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
-      const isHandshaking = isConnecting || wsState === 0;
+      // Watchdog HANYA boleh menghitung mundur jika socket benar-benar close/terputus tanpa ada progres auto-reconnect
+      const isReconnecting = isConnecting || reconnectTimeout !== null;
 
-      if (isHandshaking) {
-        log("⏳ [WATCHDOG] Baileys socket sedang dalam tahap handshake / proses inisialisasi. Melewati reconnect.");
+      if (isReconnecting) {
+        log("⏳ [WATCHDOG] Baileys socket sedang dalam proses koneksi ulang / handshake. Melewati watchdog check.");
       } else {
         if (!disconnectedSince) {
           disconnectedSince = Date.now();
@@ -919,12 +923,12 @@ function startWatchdog() {
         const THREE_MINUTES_MS = 3 * 60 * 1000;
 
         if (disconnectedDurationMs > THREE_MINUTES_MS) {
-          log(`🐕 [WATCHDOG] Baileys socket tidak aktif / terputus konsisten selama ${Math.round(disconnectedDurationMs / 1000)}s (> 3 menit). Memicu inisialisasi ulang...`);
+          log(`🐕 [WATCHDOG] Baileys socket terputus konsisten selama ${Math.round(disconnectedDurationMs / 1000)}s (> 3 menit) tanpa progres reconnect. Memicu inisialisasi ulang...`);
           disconnectedSince = Date.now();
           startWorker().catch((err) => log("✖ [WATCHDOG] Reconnect error:", err.message));
         } else {
           const waitRemainingSec = Math.round((THREE_MINUTES_MS - disconnectedDurationMs) / 1000);
-          log(`ℹ️ [WATCHDOG] Socket belum aktif (${Math.round(disconnectedDurationMs / 1000)}s terputus). Menunggu batas 3 menit (${waitRemainingSec}s tersisa) sebelum inisialisasi ulang.`);
+          log(`ℹ️ [WATCHDOG] Socket terputus (${Math.round(disconnectedDurationMs / 1000)}s). Menunggu batas 3 menit (${waitRemainingSec}s tersisa) sebelum inisialisasi ulang.`);
         }
       }
     }
