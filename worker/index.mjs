@@ -23,8 +23,8 @@ gracefulFs.gracefulify(fs);
 import "dotenv/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
-import { getDbPool, useSupabaseAuthState, clearSupabaseAuthState } from "./supabase-auth.mjs";
+import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import { getDbPool } from "./supabase-auth.mjs";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
 
@@ -559,6 +559,50 @@ async function findCampaignByKeyword(keyword) {
   return null;
 }
 
+// ── App State Synchronization (Dashboard Online Indicator) ─────────────────
+async function updateSupabaseAppState(isConnected) {
+  const payload = {
+    connected: Boolean(isConnected),
+    is_connected: Boolean(isConnected),
+    me: meJid ? meJid.split("@")[0] : null,
+    version: VERSION,
+    last_active: new Date().toISOString(),
+  };
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await pool.query(
+        `INSERT INTO app_state (key, value, updated_at)
+         VALUES ($1, $2::jsonb, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        ["worker:whatsapp", JSON.stringify(payload)]
+      );
+      log(`📡 [App State] Status koneksi disinkronkan ke Supabase: is_connected=${Boolean(isConnected)}`);
+      return;
+    }
+  } catch (poolErr) {
+    log("⚠️ [App State] Gagal update via db pool, mencoba Supabase client:", poolErr.message);
+  }
+
+  try {
+    const sb = await getSupabaseClient();
+    if (sb) {
+      const { error } = await sb.from("app_state").upsert({
+        key: "worker:whatsapp",
+        value: payload,
+        updated_at: new Date().toISOString(),
+      });
+      if (!error) {
+        log(`📡 [App State] Status koneksi disinkronkan ke Supabase (via client): is_connected=${Boolean(isConnected)}`);
+        return;
+      }
+    }
+  } catch (sbErr) {
+    log("⚠️ [App State] Gagal update via Supabase client:", sbErr.message);
+  }
+}
+
 // ── WhatsApp socket & Lifecycle ────────────────────────────────────────────
 let sock = null;
 let connected = false;
@@ -592,7 +636,8 @@ async function startWorker() {
       sock = null;
     }
 
-    const { state: rawState, saveCreds } = await useSupabaseAuthState(CONFIG.authDir);
+    const authPath = CONFIG.authDir || path.join(__dirname, "auth_info_storymaker");
+    const { state: rawState, saveCreds } = await useMultiFileAuthState(authPath);
     const state = makeCachedAuthState(rawState, { batchSize: 50 });
     let version;
     try {
@@ -641,10 +686,12 @@ async function startWorker() {
         }
         meJid = normalizeJid(sock.user?.id ?? null);
         log(`✅ Terhubung ke WhatsApp sebagai ${meJid}`);
+        void updateSupabaseAppState(true);
         void tick();
       }
       if (connection === "close") {
         connected = false;
+        void updateSupabaseAppState(false);
         if (!disconnectedSince) {
           disconnectedSince = Date.now();
         }
@@ -679,12 +726,8 @@ async function startWorker() {
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
           }
-          console.error("❌ Sesi WhatsApp StoryMaker Logged Out (Status 401)! Sesi dibersihkan dan status diubah menjadi DITAUTKAN_ULANG.");
-          try {
-            await clearSupabaseAuthState(getDbPool());
-          } catch (dbErr) {
-            console.error("⚠️ Gagal membersihkan sesi Supabase:", dbErr.message);
-          }
+          console.error("❌ Sesi WhatsApp StoryMaker Logged Out (Status 401)! Membersihkan auth lokal...");
+          void updateSupabaseAppState(false);
           await fsp.rm(CONFIG.authDir, { recursive: true, force: true }).catch(() => undefined);
 
           log("🔄 Menjadwalkan fresh pairing (QR Code baru) dalam 3 detik...");
