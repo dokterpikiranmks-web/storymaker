@@ -24,7 +24,7 @@ import "dotenv/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
-import { getDbPool, useSupabaseAuthState } from "./supabase-auth.mjs";
+import { getDbPool, useSupabaseAuthState, clearSupabaseAuthState } from "./supabase-auth.mjs";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
 
@@ -38,7 +38,7 @@ const CONFIG = {
   secret: process.env.WORKER_SECRET || "",
   workerSecret: process.env.WORKER_SECRET || "",
   pollMs: Math.max(15, Number(process.env.POLL_INTERVAL_SECONDS) || 60) * 1000,
-  authDir: path.resolve(process.env.WA_AUTH_DIR || path.join(__dirname, "auth_info_baileys")),
+  authDir: path.resolve(process.env.WA_AUTH_DIR || path.join(__dirname, "auth_info_storymaker")),
   contactsFile: path.resolve(process.env.WA_CONTACTS_FILE || path.join(__dirname, "contacts.json")),
   leadNurturingFile: path.resolve(process.env.WA_LEAD_NURTURING_FILE || path.join(__dirname, "lead_nurturing.json")),
   audience: (process.env.WA_STATUS_AUDIENCE || "")
@@ -605,7 +605,7 @@ async function startWorker() {
       auth: state,
       version,
       logger: pino({ level: CONFIG.logLevel }),
-      browser: ['Dokter Pikiran Worker', 'Chrome', '120.0.0'],
+      browser: ['StoryMaker Bot', 'Desktop', '1.0.0'],
       keepAliveIntervalMs: 25_000,
       emitOwnEvents: false,
       defaultQueryTimeoutMs: 60_000,
@@ -620,8 +620,15 @@ async function startWorker() {
     sock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
       if (qr) {
-        log("📱 Scan QR berikut: WhatsApp → Perangkat tertaut → Tautkan perangkat");
+        console.log("\n" + "═".repeat(62));
+        console.log("📲 [STORYMAKER WHATSAPP PAIRING - FRESH QR CODE]");
+        console.log("👉 Nomor HP    : 62811443327 (Multi-Device Companion)");
+        console.log("👉 Identitas   : StoryMaker Bot (Desktop 1.0.0)");
+        console.log("👉 Panduan     : WhatsApp di HP ➜ Perangkat Tertaut ➜ Tautkan");
+        console.log("👉 Arahkan kamera WhatsApp ke QR Code terminal di bawah ini:");
+        console.log("═".repeat(62) + "\n");
         qrcode.generate(qr, { small: true });
+        console.log("\n" + "═".repeat(62) + "\n");
       }
       if (connection === "open") {
         connected = true;
@@ -672,21 +679,18 @@ async function startWorker() {
             clearTimeout(reconnectTimeout);
             reconnectTimeout = null;
           }
-          console.error("❌ Sesi WhatsApp Logged Out (Status 401)! Sesi dibersihkan dan status diubah menjadi DITAUTKAN_ULANG.");
+          console.error("❌ Sesi WhatsApp StoryMaker Logged Out (Status 401)! Sesi dibersihkan dan status diubah menjadi DITAUTKAN_ULANG.");
           try {
-            const pool = getDbPool();
-            if (pool) {
-              await pool.query("DELETE FROM wa_auth_store WHERE id = 'creds'");
-              await pool.query(`
-                INSERT INTO wa_auth_store (id, value, updated_at)
-                VALUES ('session_status', '{"status":"DITAUTKAN_ULANG"}'::jsonb, NOW())
-                ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
-              `).catch(() => undefined);
-            }
+            await clearSupabaseAuthState(getDbPool());
           } catch (dbErr) {
             console.error("⚠️ Gagal membersihkan sesi Supabase:", dbErr.message);
           }
           await fsp.rm(CONFIG.authDir, { recursive: true, force: true }).catch(() => undefined);
+
+          log("🔄 Menjadwalkan fresh pairing (QR Code baru) dalam 3 detik...");
+          setTimeout(() => {
+            startWorker().catch((err) => log("✖ Gagal restart worker pasca-401:", err.message));
+          }, 3000);
         }
       }
     });

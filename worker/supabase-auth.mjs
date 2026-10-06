@@ -9,6 +9,8 @@ const { Pool } = pg;
 const fsp = fs.promises;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export const AUTH_KEY_PREFIX = "storymaker:";
+
 // Pastikan DATABASE_URL termuat dari worker/.env atau root .env
 if (!process.env.DATABASE_URL) {
   dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -52,16 +54,36 @@ export async function ensureAuthTable(pool) {
 }
 
 /**
+ * Membersihkan seluruh key autentikasi khusus StoryMaker dari wa_auth_store.
+ * Mengabaikan key aplikasi lain yang ada di tabel yang sama.
+ */
+export async function clearSupabaseAuthState(pool = getDbPool()) {
+  if (!pool) return;
+  try {
+    await pool.query("DELETE FROM wa_auth_store WHERE id LIKE $1", [`${AUTH_KEY_PREFIX}%`]);
+    await pool.query(
+      `INSERT INTO wa_auth_store (id, value, updated_at)
+       VALUES ($1, '{"status":"DITAUTKAN_ULANG"}'::jsonb, NOW())
+       ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [`${AUTH_KEY_PREFIX}session_status`]
+    ).catch(() => undefined);
+    console.log(`🧹 [Auth Store] Sesi '${AUTH_KEY_PREFIX}' berhasil dibersihkan dari wa_auth_store.`);
+  } catch (err) {
+    console.error("⚠️ Gagal membersihkan sesi StoryMaker di Supabase:", err.message);
+  }
+}
+
+/**
  * useSupabaseAuthState
  * Adapter penyimpanan auth Baileys berbasis database Supabase (PostgreSQL).
- * Menyimpan 'creds' dan cryptographic keys di tabel wa_auth_store.
+ * Menyimpan 'storymaker:creds' dan cryptographic keys di tabel wa_auth_store dengan namespace storymaker:.
  * 
  * Keuntungan:
- * 1. Worker di Cloud Container (Koyeb/Render) tidak kehilangan sesi saat restart/redeploy.
- * 2. Mendukung migrasi otomatis dari file lokal (auth_info_baileys/creds.json) pada boot pertama.
+ * 1. Isolasi total: co-exist aman dengan bot lain pada nomor yang sama tanpa Error 440 (Conflict).
+ * 2. Worker di Cloud Container (Render/Koyeb) tidak kehilangan sesi saat restart/redeploy.
  * 3. Fallback transparan ke useMultiFileAuthState jika DATABASE_URL tidak dikonfigurasi.
  */
-export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "auth_info_baileys")) {
+export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "auth_info_storymaker")) {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     console.warn("⚠️ DATABASE_URL tidak ditemukan. Menggunakan fallback lokal useMultiFileAuthState.");
@@ -71,23 +93,28 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
   const pool = getDbPool();
   await ensureAuthTable(pool);
 
-  // 1. Cek apakah creds sudah ada di database Supabase
+  const credsKey = `${AUTH_KEY_PREFIX}creds`;
+
+  // 1. Cek apakah creds storymaker sudah ada di database Supabase
   let creds = null;
   try {
-    const res = await pool.query("SELECT value FROM wa_auth_store WHERE id = 'creds' LIMIT 1");
+    const res = await pool.query(
+      "SELECT value FROM wa_auth_store WHERE id = $1 LIMIT 1",
+      [credsKey]
+    );
     if (res.rows.length > 0) {
       creds = JSON.parse(JSON.stringify(res.rows[0].value), BufferJSON.reviver);
       if (creds?.me && creds.registered !== true) {
         creds.registered = true;
       }
       const userJid = creds?.me?.id || "tersimpan";
-      console.log(`🔐 [Auth Store] Sesi Baileys ditemukan di Supabase untuk user: ${userJid}`);
+      console.log(`🔐 [Auth Store] Sesi Baileys StoryMaker ('${credsKey}') ditemukan di Supabase untuk user: ${userJid}`);
     }
   } catch (err) {
-    console.error("✖ Gagal membaca creds dari wa_auth_store:", err.message);
+    console.error(`✖ Gagal membaca creds ('${credsKey}') dari wa_auth_store:`, err.message);
   }
 
-  // 2. Jika di database belum ada, coba migrasi dari localAuthDir/creds.json atau WA_SESSION_DATA
+  // 2. Jika di database belum ada, cek WA_SESSION_DATA atau migrasi lokal khusus storymaker
   if (!creds) {
     if (process.env.WA_SESSION_DATA) {
       try {
@@ -105,18 +132,18 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
         try {
           const raw = await fsp.readFile(localCredsPath, "utf8");
           creds = JSON.parse(raw, BufferJSON.reviver);
-          console.log(`📦 [Auth Store] Mentransfer sesi lokal (${localCredsPath}) ke Supabase...`);
+          console.log(`📦 [Auth Store] Mentransfer sesi lokal StoryMaker (${localCredsPath}) ke Supabase...`);
           
-          // Simpan creds ke Supabase
+          // Simpan creds ke Supabase dengan prefix storymaker:
           const serializedCreds = JSON.stringify(creds, BufferJSON.replacer);
           await pool.query(
             `INSERT INTO wa_auth_store (id, value, updated_at)
-             VALUES ('creds', $1::jsonb, NOW())
+             VALUES ($1, $2::jsonb, NOW())
              ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-            [serializedCreds]
+            [credsKey, serializedCreds]
           );
 
-          // Salin juga key pendukung penting (app-state-sync dan pre-key awal) jika ada
+          // Salin juga key pendukung penting jika ada
           try {
             const files = await fsp.readdir(localAuthDir);
             const keyFiles = files.filter(
@@ -124,8 +151,8 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
                 f.endsWith(".json") &&
                 (f.startsWith("app-state-sync") ||
                   f.startsWith("signed-pre-key") ||
-                  f.startsWith("pre-key-1.") ||
-                  f.startsWith("session-62811443327"))
+                  f.startsWith("pre-key-") ||
+                  f.startsWith("session-"))
             );
 
             if (keyFiles.length > 0) {
@@ -134,7 +161,7 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
               for (const file of keyFiles.slice(0, 100)) {
                 try {
                   const content = await fsp.readFile(path.join(localAuthDir, file), "utf8");
-                  const keyId = file.replace(/\.json$/, "");
+                  const keyId = `${AUTH_KEY_PREFIX}${file.replace(/\.json$/, "")}`;
                   upsertIds.push(keyId);
                   upsertVals.push(content);
                 } catch {
@@ -150,20 +177,20 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
                   [upsertIds, upsertVals]
                 );
               }
-              console.log(`🔄 [Auth Store] Migrasi selesai: ${upsertIds.length} kunci sesi tersimpan ke Supabase.`);
+              console.log(`🔄 [Auth Store] Migrasi selesai: ${upsertIds.length} kunci sesi tersimpan ke Supabase dengan prefix '${AUTH_KEY_PREFIX}'.`);
             }
           } catch (migErr) {
             console.warn("⚠️ Migrasi kunci tambahan dilewati:", migErr.message);
           }
         } catch (readErr) {
-          console.warn("⚠️ Gagal membaca creds lokal:", readErr.message);
+          console.warn("⚠️ Gagal membaca creds lokal StoryMaker:", readErr.message);
         }
       }
     }
 
-    // Jika tetap belum ada sesi sama sekali, buat baru untuk QR scan
+    // Jika tetap belum ada sesi sama sekali, siapkan creds baru untuk fresh pairing QR scan
     if (!creds) {
-      console.log("📱 [Auth Store] Tidak ada sesi tersimpan. Menyiapkan kredensial baru (memerlukan scan QR).");
+      console.log(`📱 [Auth Store] Kredensial '${credsKey}' belum ada di Supabase. Menyiapkan kredensial baru (memerlukan scan QR).`);
       creds = initAuthCreds();
     }
   }
@@ -177,7 +204,7 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
   }
   let credsSaveTimer = null;
 
-  // 3. Bangun state interface sesuai ekspektasi Baileys
+  // 3. Bangun state interface sesuai ekspektasi Baileys (dengan isolasi namespace storymaker:)
   return {
     state: {
       creds,
@@ -186,15 +213,16 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
           const data = {};
           if (!ids || ids.length === 0) return data;
 
-          const dbIds = ids.map((id) => `${type}-${id}`);
+          const dbIds = ids.map((id) => `${AUTH_KEY_PREFIX}${type}-${id}`);
           try {
             const res = await pool.query(
-              "SELECT id, value FROM wa_auth_store WHERE id = ANY($1::text[])",
-              [dbIds]
+              "SELECT id, value FROM wa_auth_store WHERE id = ANY($1::text[]) AND id LIKE $2",
+              [dbIds, `${AUTH_KEY_PREFIX}%`]
             );
 
             const map = new Map();
             for (const row of res.rows) {
+              if (!row.id.startsWith(AUTH_KEY_PREFIX)) continue;
               try {
                 let val = JSON.parse(JSON.stringify(row.value), BufferJSON.reviver);
                 if (type === "app-state-sync-key" && val) {
@@ -207,11 +235,11 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
             }
 
             for (const id of ids) {
-              const fullId = `${type}-${id}`;
+              const fullId = `${AUTH_KEY_PREFIX}${type}-${id}`;
               data[id] = map.get(fullId) ?? null;
             }
           } catch (err) {
-            console.error(`✖ Error membaca keys (${type}):`, err.message);
+            console.error(`✖ Error membaca keys (${type}) dari Supabase:`, err.message);
             for (const id of ids) data[id] = null;
           }
 
@@ -226,7 +254,7 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
             for (const category of Object.keys(data)) {
               for (const id of Object.keys(data[category])) {
                 const value = data[category][id];
-                const keyId = `${category}-${id}`;
+                const keyId = `${AUTH_KEY_PREFIX}${category}-${id}`;
                 if (value) {
                   toUpsert.push({ id: keyId, value });
                 } else {
@@ -237,22 +265,43 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
 
             try {
               if (toUpsert.length > 0) {
-                // Batch upsert ke Supabase
-                const ids = toUpsert.map((x) => x.id);
-                const values = toUpsert.map((x) => JSON.stringify(x.value, BufferJSON.replacer));
-                await pool.query(
-                  `INSERT INTO wa_auth_store (id, value, updated_at)
-                   SELECT unnest($1::text[]), unnest($2::jsonb[]), NOW()
-                   ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-                  [ids, values]
-                );
+                // Batch upsert ke Supabase - filter ketat hanya key berawalan storymaker:
+                const validUpserts = toUpsert.filter((x) => x.id.startsWith(AUTH_KEY_PREFIX));
+                if (validUpserts.length > 0) {
+                  const ids = validUpserts.map((x) => x.id);
+                  const values = validUpserts.map((x) => JSON.stringify(x.value, BufferJSON.replacer));
+                  await pool.query(
+                    `INSERT INTO wa_auth_store (id, value, updated_at)
+                     SELECT unnest($1::text[]), unnest($2::jsonb[]), NOW()
+                     ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+                    [ids, values]
+                  );
+                }
               }
 
               if (toDelete.length > 0) {
-                await pool.query("DELETE FROM wa_auth_store WHERE id = ANY($1::text[])", [toDelete]);
+                // Batch delete ke Supabase - filter ketat hanya key berawalan storymaker:
+                const validDeletes = toDelete.filter((x) => x.startsWith(AUTH_KEY_PREFIX));
+                if (validDeletes.length > 0) {
+                  await pool.query(
+                    "DELETE FROM wa_auth_store WHERE id = ANY($1::text[]) AND id LIKE $2",
+                    [validDeletes, `${AUTH_KEY_PREFIX}%`]
+                  );
+                }
               }
             } catch (err) {
               console.error("✖ Error menyimpan keys ke Supabase:", err.message);
+            }
+          });
+        },
+
+        clear: async () => {
+          return enqueueWrite(async () => {
+            try {
+              await pool.query("DELETE FROM wa_auth_store WHERE id LIKE $1", [`${AUTH_KEY_PREFIX}%`]);
+              console.log(`🧹 [Auth Store] Semua key '${AUTH_KEY_PREFIX}' dibersihkan dari wa_auth_store.`);
+            } catch (err) {
+              console.error("✖ Gagal membersihkan keys dari wa_auth_store:", err.message);
             }
           });
         },
@@ -268,12 +317,12 @@ export async function useSupabaseAuthState(localAuthDir = path.join(__dirname, "
           const serialized = JSON.stringify(creds, BufferJSON.replacer);
           await pool.query(
             `INSERT INTO wa_auth_store (id, value, updated_at)
-             VALUES ('creds', $1::jsonb, NOW())
+             VALUES ($1, $2::jsonb, NOW())
              ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-            [serialized]
+            [credsKey, serialized]
           );
         } catch (err) {
-          console.error("✖ Gagal menyimpan creds ke Supabase:", err.message);
+          console.error(`✖ Gagal menyimpan creds ('${credsKey}') ke Supabase:`, err.message);
         }
       };
 
