@@ -405,10 +405,24 @@ function makeCachedAuthState(state, { batchSize = 50 } = {}) {
   return state;
 }
 
-// ── Deep Inbound Message Extractor & Keyword Matcher ───────────────────────
-const BOOKING_KEYWORDS = ["SLOT", "TERAPI", "KONSUL", "DAFTAR", "JADWAL", "BIAYA"];
-const LEAD_KEYWORDS = ["RESET", "VAGUS", "SOMATIK", "PANDUAN", "PROTOKOL"];
-const KEYWORDS = [...BOOKING_KEYWORDS, ...LEAD_KEYWORDS];
+// ── Strict Official Campaign Keywords & Inbound Matcher ─────────────────────
+const OFFICIAL_CAMPAIGN_KEYWORDS = ["lambung", "gerd", "slot", "terapi", "konsultasi", "maag"];
+const BOOKING_KEYWORDS = ["slot", "terapi", "konsultasi"];
+const HEALTH_KEYWORDS = ["lambung", "gerd", "maag"];
+const KEYWORDS = OFFICIAL_CAMPAIGN_KEYWORDS;
+const LEAD_KEYWORDS = HEALTH_KEYWORDS;
+
+function getMatchedOfficialKeyword(text) {
+  if (!text || typeof text !== "string") return null;
+  const clean = text.trim().toLowerCase();
+  for (const kw of OFFICIAL_CAMPAIGN_KEYWORDS) {
+    const rx = new RegExp(`(^|[^a-z0-9])${kw}([^a-z0-9]|$)`, "i");
+    if (rx.test(clean) || clean.includes(kw)) {
+      return kw;
+    }
+  }
+  return null;
+}
 
 function extractMessageText(msg) {
   return (
@@ -430,17 +444,15 @@ function extractMessageText(msg) {
 
 function isBookingKeywordMatched(text) {
   if (!text || typeof text !== "string") return false;
-  const cleanText = text.trim().toUpperCase();
+  const clean = text.trim().toLowerCase();
   return BOOKING_KEYWORDS.some((k) => {
-    const rx = new RegExp(`(^|[^A-Z0-9])${k}([^A-Z0-9]|$)`, "i");
-    return rx.test(cleanText) || cleanText.includes(k);
+    const rx = new RegExp(`(^|[^a-z0-9])${k}([^a-z0-9]|$)`, "i");
+    return rx.test(clean) || clean.includes(k);
   });
 }
 
 function isKeywordMatched(text) {
-  if (!text || typeof text !== "string") return false;
-  const cleanText = text.trim().toUpperCase();
-  return KEYWORDS.some((k) => cleanText.includes(k));
+  return Boolean(getMatchedOfficialKeyword(text));
 }
 
 // ── Supabase Client Initialization & Historical Evergreen Lookup ───────────
@@ -746,7 +758,7 @@ async function startWorker() {
       chats.forEach((c) => addContact(c.id));
     });
 
-    // ── Bulletproof Inbound Parser & Auto-Responder ────────────────────────
+    // ── Strict Inbound Parser & Official Campaign Auto-Responder ───────────
     sock.ev.on('messages.upsert', async (upsert) => {
       try {
         const { messages, type } = upsert;
@@ -754,45 +766,58 @@ async function startWorker() {
 
         for (const m of messages) {
           try {
-            // 1. Abaikan pesan dari akun sendiri & status broadcast
+            // 1. Abaikan pesan dari diri sendiri
             if (m.key?.fromMe) continue;
+
             const remoteJid = m.key?.remoteJid || '';
-            if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') continue;
+
+            // 2. Abaikan grup
+            if (!remoteJid || remoteJid.endsWith('@g.us')) continue;
+
+            // 3. Abaikan status WhatsApp
+            if (remoteJid === 'status@broadcast') continue;
+
+            // 4. Abaikan pesan non-teks (panggilan, reaksi, stiker, protocol/system message)
+            if (!m.message) continue;
+            if (m.messageStubType) continue;
+            if (m.message.reactionMessage) continue;
+            if (m.message.protocolMessage) continue;
+            if (m.message.pollUpdateMessage) continue;
+            if (m.message.stickerMessage) continue;
+
+            const rawText = extractMessageText(m.message).trim();
+            if (!rawText) continue;
+
+            // 5. Cek kata kunci kampanye resmi secara ketat
+            // Kata kunci valid: ['lambung', 'gerd', 'slot', 'terapi', 'konsultasi', 'maag']
+            const matchedKw = getMatchedOfficialKeyword(rawText);
+
+            // JIKA PESAN TIDAK MENGANDUNG KATA KUNCI DI ATAS: DIAM TOTAL!
+            // Jangan kirim PDF, jangan kirim salam, jangan kirim balasan apa pun.
+            // Biarkan chat ditangani oleh manusia atau aplikasi kedua.
+            if (!matchedKw) {
+              continue;
+            }
+
+            console.log(`🎯 [OFFICIAL TRIGGER] Kata kunci resmi "${matchedKw}" terdeteksi dari ${remoteJid}: "${rawText}"`);
 
             // Ekstraksi nama dari pesan masuk Baileys & sapaan sopan
             const senderName = m.pushName?.trim() || '';
             const greeting = senderName ? `Salam hangat, Bapak/Ibu ${senderName} 🌿` : 'Salam hangat, Bapak/Ibu 🌿';
 
-            // 2. Ekstraksi naskah dari m.message (dengan penanganan unwrapping lengkap)
-            const msg = m.message;
-            if (!msg) continue;
-
-            const rawText = msg.conversation ||
-                            msg.extendedTextMessage?.text ||
-                            msg.imageMessage?.caption ||
-                            msg.videoMessage?.caption ||
-                            msg.ephemeralMessage?.message?.extendedTextMessage?.text ||
-                            msg.ephemeralMessage?.message?.conversation ||
-                            msg.viewOnceMessage?.message?.extendedTextMessage?.text ||
-                            '';
-
-            const cleanText = rawText.trim().toUpperCase();
-            if (!cleanText) continue;
-            console.log(`📩 [INBOUND REAL-TIME] Dari: ${remoteJid} (${senderName || "Anonim"}) | Teks: "${rawText}"`);
-
-            // Prospek aktif membalas -> batalkan auto follow-up 3 jam
+            // Prospek aktif membalas -> batalkan auto follow-up 3 jam jika sebelumnya ada
             markLeadReplied(remoteJid);
 
-            // ── INBOUND TRIGGER KHUSUS BOOKING (SLOT / TERAPI / KONSUL / DAFTAR / JADWAL / BIAYA) ──
-            if (isBookingKeywordMatched(cleanText)) {
-              console.log(`🛎️ [BOOKING TRIGGER] Kata kunci booking terdeteksi dari ${remoteJid} (${senderName || "Anonim"}): "${cleanText}"`);
+            // Cek in-memory debounce anti-spam (5 menit TTL)
+            if (isInDebounce(remoteJid)) {
+              console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati balasan ganda.`);
+              continue;
+            }
+            setDebounce(remoteJid);
 
-              if (isInDebounce(`booking:${remoteJid}`)) {
-                console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang booking. Lewati.`);
-                continue;
-              }
-              setDebounce(`booking:${remoteJid}`);
-
+            // ── KATEGORI 1: Booking & Jadwal Terapi ('slot', 'terapi', 'konsultasi') ──
+            if (['slot', 'terapi', 'konsultasi'].includes(matchedKw)) {
+              console.log(`🛎️ [BOOKING TRIGGER] Mengirim info jadwal & tarif ke ${remoteJid}`);
               const bookingResponseText = `${greeting}\n\nTerima kasih telah menghubungi Klinik Dokter Pikiran. Berikut informasi layanan dan jadwal sesi tatap muka kami:\n\n1. 🌿 Fungsional Holistik & Totok Saraf\n   - Tarif: Rp 150.000 / sesi (±45-60 menit)\n   - Fokus: Pelepasan ketegangan fisik, saraf leher/belikat, penyelarasan meridian & fungsi pencernaan.\n\n2. 🧠 Hipnoterapi Klinis & Pemulihan Bawah Sadar\n   - Tarif: Rp 650.000 / sesi tunggal\n   - Paket Transformasi (3 Sesi): Rp 1.500.000\n   - Fokus: Penanganan trauma, anxiety/kecemasan, psikosomatis menahun, & insomnia kronis.\n\n📍 Jadwal Praktek (WITA):\n- Senin s/d Jumat: 16.00 - 21.00 WITA\n- Sabtu: 09.00 - 12.00 WITA\n- Ahad: Libur / OFF\n\nUntuk reservasi slot, silakan balas pesan ini dengan format:\nNama / Layanan / Pilihan Hari & Jam\n\nTim kami akan segera mengonfirmasi ketersediaan jadwal Anda.`;
 
               try {
@@ -804,120 +829,57 @@ async function startWorker() {
               continue;
             }
 
-            // Logika Pencocokan Berlapis Lead Magnet
-            // Tahap 1: Query ke Supabase / DB / API untuk mencari kampanye (termasuk kampanye lampau) yang memiliki trigger_keyword cocok
-            let matchedCampaign = await findCampaignByKeyword(cleanText);
-            let matchedKeyword = cleanText;
+            // ── KATEGORI 2: Materi & Panduan Kesehatan ('lambung', 'gerd', 'maag') ──
+            if (['lambung', 'gerd', 'maag'].includes(matchedKw)) {
+              console.log(`📖 [HEALTH CAMPAIGN] Mengirim modul panduan lambung/GERD ke ${remoteJid}`);
+              const topicTitle = "Pemulihan Lambung & Regulasi GERD/Psikosomatis";
+              const safeKey = "Lambung_GERD";
 
-            if (!matchedCampaign) {
-              // Cari kata per kata jika audiens mengetik kalimat (misal: "Ketik LEHER" atau "Saya mau modul LAMBUNG")
-              const words = cleanText.split(/[\s,.:;!?-]+/).filter((w) => w.length >= 3);
-              for (const w of words) {
-                const found = await findCampaignByKeyword(w);
-                if (found) {
-                  matchedCampaign = found;
-                  matchedKeyword = w;
-                  break;
-                }
-              }
-            }
-
-            // Tahap 2: Jika ditemukan kampanye yang cocok
-            if (matchedCampaign) {
-              console.log(`🎯 [TRIGGER MATCHED] Kampanye cocok ditemukan untuk kata kunci "${matchedKeyword}" (${matchedCampaign.topic || "spesifik"})!`);
-
-              // Cek in-memory debounce anti-spam (5 menit TTL)
-              if (isInDebounce(remoteJid)) {
-                console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
-                continue;
-              }
-              setDebounce(remoteJid);
-
-              const topicTitle = matchedCampaign.topic || matchedKeyword;
-              const safeKey = matchedKeyword.replace(/[^A-Za-z0-9]/g, "") || "Protokol";
-
-              // 2.a Kirim pesan teks hangat
+              // Kirim pesan teks pendahuluan edukatif
               try {
                 await sock.sendMessage(remoteJid, {
-                  text: `${greeting}\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkahnya.`
+                  text: `${greeting}\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkah penanganan mandirinya.`
                 });
                 console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
               } catch (err) {
                 console.error(`❌ Gagal kirim teks inbound:`, err);
               }
 
-              // 2.b Ambil buffer PDF dengan parameter campaignId: ${baseUrl}/api/protocol/pdf?campaignId=${matchedCampaign.id}
+              // Ambil dan kirim file PDF materi kesehatan lambung
               try {
                 const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
-                const pdfUrl = `${baseUrl}/api/protocol/pdf?campaignId=${encodeURIComponent(matchedCampaign.id)}`;
-                const pdfRes = await fetch(pdfUrl, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
+                let pdfUrl = `${baseUrl}/api/protocol/pdf?topic=lambung`;
+
+                const matchedCampaign = await findCampaignByKeyword(matchedKw);
+                if (matchedCampaign?.id) {
+                  pdfUrl = `${baseUrl}/api/protocol/pdf?campaignId=${encodeURIComponent(matchedCampaign.id)}`;
+                }
+
+                const pdfRes = await fetch(pdfUrl, {
+                  headers: { 'x-worker-secret': CONFIG.workerSecret || '' },
+                  signal: AbortSignal.timeout(20_000),
+                });
+
                 if (pdfRes.ok) {
                   const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
                   await sock.sendMessage(remoteJid, {
                     document: pdfBuffer,
                     mimetype: 'application/pdf',
-                    fileName: `Panduan_${safeKey}_DokterPikiran.pdf`,
-                    caption: `📄 Panduan Saku Praktis: ${topicTitle} (PDF)`
+                    fileName: `Panduan_Kesehatan_${safeKey}_DokterPikiran.pdf`,
+                    caption: `📄 Panduan Saku: ${topicTitle} (PDF)`
                   });
-                  console.log(`✅ [PDF SENT] File PDF dinamis Panduan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
-                  // Catat pengiriman lead magnet untuk follow-up 3 jam
+                  console.log(`✅ [PDF SENT] File PDF Panduan_Kesehatan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
                   addLeadToNurturing(remoteJid, senderName);
                 } else {
-                  console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} untuk campaignId ${matchedCampaign.id}`);
+                  console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} dari server`);
                 }
               } catch (pdfErr) {
-                console.error(`⚠️ Gagal kirim PDF dokumen spesifik:`, pdfErr);
+                console.error(`⚠️ Gagal kirim PDF dokumen lambung:`, pdfErr?.message || pdfErr);
               }
               continue;
             }
-
-            // Tahap 3 (Fallback Universal):
-            // Jika cleanText mencakup kata kunci umum ('RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'), layani dengan kampanye aktif hari ini atau protokol somatik default Dokter Pikiran.
-            const FALLBACK_KEYWORDS = ['RESET', 'PANDUAN', 'SOMATIK', 'VAGUS', 'PROTOKOL'];
-            const isFallback = FALLBACK_KEYWORDS.some(k => cleanText.includes(k));
-
-            if (isFallback) {
-              console.log(`🎯 [UNIVERSAL FALLBACK] Kata kunci umum cocok untuk ${remoteJid}! Memproses balasan...`);
-
-              // Cek in-memory debounce anti-spam (5 menit TTL)
-              if (isInDebounce(remoteJid)) {
-                console.log(`⏳ [DEBOUNCE] ${remoteJid} dalam masa tenang. Lewati.`);
-                continue;
-              }
-              setDebounce(remoteJid);
-
-              // LANGKAH 1: Balas pesan teks hangat dari Dokter Pikiran
-              try {
-                await sock.sendMessage(remoteJid, {
-                  text: `${greeting}\n\nTerima kasih sudah merespons. Berikut ringkasan protokol somatik & reset saraf vagus yang bisa Anda praktikkan:\n\n1. Rilekskan otot leher belakang di cekungan pangkal tengkorak (titik GB-20).\n2. Tarik napas diafragma 4 detik, tahan 7 detik, hembuskan perlahan 8 detik.\n3. Beri afirmasi ketenangan pada tubuh untuk istirahat lelap.\n\nDokumen panduan lengkap PDF sedang dikirimkan di bawah ini...`
-                });
-                console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
-              } catch (err) {
-                console.error(`❌ Gagal kirim teks inbound:`, err);
-              }
-
-              // LANGKAH 2: Kirim PDF dokumen dari Vercel
-              try {
-                const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
-                const pdfRes = await fetch(`${baseUrl}/api/protocol/pdf`, { headers: { 'x-worker-secret': CONFIG.workerSecret || '' } });
-                if (pdfRes.ok) {
-                  const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-                  await sock.sendMessage(remoteJid, {
-                    document: pdfBuffer,
-                    mimetype: 'application/pdf',
-                    fileName: 'Panduan_Protokol_DokterPikiran.pdf',
-                    caption: '📄 Panduan Saku Somatik & Regulasi Saraf Vagus (PDF)'
-                  });
-                  console.log(`✅ [PDF SENT] File PDF universal berhasil dikirim ke ${remoteJid}`);
-                  // Catat pengiriman lead magnet untuk follow-up 3 jam
-                  addLeadToNurturing(remoteJid, senderName);
-                }
-              } catch (pdfErr) {
-                console.error(`⚠️ Gagal kirim PDF dokumen:`, pdfErr);
-              }
-            }
           } catch (singleMsgErr) {
-            console.error("⚠️ [MESSAGE ERROR] Gagal memproses pesan tunggal / parsing issue:", singleMsgErr?.message || singleMsgErr);
+            console.error("⚠️ [MESSAGE ERROR] Gagal memproses pesan tunggal:", singleMsgErr?.message || singleMsgErr);
           }
         }
       } catch (upsertErr) {
