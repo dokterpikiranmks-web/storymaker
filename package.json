@@ -10,7 +10,8 @@
     "postinstall": "node -e \"const fs=require('fs'); if(fs.existsSync('./scripts/copy-fonts.mjs')) require('child_process').execSync('node scripts/copy-fonts.mjs', {stdio:'inherit'})\"",
     "worker": "node worker/index.mjs",
     "worker:wa": "npm --prefix worker start",
-    "generate:today": "node scripts/generate-today.mjs"
+    "generate:today": "node scripts/generate-today.mjs",
+    "generate:telegram": "node scripts/trigger-telegram.js"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

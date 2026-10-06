@@ -170,6 +170,7 @@ export interface FeatureFlags {
   geminiConfigured: boolean;
   supabaseStorageConfigured: boolean;
   instagramConfigured: boolean;
+  telegramConfigured?: boolean;
   workerSecretConfigured: boolean;
   dashboardAuthEnabled: boolean;
   timezone: string;

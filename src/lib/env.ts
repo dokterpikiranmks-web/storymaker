@@ -65,6 +65,16 @@ export function isPublicHttpsUrl(url: string): boolean {
   }
 }
 
+export function getTelegramConfig(): { botToken: string; chatId: string; configured: boolean } {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim() || "";
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim() || "";
+  return {
+    botToken,
+    chatId,
+    configured: Boolean(botToken && chatId),
+  };
+}
+
 export function getFeatureFlags(): FeatureFlags {
   const tz = getAppTimezone();
   const dbUrl = process.env.DATABASE_URL?.trim();
@@ -76,6 +86,7 @@ export function getFeatureFlags(): FeatureFlags {
       process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
     ),
     instagramConfigured: Boolean(process.env.IG_USER_ID?.trim() && process.env.IG_ACCESS_TOKEN?.trim()),
+    telegramConfigured: Boolean(process.env.TELEGRAM_BOT_TOKEN?.trim() && process.env.TELEGRAM_CHAT_ID?.trim()),
     workerSecretConfigured: Boolean(process.env.WORKER_SECRET?.trim()),
     dashboardAuthEnabled: Boolean(process.env.DASHBOARD_PASSCODE?.trim()),
     timezone: tz,
