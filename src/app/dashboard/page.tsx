@@ -7,7 +7,7 @@ import { getPersona, getWorkerHeartbeat } from "@/lib/settings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Dashboard · Story Maker",
+  title: "Remote Studio V2 · Dokter Pikiran Makassar",
 };
 
 export default async function DashboardPage() {

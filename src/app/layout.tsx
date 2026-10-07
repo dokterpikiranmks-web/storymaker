@@ -32,13 +32,13 @@ const serif = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Story Maker — Autonomous Neuro-Storytelling Engine",
+  title: "Remote Studio V2 · Dokter Pikiran Makassar",
   description:
-    "Ubah ide mentah menjadi 4 babak story WhatsApp & Instagram berbasis psikologi dopamin dan hipnosis percakapan — 100% free-tier.",
+    "Remote Studio V2 Dokter Pikiran Makassar — Siaran 5 Slide WhatsApp Story 9:16 & PDF Panduan Klinis via Telegram Engine V2.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070A12",
+  themeColor: "#0F1115",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
