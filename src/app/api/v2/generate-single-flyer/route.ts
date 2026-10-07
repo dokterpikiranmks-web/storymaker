@@ -84,6 +84,8 @@ export async function POST(req: Request) {
     const notes = body.notes?.trim() || "Maksimal 5 pasien per hari";
     const customPrompt = body.customPrompt?.trim();
 
+    console.log("[SingleFlyer API] Payload diterima:", { templateId, customPrompt, title, preset });
+
     // 1. Generate Latar Foto via Imagen 3 (atau Fallback Estetis)
     console.log(`[SingleFlyer] Generating hero photo for preset ${preset}...`);
     const photoResult = await generateHeroPhoto(customPrompt, {
@@ -190,6 +192,7 @@ export async function GET(req: Request) {
     body: JSON.stringify({
       preset,
       templateId: (searchParams.get("templateId") as FlyerTemplateId) || undefined,
+      customPrompt: searchParams.get("customPrompt") || undefined,
       title: searchParams.get("title") || undefined,
       price: searchParams.get("price") || undefined,
       notes: searchParams.get("notes") || undefined,

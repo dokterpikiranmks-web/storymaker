@@ -8,7 +8,13 @@ export const FLYER_HEIGHT = 1920;
 export const ULTRA_HD_WIDTH = 2160;
 export const ULTRA_HD_HEIGHT = 3840;
 
-export type PromoTemplateId = "bright_botanical" | "warm_editorial" | "clean_minimalist";
+export type PromoTemplateId =
+  | "bright-botanical"
+  | "warm-sand"
+  | "clean-minimalist"
+  | "bright_botanical"
+  | "warm_editorial"
+  | "clean_minimalist";
 export type QuotesTemplateId = "cinematic" | "linen" | "botanical";
 export type FlyerTemplateId = PromoTemplateId | QuotesTemplateId;
 
@@ -336,9 +342,9 @@ function buildBrightBotanicalPromo(data: SingleFlyerPayload): SatoriElement {
         justifyContent: "space-between",
         width: `${FLYER_WIDTH}px`,
         height: `${FLYER_HEIGHT}px`,
-        backgroundColor: "#F9FAF6",
+        backgroundColor: "#F8F9F5",
         backgroundImage:
-          "radial-gradient(circle at 12% 10%, rgba(220, 238, 227, 0.75) 0%, rgba(249, 250, 246, 0.96) 50%, #F3F6EF 100%)",
+          "radial-gradient(circle at 12% 10%, rgba(220, 238, 227, 0.75) 0%, rgba(248, 249, 245, 0.98) 50%, #F1F5ED 100%)",
         padding: "50px 52px 42px 52px",
         boxSizing: "border-box",
         fontFamily: "Inter, sans-serif",
@@ -945,22 +951,1231 @@ function buildBrightBotanicalPromo(data: SingleFlyerPayload): SatoriElement {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
- * TEMPLATE PROMO 2: WARM SAND EDITORIAL
+ * TEMPLATE PROMO 2: WARM SAND EDITORIAL (WARM SAND LINEN & SERIF LUXURY)
  * ════════════════════════════════════════════════════════════════════════════
  */
 function buildWarmEditorialPromo(data: SingleFlyerPayload): SatoriElement {
-  // Mirip bright botanical dengan palet warm sand / linen editorial (#F5EFEB)
-  return buildBrightBotanicalPromo(data);
+  const fullTitle = data.title || "Totok Saraf Makassar";
+  const price = data.price || "Rp 150.000";
+  const duration = data.duration || "± 1 Jam";
+  const address = data.address || "Jl. Batua Raya 10 B No.9 Makassar";
+  const schedule = data.schedule || "Senin – Sabtu 16.00 – 21.00 WITA";
+  const notes = data.notes || "Maksimal 5 pasien per hari";
+
+  const benefitsData = [
+    { num: "I", title: "Meredakan Sakit Kepala", desc: "Migrain, vertigo & ketegangan saraf kranial" },
+    { num: "II", title: "Merelaksasi Otot Leher", desc: "Pelepasan kuncian fasia & bahu kaku" },
+    { num: "III", title: "Memulihkan Sirkulasi", desc: "Revitalisasi oksigenasi aliran serebral" },
+    { num: "IV", title: "Meningkatkan Kualitas Tidur", desc: "Menenangkan insomnia & mengembalikan ritme" },
+    { num: "V", title: "Restorasi Keseimbangan Vagus", desc: "Regulasi sistem saraf otonom & pelepasan stres" },
+  ];
+
+  const heroPhotoNode: SatoriElement = data.heroPhotoBase64
+    ? {
+        type: "img",
+        props: {
+          src: data.heroPhotoBase64,
+          alt: "Editorial Terapi",
+          style: {
+            width: "976px",
+            height: "480px",
+            objectFit: "cover",
+          },
+        },
+      }
+    : {
+        type: "div",
+        props: {
+          style: {
+            display: "flex",
+            width: "976px",
+            height: "480px",
+            backgroundColor: "#3A302A",
+          },
+        },
+      };
+
+  const createBenefitCard = (b: typeof benefitsData[0]): SatoriElement => ({
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flex: 1,
+        alignItems: "center",
+        gap: "14px",
+        backgroundColor: "#F7F2EB",
+        border: "1px solid #D5C8B8",
+        borderRadius: "16px",
+        padding: "12px 18px",
+        boxShadow: "0 4px 12px rgba(44, 36, 31, 0.04)",
+      },
+      children: [
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              width: "38px",
+              height: "38px",
+              borderRadius: "50%",
+              backgroundColor: "#E5DDD1",
+              border: "1px solid #C4B5A5",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+            children: {
+              type: "span",
+              props: {
+                style: {
+                  fontFamily: "Playfair Display, serif",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#2C241F",
+                },
+                children: b.num,
+              },
+            },
+          },
+        },
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+            },
+            children: [
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontFamily: "Playfair Display, serif",
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: "#2C241F",
+                    lineHeight: 1.2,
+                  },
+                  children: b.title,
+                },
+              },
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#6E5D4F",
+                    marginTop: "2px",
+                  },
+                  children: b.desc,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  return {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        width: `${FLYER_WIDTH}px`,
+        height: `${FLYER_HEIGHT}px`,
+        backgroundColor: "#EDE8E1",
+        backgroundImage:
+          "radial-gradient(circle at 50% 15%, #F6F2EC 0%, #EDE8E1 55%, #E2D9CF 100%)",
+        padding: "52px 52px 44px 52px",
+        boxSizing: "border-box",
+        fontFamily: "Inter, sans-serif",
+        color: "#2C241F",
+      },
+      children: [
+        // ── 1. EDITORIAL HEADER ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderBottom: "1px solid #CFC3B5",
+                    paddingBottom: "12px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "14px",
+                          fontWeight: 800,
+                          letterSpacing: "4px",
+                          color: "#7D6955",
+                          textTransform: "uppercase",
+                        },
+                        children: "DOKTER PIKIRAN",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          letterSpacing: "2px",
+                          color: "#998573",
+                          textTransform: "uppercase",
+                        },
+                        children: "MAKASSAR • WITA (UTC+8)",
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontFamily: "Playfair Display, serif",
+                          fontSize: "56px",
+                          fontWeight: 700,
+                          color: "#2C241F",
+                          letterSpacing: "-0.5px",
+                          lineHeight: 1.12,
+                        },
+                        children: fullTitle,
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontFamily: "Playfair Display, serif",
+                          fontStyle: "italic",
+                          fontSize: "20px",
+                          color: "#6E5D4F",
+                        },
+                        children: "Pendekatan somatik & stimulasi titik saraf restoratif untuk ketenangan holistik.",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 2. HERO IMAGE AREA (EDITORIAL PORTRAIT FRAME) ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              position: "relative",
+              width: "976px",
+              height: "480px",
+              borderRadius: "24px",
+              overflow: "hidden",
+              border: "1.5px solid #CFC3B5",
+              boxShadow: "0 18px 40px rgba(44, 36, 31, 0.12)",
+              backgroundColor: "#2C241F",
+            },
+            children: [
+              heroPhotoNode,
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    width: "976px",
+                    height: "180px",
+                    backgroundImage:
+                      "linear-gradient(180deg, rgba(237,232,225,0) 0%, rgba(44,36,31,0.65) 60%, rgba(38,32,28,0.92) 100%)",
+                  },
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    bottom: "20px",
+                    left: "24px",
+                    right: "24px",
+                    justifyContent: "center",
+                  },
+                  children: {
+                    type: "div",
+                    props: {
+                      style: {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "8px 24px",
+                        borderRadius: "10px",
+                        backgroundColor: "rgba(247, 242, 235, 0.95)",
+                        border: "1px solid rgba(196, 181, 165, 0.8)",
+                        boxShadow: "0 8px 20px rgba(44, 36, 31, 0.15)",
+                      },
+                      children: {
+                        type: "span",
+                        props: {
+                          style: {
+                            fontFamily: "Playfair Display, serif",
+                            fontStyle: "italic",
+                            fontSize: "22px",
+                            fontWeight: 600,
+                            color: "#2C241F",
+                          },
+                          children: "“Vol. 01 — Restorasi Somatik & Keseimbangan Vagus”",
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 3. 5 BENEFIT SECTION (EDITORIAL ROMAN LIST) ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderBottom: "1px solid #CFC3B5",
+                    paddingBottom: "8px",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontFamily: "Playfair Display, serif",
+                        fontSize: "16px",
+                        fontWeight: 700,
+                        letterSpacing: "3px",
+                        color: "#4A3E35",
+                        textTransform: "uppercase",
+                      },
+                      children: "— LIMA PILAR PEMULIHAN SISTEMIK —",
+                    },
+                  },
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  },
+                  children: [
+                    {
+                      type: "div",
+                      props: {
+                        style: { display: "flex", flexDirection: "row", gap: "12px" },
+                        children: [
+                          createBenefitCard(benefitsData[0]),
+                          createBenefitCard(benefitsData[1]),
+                        ],
+                      },
+                    },
+                    {
+                      type: "div",
+                      props: {
+                        style: { display: "flex", flexDirection: "row", gap: "12px" },
+                        children: [
+                          createBenefitCard(benefitsData[2]),
+                          createBenefitCard(benefitsData[3]),
+                        ],
+                      },
+                    },
+                    {
+                      type: "div",
+                      props: {
+                        style: { display: "flex", flexDirection: "row" },
+                        children: [createBenefitCard(benefitsData[4])],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 4. HARGA (LUXURY ESPRESSO & GOLD PLAQUE) ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "#26201C",
+              border: "1.5px solid #C4A882",
+              borderRadius: "20px",
+              padding: "16px 32px",
+              boxShadow: "0 14px 32px rgba(38, 32, 28, 0.25)",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: { display: "flex", flexDirection: "column" },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "13px",
+                          fontWeight: 800,
+                          letterSpacing: "2.5px",
+                          color: "#C4A882",
+                          textTransform: "uppercase",
+                        },
+                        children: "BIAYA KONSULTASI & TERAPI",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontFamily: "Playfair Display, serif",
+                          fontSize: "48px",
+                          fontWeight: 700,
+                          color: "#F7EBD9",
+                          lineHeight: 1.1,
+                          marginTop: "2px",
+                        },
+                        children: price,
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "9px 22px",
+                    borderRadius: "100px",
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    border: "1px solid #8F7657",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "19px",
+                        fontWeight: 700,
+                        color: "#E0CEB5",
+                      },
+                      children: `Durasi ${duration}`,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 5. LOKASI & JADWAL ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "#F7F2EB",
+              border: "1px solid #DDD1C3",
+              borderRadius: "18px",
+              padding: "14px 24px",
+              gap: "16px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: { display: "flex", flexDirection: "column", flex: 1 },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "12px", color: "#8C7764", fontWeight: 800, letterSpacing: "1px" },
+                        children: "🏛️ LOKASI KLINIK",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "16px", fontWeight: 700, color: "#2C241F", marginTop: "2px" },
+                        children: address,
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    borderLeft: "1px solid #DDD1C3",
+                    paddingLeft: "18px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "12px", color: "#8C7764", fontWeight: 800, letterSpacing: "1px" },
+                        children: "⏰ JADWAL PRAKTIK",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "16px", fontWeight: 700, color: "#2C241F", marginTop: "2px" },
+                        children: schedule,
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 6. BOTTOM EDITORIAL STAMP ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "18px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: { display: "flex", flexDirection: "column", gap: "2px", flex: 1 },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "14px", fontWeight: 800, color: "#7D6955", letterSpacing: "1.5px" },
+                        children: "DOKTER PIKIRAN MAKASSAR",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "13px", fontWeight: 600, color: "#998573" },
+                        children: "Ahmad Jawahir Zain, C.Ht • Hipnoterapis Klinis",
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    backgroundColor: "#EDE2D5",
+                    border: "1.5px solid #A8866E",
+                    borderRadius: "14px",
+                    padding: "14px 20px",
+                    maxWidth: "560px",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "15px",
+                        fontWeight: 800,
+                        color: "#5A3D28",
+                        lineHeight: 1.35,
+                      },
+                      children: `CATATAN RESMI: Wajib reservasi min. sehari sebelum hadir • ${notes}`,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
 }
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
- * TEMPLATE PROMO 3: CLEAN MINIMALIST
+ * TEMPLATE PROMO 3: CLEAN MINIMALIST (MODERN SWISS MINIMALIST STYLE)
  * ════════════════════════════════════════════════════════════════════════════
  */
 function buildCleanMinimalistPromo(data: SingleFlyerPayload): SatoriElement {
-  // Menggunakan palet putih cerah modern
-  return buildBrightBotanicalPromo(data);
+  const fullTitle = data.title || "Totok Saraf Makassar";
+  const price = data.price || "Rp 150.000";
+  const duration = data.duration || "± 1 Jam";
+  const address = data.address || "Jl. Batua Raya 10 B No.9 Makassar";
+  const schedule = data.schedule || "Senin – Sabtu 16.00 – 21.00 WITA";
+  const notes = data.notes || "Maksimal 5 pasien per hari";
+
+  let mainTitle = fullTitle;
+  let accentTag = "MAKASSAR";
+  if (fullTitle.toLowerCase().includes("makassar")) {
+    mainTitle = fullTitle.replace(/makassar/i, "").trim();
+    accentTag = "MAKASSAR";
+  }
+
+  const benefitsData = [
+    { title: "Meredakan Sakit Kepala", desc: "Migrain, vertigo & pusing tegang di pelipis", icon: "head" as const },
+    { title: "Mengurangi Ketegangan Otot", desc: "Leher kaku, bahu tegang & kuncian somatik", icon: "muscle" as const },
+    { title: "Melancarkan Aliran Darah", desc: "Oksigenasi otak & revitalisasi sirkulasi", icon: "blood" as const },
+    { title: "Membantu Kualitas Tidur", desc: "Atasi insomnia kronis, tidur lebih pulas", icon: "sleep" as const },
+    { title: "Mendukung Kesehatan Mental", desc: "Reset saraf vagus & pelepasan rasa cemas", icon: "mind" as const },
+  ];
+
+  const heroPhotoNode: SatoriElement = data.heroPhotoBase64
+    ? {
+        type: "img",
+        props: {
+          src: data.heroPhotoBase64,
+          alt: "Minimalist Terapi",
+          style: {
+            width: "976px",
+            height: "470px",
+            objectFit: "cover",
+          },
+        },
+      }
+    : {
+        type: "div",
+        props: {
+          style: {
+            display: "flex",
+            width: "976px",
+            height: "470px",
+            backgroundColor: "#0F172A",
+          },
+        },
+      };
+
+  const createBenefitCard = (b: typeof benefitsData[0]): SatoriElement => ({
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flex: 1,
+        alignItems: "center",
+        gap: "14px",
+        backgroundColor: "#F8FAFC",
+        border: "1.5px solid #E2E8F0",
+        borderRadius: "16px",
+        padding: "12px 18px",
+      },
+      children: [
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#0F172A",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+            children: getBenefitIconSvg(b.icon),
+          },
+        },
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+            },
+            children: [
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "18px",
+                    fontWeight: 800,
+                    color: "#0F172A",
+                    lineHeight: 1.2,
+                  },
+                  children: b.title,
+                },
+              },
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#64748B",
+                    marginTop: "2px",
+                  },
+                  children: b.desc,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  return {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        width: `${FLYER_WIDTH}px`,
+        height: `${FLYER_HEIGHT}px`,
+        backgroundColor: "#FFFFFF",
+        padding: "52px 52px 42px 52px",
+        boxSizing: "border-box",
+        fontFamily: "Inter, sans-serif",
+        color: "#0F172A",
+      },
+      children: [
+        // ── 1. MODERNIST HEADER ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  },
+                  children: [
+                    {
+                      type: "div",
+                      props: {
+                        style: {
+                          display: "flex",
+                          alignItems: "center",
+                          backgroundColor: "#0F172A",
+                          borderRadius: "6px",
+                          padding: "6px 14px",
+                        },
+                        children: {
+                          type: "span",
+                          props: {
+                            style: {
+                              fontSize: "13px",
+                              fontWeight: 800,
+                              letterSpacing: "1.5px",
+                              color: "#FFFFFF",
+                              textTransform: "uppercase",
+                            },
+                            children: "KLINIK REHABILITASI SOMATIK",
+                          },
+                        },
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          letterSpacing: "1px",
+                          color: "#64748B",
+                        },
+                        children: "MAKASSAR WITA // 05°08'S 119°26'E",
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "14px",
+                    borderTop: "2px solid #0F172A",
+                    paddingTop: "12px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "58px",
+                          fontWeight: 800,
+                          color: "#0F172A",
+                          letterSpacing: "-2px",
+                          lineHeight: 1.05,
+                        },
+                        children: mainTitle,
+                      },
+                    },
+                    {
+                      type: "div",
+                      props: {
+                        style: {
+                          display: "flex",
+                          alignItems: "center",
+                          backgroundColor: "#ECFDF5",
+                          border: "1.5px solid #10B981",
+                          borderRadius: "100px",
+                          padding: "6px 18px",
+                        },
+                        children: {
+                          type: "span",
+                          props: {
+                            style: {
+                              fontSize: "18px",
+                              fontWeight: 800,
+                              color: "#059669",
+                              letterSpacing: "1px",
+                            },
+                            children: accentTag,
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "#475569",
+                  },
+                  children: "Stimulasi Titik Tekan Somatik • Regulasi Sistem Saraf Otonom • Tanpa Bahan Kimia",
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 2. HERO AREA (CRISP GEOMETRIC FRAME) ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              position: "relative",
+              width: "976px",
+              height: "470px",
+              borderRadius: "20px",
+              overflow: "hidden",
+              border: "2.5px solid #0F172A",
+              backgroundColor: "#0F172A",
+            },
+            children: [
+              heroPhotoNode,
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    top: "18px",
+                    right: "18px",
+                    backgroundColor: "rgba(15, 23, 42, 0.9)",
+                    border: "1px solid rgba(52, 211, 153, 0.5)",
+                    borderRadius: "100px",
+                    padding: "6px 16px",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#34D399",
+                        letterSpacing: "1px",
+                      },
+                      children: "● LIVE CLINICAL SESSION",
+                    },
+                  },
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: "rgba(15, 23, 42, 0.94)",
+                    borderTop: "1.5px solid #334155",
+                    padding: "12px 24px",
+                    justifyContent: "center",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        color: "#F8FAFC",
+                      },
+                      children: "Metode Intervensi Titik Saraf Alami • Tanpa Efek Samping • Privasi Terjamin",
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 3. 5 BENEFIT TILES ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            },
+            children: [
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "14px",
+                    fontWeight: 800,
+                    letterSpacing: "2px",
+                    color: "#059669",
+                    textTransform: "uppercase",
+                  },
+                  children: "01 / INDIKASI & MANFAAT KLINIS",
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: { display: "flex", flexDirection: "column", gap: "10px" },
+                  children: [
+                    {
+                      type: "div",
+                      props: {
+                        style: { display: "flex", flexDirection: "row", gap: "12px" },
+                        children: [
+                          createBenefitCard(benefitsData[0]),
+                          createBenefitCard(benefitsData[1]),
+                        ],
+                      },
+                    },
+                    {
+                      type: "div",
+                      props: {
+                        style: { display: "flex", flexDirection: "row", gap: "12px" },
+                        children: [
+                          createBenefitCard(benefitsData[2]),
+                          createBenefitCard(benefitsData[3]),
+                        ],
+                      },
+                    },
+                    {
+                      type: "div",
+                      props: {
+                        style: { display: "flex", flexDirection: "row" },
+                        children: [createBenefitCard(benefitsData[4])],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 4. HARGA (HIGH-CONTRAST DARK BLOCK) ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "#0F172A",
+              border: "2px solid #0F172A",
+              borderRadius: "20px",
+              padding: "16px 30px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: { display: "flex", flexDirection: "column" },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "12px",
+                          fontWeight: 800,
+                          letterSpacing: "2px",
+                          color: "#94A3B8",
+                          textTransform: "uppercase",
+                        },
+                        children: "INVESTASI KESEHATAN",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "48px",
+                          fontWeight: 800,
+                          color: "#34D399",
+                          letterSpacing: "-1px",
+                          lineHeight: 1.1,
+                          marginTop: "2px",
+                        },
+                        children: price,
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "10px 24px",
+                    borderRadius: "100px",
+                    backgroundColor: "#FFFFFF",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "18px",
+                        fontWeight: 800,
+                        color: "#0F172A",
+                      },
+                      children: `Durasi ${duration}`,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 5. LOKASI & JADWAL ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: "14px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    backgroundColor: "#F1F5F9",
+                    border: "1px solid #CBD5E1",
+                    borderRadius: "14px",
+                    padding: "12px 18px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "12px", fontWeight: 800, color: "#64748B" },
+                        children: "📍 LOKASI PRAKTIK",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "16px", fontWeight: 700, color: "#0F172A", marginTop: "2px" },
+                        children: address,
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    backgroundColor: "#F1F5F9",
+                    border: "1px solid #CBD5E1",
+                    borderRadius: "14px",
+                    padding: "12px 18px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "12px", fontWeight: 800, color: "#64748B" },
+                        children: "⏰ WAKTU PRAKTIK",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "16px", fontWeight: 700, color: "#0F172A", marginTop: "2px" },
+                        children: schedule,
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+
+        // ── 6. BOTTOM ALERT ──
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "18px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: { display: "flex", flexDirection: "column", gap: "2px", flex: 1 },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "14px", fontWeight: 800, color: "#0F172A", letterSpacing: "1px" },
+                        children: "DOKTER PIKIRAN MAKASSAR",
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: { fontSize: "13px", fontWeight: 600, color: "#64748B" },
+                        children: "Ahmad Jawahir Zain • Somatic Practitioner",
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    backgroundColor: "#FFFFFF",
+                    border: "2px solid #0F172A",
+                    borderRadius: "12px",
+                    padding: "12px 18px",
+                    maxWidth: "560px",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "14px",
+                        fontWeight: 800,
+                        color: "#0F172A",
+                        lineHeight: 1.35,
+                      },
+                      children: `[ PEMBERITAHUAN ] Sesi terbatas maksimal 5 pasien per hari • ${notes}`,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
 }
 
 /**
@@ -1499,33 +2714,342 @@ function buildWarmLinenQuotes(data: SingleFlyerPayload): SatoriElement {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
- * TEMPLATE QUOTES 3: BOTANICAL QUOTE
+ * TEMPLATE QUOTES 3: BOTANICAL MINDFULNESS (DEEP EMERALD SANCTUARY)
  * ════════════════════════════════════════════════════════════════════════════
  */
 function buildBotanicalQuotes(data: SingleFlyerPayload): SatoriElement {
-  // Padukan kesegaran botanical spa dengan tipografi quotes
-  return buildWarmLinenQuotes(data);
+  const quoteText =
+    data.title ||
+    "Tubuhmu tidak sedang melawanmu, ia hanya sedang kelelahan melindungi dirimu. Beri ia ruang dan rasa aman untuk melepaskan beban.";
+  const author = data.quoteAuthor || "Ahmad Jawahir Zain";
+  const notes =
+    data.notes || "Catatan Meja Terapi Makassar • Sistem Saraf & Bawah Sadar";
+
+  const heroPhotoNode: SatoriElement = data.heroPhotoBase64
+    ? {
+        type: "img",
+        props: {
+          src: data.heroPhotoBase64,
+          alt: "Botanical Zen",
+          style: {
+            width: "960px",
+            height: "540px",
+            objectFit: "cover",
+          },
+        },
+      }
+    : {
+        type: "div",
+        props: {
+          style: {
+            display: "flex",
+            width: "960px",
+            height: "540px",
+            backgroundColor: "#062319",
+          },
+        },
+      };
+
+  return {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        width: `${FLYER_WIDTH}px`,
+        height: `${FLYER_HEIGHT}px`,
+        backgroundColor: "#061A13",
+        backgroundImage:
+          "radial-gradient(circle at 18% 15%, #0C3829 0%, #061A13 65%, #03100B 100%)",
+        padding: "60px 60px 50px 60px",
+        boxSizing: "border-box",
+        fontFamily: "Inter, sans-serif",
+        color: "#ECFDF5",
+      },
+      children: [
+        // Top Header
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "1.5px solid rgba(52, 211, 153, 0.25)",
+              paddingBottom: "18px",
+            },
+            children: [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  },
+                  children: [
+                    { type: "span", props: { style: { fontSize: "22px" }, children: "🌿" } },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "16px",
+                          fontWeight: 800,
+                          letterSpacing: "2.5px",
+                          color: "#34D399",
+                          textTransform: "uppercase",
+                        },
+                        children: "REFLEKSI MEJA TERAPI",
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "14px",
+                    color: "#A7F3D0",
+                    fontWeight: 600,
+                    letterSpacing: "1px",
+                  },
+                  children: "MAKASSAR • WITA (UTC+8)",
+                },
+              },
+            ],
+          },
+        },
+
+        // Hero Botanical Photo Card
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              position: "relative",
+              width: "960px",
+              height: "540px",
+              borderRadius: "32px",
+              overflow: "hidden",
+              border: "1.5px solid rgba(52, 211, 153, 0.35)",
+              boxShadow: "0 28px 60px rgba(0,0,0,0.55)",
+              backgroundColor: "#07261C",
+            },
+            children: [
+              heroPhotoNode,
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    inset: 0,
+                    backgroundImage:
+                      "linear-gradient(180deg, rgba(6,26,19,0.15) 0%, rgba(6,26,19,0.92) 100%)",
+                  },
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    bottom: "26px",
+                    left: "30px",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "9px 24px",
+                    borderRadius: "50px",
+                    backgroundColor: "rgba(6, 32, 24, 0.88)",
+                    border: "1px solid rgba(52, 211, 153, 0.6)",
+                  },
+                  children: {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontFamily: "Playfair Display, serif",
+                        fontStyle: "italic",
+                        fontSize: "21px",
+                        color: "#A7F3D0",
+                      },
+                      children: "Sentuhan hening alam meredakan gejolak pikiran",
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+
+        // Quote Content Section
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              padding: "16px 12px",
+            },
+            children: [
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontFamily: "Playfair Display, serif",
+                    fontSize: "120px",
+                    lineHeight: 0.55,
+                    color: "#34D399",
+                    opacity: 0.85,
+                  },
+                  children: "“",
+                },
+              },
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontFamily: "Playfair Display, serif",
+                    fontSize: "44px",
+                    fontWeight: 600,
+                    lineHeight: 1.45,
+                    color: "#FFFFFF",
+                    letterSpacing: "-0.5px",
+                  },
+                  children: quoteText,
+                },
+              },
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                    borderLeft: "3.5px solid #34D399",
+                    paddingLeft: "18px",
+                    marginTop: "10px",
+                  },
+                  children: [
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "25px",
+                          fontWeight: 700,
+                          color: "#FFFFFF",
+                        },
+                        children: `— ${author}`,
+                      },
+                    },
+                    {
+                      type: "span",
+                      props: {
+                        style: {
+                          fontSize: "17px",
+                          color: "#A7F3D0",
+                          fontWeight: 500,
+                        },
+                        children: "Hipnoterapis Klinis & Solo AI Dev • Makassar",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+
+        // Insight Reflective Box
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "16px",
+              backgroundColor: "rgba(52, 211, 153, 0.12)",
+              border: "1.5px solid rgba(52, 211, 153, 0.35)",
+              borderRadius: "20px",
+              padding: "20px 24px",
+            },
+            children: [
+              { type: "span", props: { style: { fontSize: "28px" }, children: "🌿" } },
+              {
+                type: "span",
+                props: {
+                  style: {
+                    fontSize: "19px",
+                    fontWeight: 500,
+                    color: "#D1FAE5",
+                    lineHeight: 1.4,
+                  },
+                  children: notes,
+                },
+              },
+            ],
+          },
+        },
+
+        // Footer
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderTop: "1px solid rgba(52, 211, 153, 0.2)",
+              paddingTop: "14px",
+            },
+            children: [
+              {
+                type: "span",
+                props: {
+                  style: { fontSize: "14px", color: "#6EE7B7", fontWeight: 600 },
+                  children: "DOKTER PIKIRAN MAKASSAR",
+                },
+              },
+              {
+                type: "span",
+                props: {
+                  style: { fontSize: "14px", color: "#6EE7B7", fontStyle: "italic" },
+                  children: "Simpan ke galeri & bagikan ke kerabat",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
 }
 
 /**
  * Render Satori JSON tree element berdasarkan payload preset & templateId
  */
 export function buildSingleFlyerElement(payload: SingleFlyerPayload): SatoriElement {
+  const templateKey = (payload.templateId || "").toLowerCase().replace(/_/g, "-");
+
   if (payload.preset === "QUOTES") {
-    if (payload.templateId === "linen") {
+    if (templateKey.includes("linen")) {
       return buildWarmLinenQuotes(payload);
     }
-    if (payload.templateId === "botanical") {
+    if (templateKey.includes("botanical")) {
       return buildBotanicalQuotes(payload);
     }
     return buildCinematicQuotes(payload);
   }
 
   // PROMO_KLINIK
-  if (payload.templateId === "warm_editorial") {
+  if (templateKey.includes("warm") || templateKey.includes("sand") || templateKey.includes("editorial")) {
     return buildWarmEditorialPromo(payload);
   }
-  if (payload.templateId === "clean_minimalist") {
+  if (templateKey.includes("clean") || templateKey.includes("minimal")) {
     return buildCleanMinimalistPromo(payload);
   }
   return buildBrightBotanicalPromo(payload);

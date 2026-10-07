@@ -21,7 +21,13 @@ export type PillarKey = "PIKIRAN" | "TUBUH" | "TEKNOLOGI";
 export type ContentMode = "daily" | "case" | "promo";
 export type StudioMode = "serial" | "single";
 export type SinglePresetKey = "TOTOK_SARAF" | "HIPNOTERAPI" | "QUOTES";
-export type PromoTemplateId = "bright_botanical" | "warm_editorial" | "clean_minimalist";
+export type PromoTemplateId =
+  | "bright-botanical"
+  | "warm-sand"
+  | "clean-minimalist"
+  | "bright_botanical"
+  | "warm_editorial"
+  | "clean_minimalist";
 export type QuotesTemplateId = "cinematic" | "linen" | "botanical";
 export type FlyerTemplateId = PromoTemplateId | QuotesTemplateId;
 
@@ -129,7 +135,7 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
 
   // ── State Single Flyer Studio (1-Story 9:16) ──
   const [singlePreset, setSinglePreset] = useState<SinglePresetKey>("TOTOK_SARAF");
-  const [promoTemplate, setPromoTemplate] = useState<PromoTemplateId>("bright_botanical");
+  const [promoTemplate, setPromoTemplate] = useState<PromoTemplateId>("bright-botanical");
   const [quotesTemplate, setQuotesTemplate] = useState<QuotesTemplateId>("cinematic");
   const [flyerTitle, setFlyerTitle] = useState("Totok Saraf Makassar");
   const [flyerPrice, setFlyerPrice] = useState("Rp 150.000");
@@ -282,13 +288,13 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
       const payload = {
         preset: singlePreset === "QUOTES" ? "QUOTES" : "PROMO_KLINIK",
         templateId: activeTemplate,
+        customPrompt: flyerCustomPrompt.trim() || undefined,
         title: flyerTitle.trim(),
         price: flyerPrice.trim() || undefined,
         duration: flyerDuration.trim() || undefined,
         address: flyerAddress.trim() || undefined,
         schedule: flyerSchedule.trim() || undefined,
         notes: flyerNotes.trim() || undefined,
-        customPrompt: flyerCustomPrompt.trim() || undefined,
       };
 
       const res = await fetch("/api/v2/generate-single-flyer", {
@@ -808,10 +814,10 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
-                      onClick={() => setPromoTemplate("bright_botanical")}
+                      onClick={() => setPromoTemplate("bright-botanical")}
                       className={cn(
                         "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
-                        promoTemplate === "bright_botanical"
+                        promoTemplate === "bright-botanical" || promoTemplate === "bright_botanical"
                           ? "border-emerald-400/80 bg-emerald-500/20 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
                           : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
                       )}
@@ -822,10 +828,10 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
 
                     <button
                       type="button"
-                      onClick={() => setPromoTemplate("warm_editorial")}
+                      onClick={() => setPromoTemplate("warm-sand")}
                       className={cn(
                         "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
-                        promoTemplate === "warm_editorial"
+                        promoTemplate === "warm-sand" || promoTemplate === "warm_editorial"
                           ? "border-amber-400/80 bg-amber-500/20 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.25)]"
                           : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
                       )}
@@ -836,10 +842,10 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
 
                     <button
                       type="button"
-                      onClick={() => setPromoTemplate("clean_minimalist")}
+                      onClick={() => setPromoTemplate("clean-minimalist")}
                       className={cn(
                         "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
-                        promoTemplate === "clean_minimalist"
+                        promoTemplate === "clean-minimalist" || promoTemplate === "clean_minimalist"
                           ? "border-sky-400/80 bg-sky-500/20 text-sky-200 shadow-[0_0_12px_rgba(56,189,248,0.25)]"
                           : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
                       )}

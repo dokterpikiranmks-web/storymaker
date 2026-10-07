@@ -11,15 +11,31 @@ export interface HeroPhotoResult {
   promptUsed?: string;
 }
 
+function detectImageMime(buffer: Buffer): string {
+  if (buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
+    return "image/png";
+  }
+  if (buffer.length > 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP") {
+    return "image/webp";
+  }
+  if (buffer.toString("utf8", 0, 100).includes("<svg")) {
+    return "image/svg+xml";
+  }
+  return "image/jpeg";
+}
+
 const FALLBACK_UNSPLASH_URLS = {
   PROMO_KLINIK: [
-    "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1080&h=1080&q=80",
-    "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1080&h=1080&q=80",
-    "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1080&h=1080&q=80",
+    "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?fm=jpg&w=1080&h=1080&q=80",
+    "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?fm=jpg&w=1080&h=1080&q=80",
+    "https://images.unsplash.com/photo-1540555700478-4be289fbecef?fm=jpg&w=1080&h=1080&q=80",
   ],
   QUOTES: [
-    "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1080&h=1080&q=80",
-    "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=1080&h=1080&q=80",
+    "https://images.unsplash.com/photo-1506126613408-eca07ce68773?fm=jpg&w=1080&h=1080&q=80",
+    "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?fm=jpg&w=1080&h=1080&q=80",
   ],
 };
 
@@ -41,18 +57,30 @@ async function getLocalFallbackPhoto(preset: "PROMO_KLINIK" | "QUOTES" = "PROMO_
 /**
  * Mencoba mengunduh foto fallback berkualitas tinggi dari Unsplash dengan timeout
  */
-async function fetchOnlineFallback(preset: "PROMO_KLINIK" | "QUOTES" = "PROMO_KLINIK"): Promise<Buffer | null> {
-  const urls = FALLBACK_UNSPLASH_URLS[preset] || FALLBACK_UNSPLASH_URLS.PROMO_KLINIK;
+async function fetchOnlineFallback(
+  preset: "PROMO_KLINIK" | "QUOTES" = "PROMO_KLINIK",
+  customPrompt?: string
+): Promise<Buffer | null> {
+  let urls = FALLBACK_UNSPLASH_URLS[preset] || FALLBACK_UNSPLASH_URLS.PROMO_KLINIK;
+
+  // Variasi kontekstual jika prompt menyebut leher / akupresur
+  if (customPrompt && /leher|bahu|akupresur/i.test(customPrompt)) {
+    urls = [
+      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?fm=jpg&w=1080&h=1080&q=80",
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?fm=jpg&w=1080&h=1080&q=80",
+    ];
+  }
+
   const targetUrl = urls[Math.floor(Math.random() * urls.length)];
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch(targetUrl, {
       signal: controller.signal,
       headers: {
-        Accept: "image/jpeg,image/webp,image/*",
+        Accept: "image/jpeg",
       },
     });
     clearTimeout(timeoutId);
@@ -103,21 +131,25 @@ export async function generateHeroPhoto(
   const preset = options?.preset || "PROMO_KLINIK";
   const apiKey = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim();
 
-  // 1. Siapkan Prompt Fotorealistis
-  let effectivePrompt = (prompt || "").trim();
-  if (!effectivePrompt) {
-    if (preset === "QUOTES") {
-      effectivePrompt =
-        "Serene, contemplative and peaceful atmosphere, soft morning sunlight casting gentle warmth on minimalist natural elements, deep mindfulness and calmness concept, photorealistic 8k, editorial aesthetic";
-    } else {
-      effectivePrompt =
-        "Photorealistic close-up photo of an Indonesian patient lying down peacefully with closed eyes receiving gentle acupressure massage and somatic therapy from a professional therapist in a clean, modern natural wellness clinic in Makassar, warm natural ambient lighting, soft shadows, serene and deeply relaxing atmosphere, 8k resolution, professional clinical wellness photography";
-    }
+  // 1. Dynamic Prompt Builder sesuai instruksi CTO
+  const customPrompt = (prompt || "").trim();
+  let effectivePrompt: string;
+  if (customPrompt) {
+    effectivePrompt = `${customPrompt}, professional clinical wellness aesthetic, soft daylight, warm tones, high-end photography, 8k resolution, photorealistic, no text, no watermark`;
+  } else if (preset === "QUOTES") {
+    effectivePrompt =
+      "Serene, contemplative and peaceful atmosphere, soft morning sunlight casting gentle warmth on minimalist natural elements, deep mindfulness and calmness concept, photorealistic 8k, editorial aesthetic";
+  } else {
+    effectivePrompt =
+      "Photorealistic close-up photo of an Indonesian patient lying down peacefully with closed eyes receiving gentle acupressure massage and somatic therapy from a professional therapist in a clean, modern natural wellness clinic in Makassar, warm natural ambient lighting, soft shadows, serene and deeply relaxing atmosphere, 8k resolution, professional clinical wellness photography";
   }
 
-  // 2. Coba Generate via Imagen 3 jika API Key tersedia
+  let result: HeroPhotoResult | null = null;
+
+  // 2. Panggil Imagen 3 (@google/genai imagen-3.0-generate-002) jika API Key tersedia
   if (apiKey) {
     try {
+      console.log(`[Imagen] Invoking Imagen 3 (imagen-3.0-generate-002)...`);
       const ai = new GoogleGenAI({ apiKey });
       const model = "imagen-3.0-generate-002";
 
@@ -136,7 +168,7 @@ export async function generateHeroPhoto(
 
       if (imageBytes) {
         const buffer = Buffer.from(imageBytes, "base64");
-        return {
+        result = {
           buffer,
           base64: `data:image/jpeg;base64,${imageBytes}`,
           mimeType: "image/jpeg",
@@ -151,42 +183,56 @@ export async function generateHeroPhoto(
         err instanceof Error ? err.message : err
       );
     }
+  } else {
+    console.warn("⚠️ [Imagen 3] GEMINI_API_KEY tidak dikonfigurasi, beralih ke fallback estetis.");
   }
 
-  // 3. Fallback Level 1: Aset Lokal di Disk (Instan & Bebas Jaringan)
-  const localBuf = await getLocalFallbackPhoto(preset);
-  if (localBuf) {
-    return {
-      buffer: localBuf,
-      base64: `data:image/jpeg;base64,${localBuf.toString("base64")}`,
-      mimeType: "image/jpeg",
+  // 3. Fallback Level 1: Fetch Online Unsplash (Dinamis sesuai preset/prompt)
+  if (!result) {
+    const onlineBuf = await fetchOnlineFallback(preset, customPrompt);
+    if (onlineBuf) {
+      const mime = detectImageMime(onlineBuf);
+      result = {
+        buffer: onlineBuf,
+        base64: `data:${mime};base64,${onlineBuf.toString("base64")}`,
+        mimeType: mime,
+        source: "fallback",
+        model: "unsplash-fallback",
+        promptUsed: effectivePrompt,
+      };
+    }
+  }
+
+  // 4. Fallback Level 2: Aset Lokal di Disk (Offline-Safe)
+  if (!result) {
+    const localBuf = await getLocalFallbackPhoto(preset);
+    if (localBuf) {
+      const mime = detectImageMime(localBuf);
+      result = {
+        buffer: localBuf,
+        base64: `data:${mime};base64,${localBuf.toString("base64")}`,
+        mimeType: mime,
+        source: "fallback",
+        model: "local-asset-fallback",
+        promptUsed: effectivePrompt,
+      };
+    }
+  }
+
+  // 5. Fallback Level 3: Emergency Vector Buffer
+  if (!result) {
+    const emergencyBuf = getEmergencyFallbackBuffer();
+    result = {
+      buffer: emergencyBuf,
+      base64: `data:image/svg+xml;base64,${emergencyBuf.toString("base64")}`,
+      mimeType: "image/svg+xml",
       source: "fallback",
-      model: "local-asset-fallback",
+      model: "emergency-vector",
       promptUsed: effectivePrompt,
     };
   }
 
-  // 4. Fallback Level 2: Unduh Unsplash Online
-  const onlineBuf = await fetchOnlineFallback(preset);
-  if (onlineBuf) {
-    return {
-      buffer: onlineBuf,
-      base64: `data:image/jpeg;base64,${onlineBuf.toString("base64")}`,
-      mimeType: "image/jpeg",
-      source: "fallback",
-      model: "unsplash-fallback",
-      promptUsed: effectivePrompt,
-    };
-  }
-
-  // 5. Fallback Level 3: Emergency Vector/Data
-  const emergencyBuf = getEmergencyFallbackBuffer();
-  return {
-    buffer: emergencyBuf,
-    base64: `data:image/svg+xml;base64,${emergencyBuf.toString("base64")}`,
-    mimeType: "image/svg+xml",
-    source: "fallback",
-    model: "emergency-vector",
-    promptUsed: effectivePrompt,
-  };
+  // Log status hasil render sesuai instruksi CTO
+  console.log("[Imagen] Status render hero image:", result.source);
+  return result;
 }
