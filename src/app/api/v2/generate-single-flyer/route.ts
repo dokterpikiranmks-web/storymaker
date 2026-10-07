@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { generateHeroPhoto } from "../../../../../lib/imagen";
-import { renderSingleFlyerPng } from "../../../../../lib/single-flyer-renderer";
+import {
+  type FlyerTemplateId,
+  renderSingleFlyerPng,
+} from "../../../../../lib/single-flyer-renderer";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { sendPhotoCard } = require("../../../../../lib/telegram-publisher");
@@ -9,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 export interface SingleFlyerRequestBody {
   preset?: "PROMO_KLINIK" | "QUOTES";
+  templateId?: FlyerTemplateId;
   title?: string;
   price?: string;
   duration?: string;
@@ -67,6 +71,7 @@ export async function POST(req: Request) {
     }
 
     const preset = body.preset === "QUOTES" ? "QUOTES" : "PROMO_KLINIK";
+    const templateId = body.templateId;
     const title =
       body.title?.trim() ||
       (preset === "QUOTES"
@@ -87,9 +92,10 @@ export async function POST(req: Request) {
     });
 
     // 2. Render TEPAT 1 GAMBAR PNG 9:16 dengan Tipografi Satori & Resvg
-    console.log("[SingleFlyer] Rendering 1080x1920 PNG flyer via Satori...");
+    console.log("[SingleFlyer] Rendering 2K Ultra HD (2160x3840) PNG flyer via Satori...");
     const pngBuffer = await renderSingleFlyerPng({
       preset,
+      templateId,
       title,
       price,
       duration,
@@ -137,6 +143,7 @@ export async function POST(req: Request) {
       success: true,
       timestamp: new Date().toISOString(),
       preset,
+      templateId,
       title,
       price,
       duration,
@@ -182,6 +189,7 @@ export async function GET(req: Request) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       preset,
+      templateId: (searchParams.get("templateId") as FlyerTemplateId) || undefined,
       title: searchParams.get("title") || undefined,
       price: searchParams.get("price") || undefined,
       notes: searchParams.get("notes") || undefined,

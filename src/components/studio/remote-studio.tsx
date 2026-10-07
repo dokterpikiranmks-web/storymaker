@@ -21,6 +21,9 @@ export type PillarKey = "PIKIRAN" | "TUBUH" | "TEKNOLOGI";
 export type ContentMode = "daily" | "case" | "promo";
 export type StudioMode = "serial" | "single";
 export type SinglePresetKey = "TOTOK_SARAF" | "HIPNOTERAPI" | "QUOTES";
+export type PromoTemplateId = "bright_botanical" | "warm_editorial" | "clean_minimalist";
+export type QuotesTemplateId = "cinematic" | "linen" | "botanical";
+export type FlyerTemplateId = PromoTemplateId | QuotesTemplateId;
 
 export interface LastSendHistory {
   topic: string;
@@ -126,6 +129,8 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
 
   // ── State Single Flyer Studio (1-Story 9:16) ──
   const [singlePreset, setSinglePreset] = useState<SinglePresetKey>("TOTOK_SARAF");
+  const [promoTemplate, setPromoTemplate] = useState<PromoTemplateId>("bright_botanical");
+  const [quotesTemplate, setQuotesTemplate] = useState<QuotesTemplateId>("cinematic");
   const [flyerTitle, setFlyerTitle] = useState("Totok Saraf Makassar");
   const [flyerPrice, setFlyerPrice] = useState("Rp 150.000");
   const [flyerDuration, setFlyerDuration] = useState("± 1 Jam");
@@ -273,8 +278,10 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
     setSingleError(null);
 
     try {
+      const activeTemplate = singlePreset === "QUOTES" ? quotesTemplate : promoTemplate;
       const payload = {
         preset: singlePreset === "QUOTES" ? "QUOTES" : "PROMO_KLINIK",
+        templateId: activeTemplate,
         title: flyerTitle.trim(),
         price: flyerPrice.trim() || undefined,
         duration: flyerDuration.trim() || undefined,
@@ -295,7 +302,11 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
         throw new Error(data.error || "Gagal memproses pengiriman flyer ke Telegram.");
       }
 
-      setSingleSuccess("✅ 1 Flyer Promosi berhasil dikirim ke Telegram!");
+      setSingleSuccess(
+        singlePreset === "QUOTES"
+          ? "✅ 1 Kartu Quote Editorial (2K Ultra HD) berhasil dikirim ke Telegram!"
+          : "✅ 1 Flyer Promosi Ultra HD (2K) berhasil dikirim ke Telegram!"
+      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setSingleError(msg);
@@ -731,7 +742,7 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
                   🎯 Pilihan Preset Flyer 9:16
                 </p>
                 <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-300">
-                  1080 x 1920 PX
+                  2K ULTRA HD (2160×3840 PX)
                 </span>
               </div>
 
@@ -781,6 +792,107 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
                   <span className="text-xs font-bold leading-tight">Quotes</span>
                   <span className="text-[10px] text-amber-400/80">Harian</span>
                 </button>
+              </div>
+
+              {/* ── PILIHAN TEMPLATE DESAIN VISUAL ── */}
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span>🎨</span>
+                    <span>Pilihan Gaya Template (Ultra HD 2K)</span>
+                  </p>
+                  <span className="text-[10px] text-amber-300/80 font-mono">2160×3840 px</span>
+                </div>
+
+                {singlePreset !== "QUOTES" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPromoTemplate("bright_botanical")}
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
+                        promoTemplate === "bright_botanical"
+                          ? "border-emerald-400/80 bg-emerald-500/20 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                          : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">🌿 Bright Botanical</span>
+                      <span className="text-[10px] text-emerald-400/80">Standar Klinik Spa</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPromoTemplate("warm_editorial")}
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
+                        promoTemplate === "warm_editorial"
+                          ? "border-amber-400/80 bg-amber-500/20 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.25)]"
+                          : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">🏛️ Warm Sand</span>
+                      <span className="text-[10px] text-amber-400/80">Editorial Linen Zen</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPromoTemplate("clean_minimalist")}
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
+                        promoTemplate === "clean_minimalist"
+                          ? "border-sky-400/80 bg-sky-500/20 text-sky-200 shadow-[0_0_12px_rgba(56,189,248,0.25)]"
+                          : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">✨ Clean Minimalist</span>
+                      <span className="text-[10px] text-sky-400/80">Modern Swiss Style</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuotesTemplate("cinematic")}
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
+                        quotesTemplate === "cinematic"
+                          ? "border-amber-400/80 bg-amber-500/20 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.25)]"
+                          : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">🌑 Cinematic</span>
+                      <span className="text-[10px] text-amber-400/80">Deep Atmosphere</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setQuotesTemplate("linen")}
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
+                        quotesTemplate === "linen"
+                          ? "border-amber-400/80 bg-amber-500/20 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.25)]"
+                          : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">📜 Warm Linen</span>
+                      <span className="text-[10px] text-amber-400/80">Zen Paper Texture</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setQuotesTemplate("botanical")}
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 text-left transition-all border flex flex-col gap-0.5",
+                        quotesTemplate === "botanical"
+                          ? "border-emerald-400/80 bg-emerald-500/20 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                          : "border-white/5 bg-[#0F1115] text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">🌿 Botanical</span>
+                      <span className="text-[10px] text-emerald-400/80">Organic Mindful</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 text-[11px] text-slate-300">
@@ -963,7 +1075,7 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
                     <span>{singleSuccess}</span>
                   </div>
                   <p className="text-[11px] text-slate-300">
-                    Flyer 9:16 resolusi tinggi 1080x1920 telah terkirim lengkap dengan caption promosi ke bot Telegram. Buka Telegram untuk mengunduh ke galeri HP & bagikan ke WhatsApp Story.
+                    Flyer 9:16 resolusi Ultra HD 2K (2160×3840 px) telah terkirim lengkap dengan caption promosi ke bot Telegram. Buka Telegram untuk mengunduh ke galeri HP & bagikan ke WhatsApp Story.
                   </p>
                 </div>
               ) : null}

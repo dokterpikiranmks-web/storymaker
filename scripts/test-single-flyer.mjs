@@ -13,53 +13,88 @@ const { sendPhotoCard } = require("../lib/telegram-publisher.js");
 
 async function main() {
   console.log("═══════════════════════════════════════════════════════════════");
-  console.log("🚀 TESTING SINGLE FLYER STUDIO (1 STORY 9:16)");
-  console.log("   Preset: Totok Saraf Makassar (PROMO_KLINIK)");
+  console.log("🚀 TESTING SINGLE FLYER & QUOTE STUDIO (2K ULTRA HD 2160x3840)");
   console.log("═══════════════════════════════════════════════════════════════");
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID || "785378199";
 
-  console.log("1. Generating Hero Photo (Imagen 3 / Fallback)...");
-  const photo = await generateHeroPhoto(undefined, { preset: "PROMO_KLINIK" });
-  console.log(`   Photo source: ${photo.source} (${photo.model || "default"})`);
+  // ── TEST 1: PROMO KLINIK (BRIGHT BOTANICAL SPA - ULTRA HD 2K) ──
+  console.log("\n[TEST 1] Generating Promo Klinik: Totok Saraf Makassar (Bright Botanical 2K)...");
+  const promoPhoto = await generateHeroPhoto(undefined, { preset: "PROMO_KLINIK" });
+  console.log(`   Photo source: ${promoPhoto.source} (${promoPhoto.model || "default"})`);
 
-  console.log("2. Rendering 1080x1920 PNG Single Flyer via Satori...");
-  const pngBuffer = await renderSingleFlyerPng({
+  console.log("   Rendering 2160x3840 PNG Promo Flyer...");
+  const promoPng = await renderSingleFlyerPng({
     preset: "PROMO_KLINIK",
+    templateId: "bright_botanical",
     title: "Totok Saraf Makassar",
     price: "Rp 150.000",
     duration: "± 1 Jam",
     address: "Jl. Batua Raya 10 B No.9 Makassar",
     schedule: "Senin – Sabtu 16.00 – 21.00 WITA",
     notes: "Maksimal 5 pasien per hari",
-    heroPhotoBase64: photo.base64,
+    heroPhotoBase64: promoPhoto.base64,
   });
-  console.log(`   PNG generated successfully! Size: ${pngBuffer.length} bytes`);
+  console.log(`   Promo PNG Buffer size: ${promoPng.length} bytes`);
 
-  console.log(`3. Sending 1 Photo to Telegram Chat ${chatId}...`);
-  const caption =
+  console.log(`   Sending Promo Flyer to Telegram Chat ${chatId}...`);
+  const promoCaption =
     `🌿 FLYER PROMOSI KLINIK • DOKTER PIKIRAN MAKASSAR 🌿\n\n` +
-    `🎯 Layanan: Totok Saraf Makassar\n` +
+    `🎯 Layanan: Totok Saraf Makassar (Bright Botanical Spa 2K)\n` +
     `💰 Biaya: Rp 150.000 (Durasi ± 1 Jam)\n` +
     `📍 Alamat: Jl. Batua Raya 10 B No.9 Makassar\n` +
     `⏰ Jadwal: Senin – Sabtu 16.00 – 21.00 WITA\n` +
-    `📌 Catatan: Wajib reservasi min. sehari sebelum datang • Maksimal 5 pasien per hari\n\n` +
+    `📌 Catatan: Wajib buat janji min. sehari sebelum datang • Maksimal 5 pasien per hari\n\n` +
     `"Tubuh lebih rileks, pikiran lebih tenang"\n` +
     `Terapi Alami • Tanpa Obat • Tanpa Efek Samping\n\n` +
-    `📲 Konsultasi & Reservasi Jadwal: Hubungi WhatsApp klinik atau balas pesan ini.\n` +
-    `📱 Flyer 1-Story 9:16 siap dibagikan ke WhatsApp Story.`;
+    `📲 WhatsApp Reservasi: Balas pesan ini atau hubungi klinik langsung.\n` +
+    `📱 Desain Standar Komersial 2K Ultra HD (2160x3840 px).`;
 
-  const result = await sendPhotoCard(
+  const promoRes = await sendPhotoCard(
     botToken,
     chatId,
-    pngBuffer,
-    "totok-saraf-makassar-flyer.png",
-    caption
+    promoPng,
+    "totok-saraf-2k-promo.png",
+    promoCaption
   );
+  console.log("   ✅ Promo Flyer berhasil terkirim ke Telegram!", promoRes.ok ? "OK" : promoRes);
 
-  console.log("═══════════════════════════════════════════════════════════════");
-  console.log("🎉 BERHASIL! 1 Flyer Promosi terkirim ke Telegram!", result.ok ? "OK" : result);
+  // ── TEST 2: QUOTES EDITORIAL (CINEMATIC DEEP ATMOSPHERE - ULTRA HD 2K) ──
+  console.log("\n[TEST 2] Generating Quote Editorial: Refleksi Meja Terapi (Cinematic 2K)...");
+  const quotePhoto = await generateHeroPhoto(undefined, { preset: "QUOTES" });
+  console.log(`   Photo source: ${quotePhoto.source} (${quotePhoto.model || "default"})`);
+
+  console.log("   Rendering 2160x3840 PNG Quote Card...");
+  const quotePng = await renderSingleFlyerPng({
+    preset: "QUOTES",
+    templateId: "cinematic",
+    title: "Tubuhmu tidak sedang melawanmu, ia hanya sedang kelelahan melindungi dirimu. Beri ia rasa aman.",
+    notes: "Catatan Meja Terapi Makassar • Sistem Saraf & Bawah Sadar",
+    heroPhotoBase64: quotePhoto.base64,
+  });
+  console.log(`   Quote PNG Buffer size: ${quotePng.length} bytes`);
+
+  console.log(`   Sending Quote Card to Telegram Chat ${chatId}...`);
+  const quoteCaption =
+    `✨ REFLEKSI MEJA TERAPI • DOKTER PIKIRAN MAKASSAR ✨\n\n` +
+    `"Tubuhmu tidak sedang melawanmu, ia hanya sedang kelelahan melindungi dirimu. Beri ia rasa aman."\n\n` +
+    `— Ahmad Jawahir Zain\n` +
+    `Hipnoterapis Klinis & Solo AI Dev • Makassar, WITA\n\n` +
+    `💡 Catatan Meja Terapi Makassar • Sistem Saraf & Bawah Sadar\n\n` +
+    `📱 Kartu Quote Editorial 2K Ultra HD (2160x3840 px) siap dibagikan ke WhatsApp Story.`;
+
+  const quoteRes = await sendPhotoCard(
+    botToken,
+    chatId,
+    quotePng,
+    "quote-cinematic-2k.png",
+    quoteCaption
+  );
+  console.log("   ✅ Quote Card berhasil terkirim ke Telegram!", quoteRes.ok ? "OK" : quoteRes);
+
+  console.log("\n═══════════════════════════════════════════════════════════════");
+  console.log("🎉 SEMUA TEST BERHASIL! 2K Promo Flyer & 2K Quote Card terkirim ke Telegram!");
   console.log("═══════════════════════════════════════════════════════════════");
 }
 
