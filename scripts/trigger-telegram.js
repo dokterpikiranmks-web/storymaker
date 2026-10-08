@@ -12,6 +12,11 @@
  * ════════════════════════════════════════════════════════════════════════════
  */
 
+const dns = require("node:dns");
+if (dns && typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
+
 const path = require("node:path");
 const dotenv = require("dotenv");
 

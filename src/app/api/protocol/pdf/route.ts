@@ -33,13 +33,20 @@ export async function GET(req: NextRequest) {
         const decodedStr = Buffer.from(dataParam, "base64url").toString("utf-8");
         const parsed = JSON.parse(decodedStr);
         if (parsed) {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const { getCuratedStoryForDate, CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
+          const pil = (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase();
+          const curatedFallback = typeof getCuratedStoryForDate === "function"
+            ? getCuratedStoryForDate(pil, campaignDate)
+            : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
+
           dynamicStory = {
-            topic: parsed.t || parsed.topic || topicParam || "",
-            edukasi: parsed.e || parsed.edukasi || "",
-            praktik: parsed.p || parsed.praktik || "",
-            bukti: parsed.b || parsed.bukti || "",
-            keyword: (parsed.k || parsed.keyword || keywordParam || "RESET").toUpperCase(),
-            pillar: (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase(),
+            topic: parsed.t || parsed.topic || topicParam || curatedFallback.topic,
+            edukasi: parsed.e || parsed.edukasi || curatedFallback.stories[1].text,
+            praktik: parsed.p || parsed.praktik || curatedFallback.stories[2].text,
+            bukti: parsed.b || parsed.bukti || curatedFallback.stories[3].text,
+            keyword: (parsed.k || parsed.keyword || keywordParam || curatedFallback.keyword || "RESET").toUpperCase(),
+            pillar: pil,
             date: campaignDate,
           };
         }
@@ -48,13 +55,20 @@ export async function GET(req: NextRequest) {
           const decodedStr = Buffer.from(dataParam, "base64").toString("utf-8");
           const parsed = JSON.parse(decodedStr);
           if (parsed) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { getCuratedStoryForDate, CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
+            const pil = (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase();
+            const curatedFallback = typeof getCuratedStoryForDate === "function"
+              ? getCuratedStoryForDate(pil, campaignDate)
+              : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
+
             dynamicStory = {
-              topic: parsed.t || parsed.topic || topicParam || "",
-              edukasi: parsed.e || parsed.edukasi || "",
-              praktik: parsed.p || parsed.praktik || "",
-              bukti: parsed.b || parsed.bukti || "",
-              keyword: (parsed.k || parsed.keyword || keywordParam || "RESET").toUpperCase(),
-              pillar: (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase(),
+              topic: parsed.t || parsed.topic || topicParam || curatedFallback.topic,
+              edukasi: parsed.e || parsed.edukasi || curatedFallback.stories[1].text,
+              praktik: parsed.p || parsed.praktik || curatedFallback.stories[2].text,
+              bukti: parsed.b || parsed.bukti || curatedFallback.stories[3].text,
+              keyword: (parsed.k || parsed.keyword || keywordParam || curatedFallback.keyword || "RESET").toUpperCase(),
+              pillar: pil,
               date: campaignDate,
             };
           }
@@ -77,7 +91,8 @@ export async function GET(req: NextRequest) {
         if (targetFile) {
           const fileContent = fs.readFileSync(targetFile, "utf-8");
           const cached = JSON.parse(fileContent);
-          if (cached && cached.stories) {
+          // Hanya gunakan cache jika tanggalnya persis hari ini (mencegah topik basi kemarin)
+          if (cached && cached.stories && cached.date === campaignDate) {
             dynamicStory = {
               topic: topicParam || cached.topic || "",
               edukasi: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("EDUKASI"))?.text || "",
@@ -94,12 +109,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. Fallback ke Curated Stories V2.3 Makassar (Priority 3)
+    // 3. Fallback ke Curated Stories Dinamis V2.3 Makassar (Priority 3)
     if (!dynamicStory) {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
+      const { getCuratedStoryForDate, CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
       const pil = (pillarParam || (keywordParam === "RESET" ? "PIKIRAN" : keywordParam === "FOKUS" ? "TEKNOLOGI" : "TUBUH")).toUpperCase();
-      const curated = CURATED_STORIES[pil] || CURATED_STORIES.TUBUH;
+      const curated = typeof getCuratedStoryForDate === "function" 
+        ? getCuratedStoryForDate(pil, campaignDate) 
+        : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
 
       dynamicStory = {
         topic: topicParam || curated.topic,

@@ -1,0 +1,69 @@
+{
+  "success": true,
+  "date": "2026-10-08",
+  "pillar": "PIKIRAN",
+  "pillarTitle": "Bawah Sadar, Belief System & Suara Batin",
+  "themeColor": "#1E293B",
+  "accentColor": "#FDE047",
+  "topic": "Kenapa Memaksa Berpikir Positif Justru Bikin Cemas Makin Parah?",
+  "keyword": "RESET",
+  "source": "curated_fallback",
+  "model": "DokterPikiran-Curated-V2.3-Makassar",
+  "stories": [
+    {
+      "slide": 1,
+      "time": "07:00",
+      "act": "HOOK",
+      "text": "Memaksa afirmasi positif saat cemas membuat otak membacanya sebagai ancaman kebohongan.",
+      "visualGuide": {
+        "headline": "Paradoks Afirmasi Positif",
+        "palette": "Dark Slate & Warm Sand",
+        "elements": "Kartu 9:16 minimalis elegan dengan tanda kutip filosofis"
+      }
+    },
+    {
+      "slide": 2,
+      "time": "07:45",
+      "act": "EDUKASI",
+      "text": "Bawah sadar mendeteksi ancaman. Saat panik dipaksa tenang, otak mendeteksi error mismatch dan menaikkan alarm bahaya berlipat ganda.",
+      "visualGuide": {
+        "headline": "Error Mismatch Batin",
+        "palette": "Dark Slate dengan aksen Gold",
+        "elements": "Analogi pendeteksi error sistem logika dan alarm bawah sadar"
+      }
+    },
+    {
+      "slide": 3,
+      "time": "13:00",
+      "act": "PRAKTIK",
+      "text": "Sub-occipital Eye Reset 60 Detik: Tanpa menolehkan kepala, lirikkan bola mata ke sudut kanan selama 30 detik sampai ada reflek menguap atau menelan. Kuncian saraf leher belakang langsung lepas.",
+      "visualGuide": {
+        "headline": "Lateral Eye Reset",
+        "palette": "Forest Slate & Linen",
+        "elements": "Manuver lateral bola mata untuk mereset kuncian saraf leher"
+      }
+    },
+    {
+      "slide": 4,
+      "time": "20:00",
+      "act": "BUKTI",
+      "text": "Di ruang terapi Makassar, mereka yang paling lelah mentalnya justru yang paling rajin memaksakan afirmasi positif tiap pagi, padahal sistem sarafnya sedang freeze dan butuh rasa aman ragawi.",
+      "visualGuide": {
+        "headline": "Catatan Meja Terapi Makassar",
+        "palette": "Muted Slate hangat",
+        "elements": "Refleksi mendalam kasus penolakan bawah sadar dari Makassar"
+      }
+    },
+    {
+      "slide": 5,
+      "time": "21:00",
+      "act": "CTA HALUS",
+      "text": "Pikiranmu tidak butuh kata manis palsu, dia hanya butuh sinyal fisik bahwa kamu aman. Malam ini izinkan dirimu tenang. Mau panduan PDF Reset Sistem Saraf Bawah Sadar? Balas story ini: RESET.",
+      "visualGuide": {
+        "headline": "Beri Tubuh Rasa Aman",
+        "palette": "Night Deep Slate & Warm Sand",
+        "elements": "Pesan reflektif malam dengan pemicu keyword RESET"
+      }
+    }
+  ]
+}

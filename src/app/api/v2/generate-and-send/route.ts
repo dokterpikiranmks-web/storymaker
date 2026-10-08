@@ -1,3 +1,7 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const maxDuration = 60; // Izinkan durasi eksekusi hingga 60 detik jika didukung paket Vercel
+
 import { NextResponse } from "next/server";
 
 // Menggunakan require untuk interoperabilitas dengan lib CommonJS / Node.js
@@ -5,8 +9,6 @@ import { NextResponse } from "next/server";
 const { generateStoryV2, PILLARS } = require("../../../../../lib/story-engine-v2");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { publishToTelegram } = require("../../../../../lib/telegram-publisher");
-
-export const dynamic = "force-dynamic";
 
 interface GenerateAndSendPayload {
   pillar?: "PIKIRAN" | "TUBUH" | "TEKNOLOGI";
@@ -40,18 +42,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Generate Naskah 5 Story dengan dukungan Topik Kustom User
+    // 1. Generate Naskah 5 Story dengan dukungan Topik Kustom User & Anti-Cache Seed
     const storyData = await generateStoryV2({
       pillar: pillar?.toUpperCase(),
       date,
       topic: topic || custom_topic,
       rawThought: raw_thought,
+      seed: Date.now(),
+      fresh: true,
     });
 
     // 2. Publish ke Telegram Bot (Kirim 5 Gambar 9:16 + Link PDF Panduan)
     const telegramResult = await publishToTelegram(storyData);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       date: storyData.date,
@@ -64,6 +68,8 @@ export async function POST(req: Request) {
       stories: storyData.stories,
       telegram: telegramResult,
     });
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+    return res;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[API v2 generate-and-send] Error:", message);
@@ -95,11 +101,13 @@ export async function GET(req: Request) {
     const storyData = await generateStoryV2({
       pillar,
       date: dateParam,
+      seed: Date.now(),
+      fresh: true,
     });
 
     const telegramResult = await publishToTelegram(storyData);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       date: storyData.date,
@@ -112,6 +120,8 @@ export async function GET(req: Request) {
       stories: storyData.stories,
       telegram: telegramResult,
     });
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+    return res;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[API v2 generate-and-send GET] Error:", message);

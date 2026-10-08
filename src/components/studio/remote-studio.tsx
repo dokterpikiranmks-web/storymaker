@@ -242,10 +242,16 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal memproses siaran ke Telegram.");
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server Vercel Timeout / Busy: ${text.slice(0, 100)}`);
+      }
+      if (!res.ok) throw new Error(data?.error || data?.message || "Gagal memproses story");
+      if (!data.success) {
+        throw new Error(data?.error || data?.message || "Gagal memproses siaran ke Telegram.");
       }
 
       const now = new Date();
@@ -303,9 +309,16 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal memproses pengiriman flyer ke Telegram.");
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server Vercel Timeout / Busy: ${text.slice(0, 100)}`);
+      }
+      if (!res.ok) throw new Error(data?.error || data?.message || "Gagal memproses pengiriman flyer ke Telegram.");
+      if (!data.success) {
+        throw new Error(data?.error || data?.message || "Gagal memproses pengiriman flyer ke Telegram.");
       }
 
       setSingleSuccess(

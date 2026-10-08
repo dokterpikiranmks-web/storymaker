@@ -1,11 +1,11 @@
 {
   "success": true,
-  "date": "2026-10-07",
+  "date": "2026-10-08",
   "pillar": "TUBUH",
   "pillarTitle": "Gut-Brain, Sistem Saraf & Paradoks Tubuh",
   "themeColor": "#1B2E24",
   "accentColor": "#86EFAC",
-  "topic": "Kenapa Asam Lambung Kambuh Justru Bukan Karena Kelebihan Asam?",
+  "topic": "Relaxation-Induced Anxiety: Kenapa Saat Rebahan Tubuh Malah Makin Gelisah & Migrain?",
   "keyword": "LAMBUNG",
   "source": "curated_fallback",
   "model": "DokterPikiran-Curated-V2.3-Makassar",
@@ -14,55 +14,55 @@
       "slide": 1,
       "time": "07:00",
       "act": "HOOK",
-      "text": "Asam lambung perih saat cemas? Lambungmu bukan kelebihan asam, tapi kekurangan asam.",
+      "text": "Niat santai dan rebahan, tapi dada malah berdebar dan asam lambung melilit?",
       "visualGuide": {
-        "headline": "Paradoks Asam Lambung",
-        "palette": "Forest Sage & Warm Linen",
-        "elements": "Kartu 9:16 minimalis berwibawa, membongkar mitos asam lambung"
+        "headline": "Relaxation Anxiety",
+        "palette": "Forest Sage & Mint",
+        "elements": "Visual minimalis paradoks tubuh yang gelisah saat istirahat"
       }
     },
     {
       "slide": 2,
       "time": "07:45",
       "act": "EDUKASI",
-      "text": "Saat saraf siaga aktif, lambung kekurangan asam. Klep esofagus gagal mengunci rapat, sehingga uap asam bocor naik ke dada.",
+      "text": "Saraf terbiasa siaga tinggi kronis. Penurunan hormon stres mendadak dibaca otak bawah sadar sebagai ancaman bahaya sebelum badai.",
       "visualGuide": {
-        "headline": "Klep Gagal Mengunci",
-        "palette": "Forest Sage & Mint",
-        "elements": "Highlight box mekanisme katup lambung saat saraf simpatik aktif"
+        "headline": "Alarm Sebelum Badai",
+        "palette": "Forest Sage & Warm Linen",
+        "elements": "Highlight box penarikan hormon stres mendadak"
       }
     },
     {
       "slide": 3,
       "time": "13:00",
       "act": "PRAKTIK",
-      "text": "Jaw Release 60 Detik: Renggangkan rahang, buka mulut santai, lalu tempelkan ujung lidah ke langit-langit mulut. Ini memutus sinyal darurat lambung seketika.",
+      "text": "Physiological Sigh 60 Detik: Ambil dua tarikan napas pendek cepat lewat hidung, hembuskan satu tarikan panjang lewat mulut. Alveoli paru mekar seketika.",
       "visualGuide": {
-        "headline": "Trigeminal Jaw Release",
+        "headline": "Physiological Sigh",
         "palette": "Sage Green & Sand",
-        "elements": "Instruksi manuver pelepasan saraf trigeminal rahang dan lambung"
+        "elements": "Langkah fisiologis 2 tarikan pendek dan 1 hembusan panjang lega"
       }
     },
     {
       "slide": 4,
       "time": "20:00",
       "act": "BUKTI",
-      "text": "Kasus meja terapi Makassar: bertahun-tahun pasien menghindari kopi dan pantang makan, tapi lambung tetap perih. Begitu kuncian saraf rahang dan alarm paniknya direset, keluhan asamnya lenyap.",
+      "text": "Catatan meja terapi Makassar: profesional yang selalu dispepsia tiap hari libur. Masalahnya bukan lambung, tapi sarafnya belum diajari bahwa hening itu aman.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
         "palette": "Deep Forest Muted",
-        "elements": "Kutipan refleksi nyata anomali tubuh dari meja terapi Makassar"
+        "elements": "Kutipan refleksi psikosomatis dari ruang klinik Makassar"
       }
     },
     {
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Lambungmu bukan musuh, dia hanya merespons alarm darurat yang belum kamu matikan. Malam ini istirahatkan sarafmu. Mau panduan PDF 60 Detik Atasi Asam Lambung Psikosomatis? Balas story ini: LAMBUNG.",
+      "text": "Tenang bukan berarti kehilangan kendali. Beri izin tubuhmu menurunkan perisai malam ini. Mau panduan PDF Menjinakkan Cemas Saat Rehat? Balas story ini: LAMBUNG.",
       "visualGuide": {
-        "headline": "Istirahatkan Saraf Malam Ini",
+        "headline": "Izin untuk Rehat Aman",
         "palette": "Night Forest & Soft Sand",
-        "elements": "Pesan penutup tenang dengan pemicu keyword LAMBUNG"
+        "elements": "Pesan penutup malam tenang dengan pemicu keyword LAMBUNG"
       }
     }
   ]
