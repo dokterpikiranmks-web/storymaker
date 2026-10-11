@@ -1,0 +1,88 @@
+{
+  "success": true,
+  "date": "2026-10-11",
+  "pillar": "PIKIRAN",
+  "pillarTitle": "Bawah Sadar, Belief System & Suara Batin",
+  "themeColor": "#1E293B",
+  "accentColor": "#63B3ED",
+  "topic": "Beban Emosi Terpendam: Kenapa Masalah Batin Sering Lari ke Lambung & Dada?",
+  "keyword": "RESET",
+  "source": "curated_fallback",
+  "model": "DokterPikiran-Curated-V3.0-Makassar",
+  "stories": [
+    {
+      "slide": 1,
+      "time": "07:00",
+      "act": "HOOK",
+      "text": "Sering nelan amarah dan perasaan sendiri? Jangan heran kalau lambung ikut meradang.",
+      "visualGuide": {
+        "headline": "Emosi Menjadi Perih",
+        "badge": "💡 EMOSI & LAMBUNG"
+      }
+    },
+    {
+      "slide": 2,
+      "time": "07:45",
+      "act": "EDUKASI",
+      "text": "Saluran cerna punya jutaan sel saraf. Saat emosi ditahan paksa, saraf enterik lambung yang menanggung bebannya.",
+      "visualGuide": {
+        "headline": "Beban Saraf Enterik",
+        "badge": "🔬 SKEMA SEBAB - AKIBAT",
+        "flowchart": [
+          "Amarah Dipendam Paksa",
+          "Saraf Lambung Menegang",
+          "Asam Lambung & Begah Kambuh"
+        ]
+      }
+    },
+    {
+      "slide": 3,
+      "time": "13:00",
+      "act": "PRAKTIK",
+      "text": "Diaphragmatic Sigh 60 Detik: Letakkan tangan di ulu hati, ambil 2 napas pendek, hembuskan lega.",
+      "visualGuide": {
+        "headline": "Diaphragmatic Sigh",
+        "badge": "⚡ PRAKTIK 60 DETIK",
+        "steps": [
+          {
+            "step": "01",
+            "action": "Letakkan tangan di perut atas tepat di bawah ulu hati",
+            "target": "Ulu Hati & Diafragma"
+          },
+          {
+            "step": "02",
+            "action": "Tarik napas 2 kali pendek lewat hidung sampai perut ngembang",
+            "target": "Paru-paru & Perut"
+          },
+          {
+            "step": "03",
+            "action": "Hembuskan panjang lewat mulut sambil rilekskan perut",
+            "target": "Saraf Enterik Tenang"
+          }
+        ]
+      }
+    },
+    {
+      "slide": 4,
+      "time": "20:00",
+      "act": "BUKTI",
+      "text": "Klien di Makassar sembuh dari sakit maag menahun setelah berani melepaskan beban rasa bersalah yang dipendam belasan tahun.",
+      "visualGuide": {
+        "headline": "Catatan Meja Terapi Makassar",
+        "badge": "📋 REKAM MEDIS KLINIS",
+        "stamp": "TERVERIFIKASI SOMATIK • MAKASSAR"
+      }
+    },
+    {
+      "slide": 5,
+      "time": "21:00",
+      "act": "CTA HALUS",
+      "text": "Boleh kok merasa lelah dan rapuh. Istirahatkan bebanmu malam ini. Mau baca panduan lengkapnya? Balas story ini: RESET.",
+      "visualGuide": {
+        "headline": "Izin Menjadi Manusia",
+        "badge": "📄 PANDUAN POCKET PDF",
+        "booklet": "Protokol Melepas Beban Emosi Terpendam"
+      }
+    }
+  ]
+}

@@ -1,68 +1,87 @@
 {
   "success": true,
-  "date": "2026-10-08",
+  "date": "2026-10-11",
   "pillar": "PIKIRAN",
   "pillarTitle": "Bawah Sadar, Belief System & Suara Batin",
   "themeColor": "#1E293B",
-  "accentColor": "#FDE047",
-  "topic": "Kenapa Memaksa Berpikir Positif Justru Bikin Cemas Makin Parah?",
+  "accentColor": "#63B3ED",
+  "topic": "Beban Emosi Terpendam: Kenapa Masalah Batin Sering Lari ke Lambung & Dada?",
   "keyword": "RESET",
   "source": "curated_fallback",
-  "model": "DokterPikiran-Curated-V2.3-Makassar",
+  "model": "DokterPikiran-Curated-V3.0-Makassar",
   "stories": [
     {
       "slide": 1,
       "time": "07:00",
       "act": "HOOK",
-      "text": "Memaksa afirmasi positif saat cemas membuat otak membacanya sebagai ancaman kebohongan.",
+      "text": "Sering nelan amarah dan perasaan sendiri? Jangan heran kalau lambung ikut meradang.",
       "visualGuide": {
-        "headline": "Paradoks Afirmasi Positif",
-        "palette": "Dark Slate & Warm Sand",
-        "elements": "Kartu 9:16 minimalis elegan dengan tanda kutip filosofis"
+        "headline": "Emosi Menjadi Perih",
+        "badge": "💡 EMOSI & LAMBUNG"
       }
     },
     {
       "slide": 2,
       "time": "07:45",
       "act": "EDUKASI",
-      "text": "Bawah sadar mendeteksi ancaman. Saat panik dipaksa tenang, otak mendeteksi error mismatch dan menaikkan alarm bahaya berlipat ganda.",
+      "text": "Saluran cerna punya jutaan sel saraf. Saat emosi ditahan paksa, saraf enterik lambung yang menanggung bebannya.",
       "visualGuide": {
-        "headline": "Error Mismatch Batin",
-        "palette": "Dark Slate dengan aksen Gold",
-        "elements": "Analogi pendeteksi error sistem logika dan alarm bawah sadar"
+        "headline": "Beban Saraf Enterik",
+        "badge": "🔬 SKEMA SEBAB - AKIBAT",
+        "flowchart": [
+          "Amarah Dipendam Paksa",
+          "Saraf Lambung Menegang",
+          "Asam Lambung & Begah Kambuh"
+        ]
       }
     },
     {
       "slide": 3,
       "time": "13:00",
       "act": "PRAKTIK",
-      "text": "Sub-occipital Eye Reset 60 Detik: Tanpa menolehkan kepala, lirikkan bola mata ke sudut kanan selama 30 detik sampai ada reflek menguap atau menelan. Kuncian saraf leher belakang langsung lepas.",
+      "text": "Diaphragmatic Sigh 60 Detik: Letakkan tangan di ulu hati, ambil 2 napas pendek, hembuskan lega.",
       "visualGuide": {
-        "headline": "Lateral Eye Reset",
-        "palette": "Forest Slate & Linen",
-        "elements": "Manuver lateral bola mata untuk mereset kuncian saraf leher"
+        "headline": "Diaphragmatic Sigh",
+        "badge": "⚡ PRAKTIK 60 DETIK",
+        "steps": [
+          {
+            "step": "01",
+            "action": "Letakkan tangan di perut atas tepat di bawah ulu hati",
+            "target": "Ulu Hati & Diafragma"
+          },
+          {
+            "step": "02",
+            "action": "Tarik napas 2 kali pendek lewat hidung sampai perut ngembang",
+            "target": "Paru-paru & Perut"
+          },
+          {
+            "step": "03",
+            "action": "Hembuskan panjang lewat mulut sambil rilekskan perut",
+            "target": "Saraf Enterik Tenang"
+          }
+        ]
       }
     },
     {
       "slide": 4,
       "time": "20:00",
       "act": "BUKTI",
-      "text": "Di ruang terapi Makassar, mereka yang paling lelah mentalnya justru yang paling rajin memaksakan afirmasi positif tiap pagi, padahal sistem sarafnya sedang freeze dan butuh rasa aman ragawi.",
+      "text": "Klien di Makassar sembuh dari sakit maag menahun setelah berani melepaskan beban rasa bersalah yang dipendam belasan tahun.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
-        "palette": "Muted Slate hangat",
-        "elements": "Refleksi mendalam kasus penolakan bawah sadar dari Makassar"
+        "badge": "📋 REKAM MEDIS KLINIS",
+        "stamp": "TERVERIFIKASI SOMATIK • MAKASSAR"
       }
     },
     {
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Pikiranmu tidak butuh kata manis palsu, dia hanya butuh sinyal fisik bahwa kamu aman. Malam ini izinkan dirimu tenang. Mau panduan PDF Reset Sistem Saraf Bawah Sadar? Balas story ini: RESET.",
+      "text": "Boleh kok merasa lelah dan rapuh. Istirahatkan bebanmu malam ini. Mau baca panduan lengkapnya? Balas story ini: RESET.",
       "visualGuide": {
-        "headline": "Beri Tubuh Rasa Aman",
-        "palette": "Night Deep Slate & Warm Sand",
-        "elements": "Pesan reflektif malam dengan pemicu keyword RESET"
+        "headline": "Izin Menjadi Manusia",
+        "badge": "📄 PANDUAN POCKET PDF",
+        "booklet": "Protokol Melepas Beban Emosi Terpendam"
       }
     }
   ]

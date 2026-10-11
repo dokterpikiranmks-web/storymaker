@@ -6,8 +6,24 @@
   },
   "crons": [
     {
-      "path": "/api/cron/research",
-      "schedule": "30 21 * * *"
+      "path": "/api/cron/slot-dispatcher",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/slot-dispatcher",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/slot-dispatcher",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/slot-dispatcher",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/slot-dispatcher",
+      "schedule": "0 13 * * *"
     }
   ]
 }

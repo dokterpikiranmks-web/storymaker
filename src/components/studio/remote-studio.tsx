@@ -114,6 +114,26 @@ function getDefaultPillar(): PillarKey {
   return "TEKNOLOGI";
 }
 
+/**
+ * Menghitung slot aktif terkini berdasarkan jam WITA
+ */
+function getClientSlotInfo() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Makassar",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "7", 10);
+  const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0", 10);
+  const total = hour * 60 + minute;
+  if (total >= 390 && total < 450) return { slot: 1, name: "Story 1 (Hook Pagi)", time: "07:00 WITA" };
+  if (total >= 450 && total < 630) return { slot: 2, name: "Story 2 (Edukasi Skema)", time: "07:45 WITA" };
+  if (total >= 630 && total < 990) return { slot: 3, name: "Story 3 (Praktik Siang)", time: "13:00 WITA" };
+  if (total >= 990 && total < 1230) return { slot: 4, name: "Story 4 (Kasus Malam)", time: "20:00 WITA" };
+  return { slot: 5, name: "Story 5 (Refleksi & PDF)", time: "21:00 WITA" };
+}
+
 interface RemoteStudioProps {
   authEnabled?: boolean;
 }
@@ -216,8 +236,8 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
     }
   };
 
-  // Form Submission ke POST /api/v2/generate-and-send (Serial 5-Story)
-  async function handleGenerateAndSend() {
+  // Form Submission ke Real-Time Slot Dispatcher (Slot Aktif Sekarang 1-per-1)
+  async function handleSendActiveSlot() {
     if (loading) return;
     setLoading(true);
     setErrorMessage(null);
@@ -231,14 +251,13 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
     }
 
     try {
-      const res = await fetch("/api/v2/generate-and-send", {
+      const res = await fetch("/api/cron/slot-dispatcher", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          slot: "active",
           pillar: selectedPillar,
-          topic: targetTopic,
+          custom_topic: targetTopic,
         }),
       });
 
@@ -247,11 +266,74 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
       try {
         data = JSON.parse(text);
       } catch {
-        throw new Error(`Server Vercel Timeout / Busy: ${text.slice(0, 100)}`);
+        throw new Error(`Server Timeout / Busy: ${text.slice(0, 100)}`);
       }
-      if (!res.ok) throw new Error(data?.error || data?.message || "Gagal memproses story");
-      if (!data.success) {
-        throw new Error(data?.error || data?.message || "Gagal memproses siaran ke Telegram.");
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error || data?.message || "Gagal memproses slot dispatcher.");
+      }
+
+      const now = new Date();
+      const timeStr = `${now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WITA`;
+
+      const sendRecord: LastSendHistory = {
+        topic: `Slot ${data.slot} (${data.act}): ${data.topic}`,
+        pillar: (data.pillar as PillarKey) || selectedPillar,
+        keyword: data.keyword || currentPillarConfig.keyword,
+        timeStr,
+        timestamp: now.toISOString(),
+        pdfUrl: data.pdfUrl,
+      };
+
+      setLastSuccess(sendRecord);
+      setHistory(sendRecord);
+
+      try {
+        localStorage.setItem("remote_studio_v2_last_send", JSON.stringify(sendRecord));
+      } catch {
+        /* ignore */
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Form Submission untuk Kirim Seluruh 5 Slot Sekaligus (Manual Batch)
+  async function handleSendAllSlots() {
+    if (loading) return;
+    setLoading(true);
+    setErrorMessage(null);
+
+    let targetTopic: string | undefined = undefined;
+    if (mode === "case") {
+      targetTopic = patientComplaint.trim() || undefined;
+    } else if (mode === "promo") {
+      const slotText = promoSlotInfo.trim();
+      targetTopic = slotText ? `Flash Promo Konsultasi Makassar: ${slotText}` : undefined;
+    }
+
+    try {
+      const res = await fetch("/api/cron/slot-dispatcher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "all",
+          pillar: selectedPillar,
+          custom_topic: targetTopic,
+        }),
+      });
+
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server Timeout / Busy: ${text.slice(0, 100)}`);
+      }
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error || data?.message || "Gagal memproses siaran 5 slot.");
       }
 
       const now = new Date();
@@ -262,8 +344,8 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
         pillar: (data.pillar as PillarKey) || selectedPillar,
         keyword: data.keyword || currentPillarConfig.keyword,
         timeStr,
-        timestamp: data.timestamp || now.toISOString(),
-        pdfUrl: data.telegram?.pdfUrl,
+        timestamp: now.toISOString(),
+        pdfUrl: data.batchResult?.pdfUrl,
       };
 
       setLastSuccess(sendRecord);
@@ -626,15 +708,21 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
               ) : null}
             </section>
 
-            {/* ── CARD 3: ACTION & STATUS TERKINI ── */}
+            {/* ── CARD 3: REAL-TIME SLOT DISPATCHER & MANUAL ── */}
             <section className="rounded-2xl border border-white/5 bg-[#1A1E24] p-4 sm:p-5 shadow-md space-y-3.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Card 3 · ACTION & STATUS TERKINI
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Card 3 · REAL-TIME DISPATCHER & ACTION
+                </p>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  {getClientSlotInfo().name} • {getClientSlotInfo().time}
+                </span>
+              </div>
 
+              {/* Tombol 1: Kirim Slot Aktif Sekarang */}
               <button
                 type="button"
-                onClick={handleGenerateAndSend}
+                onClick={handleSendActiveSlot}
                 disabled={loading}
                 className={cn(
                   "w-full h-13 sm:h-14 cursor-pointer rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-lg active:scale-[0.98]",
@@ -646,14 +734,30 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
                 {loading ? (
                   <>
                     <Loader2 className="size-5 animate-spin text-[#0A1411]" />
-                    <span>Menerbitkan 5 Kartu Naskah ke Telegram...</span>
+                    <span>Memproses Dispatch Slot ke Telegram...</span>
                   </>
                 ) : (
                   <>
                     <Send className="size-5 text-[#0A1411]" />
-                    <span>SIARKAN 5 STORY HARI INI KE TELEGRAM</span>
+                    <span>KIRIM SLOT AKTIF SEKARANG ({getClientSlotInfo().name.split(" ")[1]})</span>
                   </>
                 )}
+              </button>
+
+              {/* Tombol 2: Kirim Seluruh 5 Slot Sekaligus (Manual) */}
+              <button
+                type="button"
+                onClick={handleSendAllSlots}
+                disabled={loading}
+                className={cn(
+                  "w-full h-11 sm:h-12 cursor-pointer rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition active:scale-[0.98]",
+                  loading
+                    ? "border-slate-700/60 text-slate-500 cursor-not-allowed"
+                    : "border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300",
+                )}
+              >
+                <Sparkles className="size-4" />
+                <span>Kirim Seluruh 5 Slot Sekaligus (Manual)</span>
               </button>
 
               {/* Status Message */}
@@ -678,7 +782,7 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-300 font-medium">
-                    Topik: &quot;{lastSuccess.topic}&quot; • Pilar {lastSuccess.pillar}
+                    {lastSuccess.topic} • Pilar {lastSuccess.pillar}
                   </p>
                 </div>
               ) : null}
