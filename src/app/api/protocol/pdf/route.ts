@@ -10,11 +10,13 @@ import { isSupabaseStorageConfigured, uploadLeadMagnetPdf } from "@/lib/supabase
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const dataParam = searchParams.get("data")?.trim();
+    const payloadParam = searchParams.get("payload")?.trim();
     const campaignId = searchParams.get("campaignId")?.trim();
     const dateParam = searchParams.get("date")?.trim();
     const keywordParam = searchParams.get("keyword")?.trim();
@@ -25,105 +27,121 @@ export async function GET(req: NextRequest) {
 
     const campaignDate = dateParam || todayInTimezone(getAppTimezone());
 
-    // 1. Ekstraksi Data Story Dinamis (Priority 1: dataParam base64url)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {
+      getCuratedStoryForDate,
+      CURATED_STORIES,
+      resolvePillar,
+      resolvePillarKeyword,
+      getActiveDailyStory,
+      generateStoryV2,
+    } = require("../../../../../lib/story-engine-v2");
+
     let dynamicStory: DynamicStoryPdfData | null = null;
 
-    if (dataParam) {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // PRIORITAS 1: Ekstrak data langsung dari URL searchParams
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    // 1A. Jika ada payload atau data base64/base64url
+    const rawPayload = payloadParam || dataParam;
+    if (rawPayload) {
       try {
-        const decodedStr = Buffer.from(dataParam, "base64url").toString("utf-8");
+        let decodedStr = "";
+        try {
+          decodedStr = Buffer.from(rawPayload, "base64url").toString("utf-8");
+        } catch {
+          decodedStr = Buffer.from(rawPayload, "base64").toString("utf-8");
+        }
         const parsed = JSON.parse(decodedStr);
-        if (parsed) {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const { getCuratedStoryForDate, CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
-          const pil = (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase();
+        if (parsed && typeof parsed === "object") {
+          const pil = resolvePillar(parsed.l || parsed.pillar || pillarParam, campaignDate);
+          const defaultKw = resolvePillarKeyword(pil, campaignDate);
           const curatedFallback = typeof getCuratedStoryForDate === "function"
             ? getCuratedStoryForDate(pil, campaignDate)
             : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
 
           dynamicStory = {
             topic: parsed.t || parsed.topic || topicParam || curatedFallback.topic,
-            edukasi: parsed.e || parsed.edukasi || curatedFallback.stories[1].text,
-            praktik: parsed.p || parsed.praktik || curatedFallback.stories[2].text,
-            bukti: parsed.b || parsed.bukti || curatedFallback.stories[3].text,
-            keyword: (parsed.k || parsed.keyword || keywordParam || curatedFallback.keyword || "RESET").toUpperCase(),
+            edukasi: parsed.e || parsed.edukasi || curatedFallback.stories[1]?.text || "",
+            praktik: parsed.p || parsed.praktik || curatedFallback.stories[2]?.text || "",
+            bukti: parsed.b || parsed.bukti || curatedFallback.stories[3]?.text || "",
+            keyword: (parsed.k || parsed.keyword || keywordParam || defaultKw).toUpperCase(),
             pillar: pil,
             date: campaignDate,
           };
         }
-      } catch {
-        try {
-          const decodedStr = Buffer.from(dataParam, "base64").toString("utf-8");
-          const parsed = JSON.parse(decodedStr);
-          if (parsed) {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const { getCuratedStoryForDate, CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
-            const pil = (parsed.l || parsed.pillar || pillarParam || "TUBUH").toUpperCase();
-            const curatedFallback = typeof getCuratedStoryForDate === "function"
-              ? getCuratedStoryForDate(pil, campaignDate)
-              : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
-
-            dynamicStory = {
-              topic: parsed.t || parsed.topic || topicParam || curatedFallback.topic,
-              edukasi: parsed.e || parsed.edukasi || curatedFallback.stories[1].text,
-              praktik: parsed.p || parsed.praktik || curatedFallback.stories[2].text,
-              bukti: parsed.b || parsed.bukti || curatedFallback.stories[3].text,
-              keyword: (parsed.k || parsed.keyword || keywordParam || curatedFallback.keyword || "RESET").toUpperCase(),
-              pillar: pil,
-              date: campaignDate,
-            };
-          }
-        } catch (e) {
-          console.warn("[protocol/pdf] Gagal decode dataParam:", e);
-        }
+      } catch (err) {
+        console.warn("[protocol/pdf] Gagal decode base64 payload:", err);
       }
     }
 
-    // 2. Jika dataParam tidak ada, coba baca cache data/latest-story.json (Priority 2)
-    if (!dynamicStory) {
-      try {
-        const fs = await import("node:fs");
-        const path = await import("node:path");
-        const targetPillar = (pillarParam || (keywordParam === "RESET" ? "PIKIRAN" : keywordParam === "FOKUS" ? "TEKNOLOGI" : "TUBUH")).toLowerCase();
-        const pillarCache = path.join(process.cwd(), "data", `story-${targetPillar}.json`);
-        const latestCache = path.join(process.cwd(), "data", "latest-story.json");
-
-        const targetFile = fs.existsSync(pillarCache) ? pillarCache : fs.existsSync(latestCache) ? latestCache : null;
-        if (targetFile) {
-          const fileContent = fs.readFileSync(targetFile, "utf-8");
-          const cached = JSON.parse(fileContent);
-          // Hanya gunakan cache jika tanggalnya persis hari ini (mencegah topik basi kemarin)
-          if (cached && cached.stories && cached.date === campaignDate) {
-            dynamicStory = {
-              topic: topicParam || cached.topic || "",
-              edukasi: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("EDUKASI"))?.text || "",
-              praktik: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("PRAKTIK"))?.text || "",
-              bukti: cached.stories.find((s: any) => (s.act || "").toUpperCase().includes("BUKTI"))?.text || "",
-              keyword: (keywordParam || cached.keyword || "RESET").toUpperCase(),
-              pillar: (pillarParam || cached.pillar || "TUBUH").toUpperCase(),
-              date: cached.date || campaignDate,
-            };
-          }
-        }
-      } catch {
-        // Abaikan kegagalan baca file cache
-      }
-    }
-
-    // 3. Fallback ke Curated Stories Dinamis V2.3 Makassar (Priority 3)
-    if (!dynamicStory) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { getCuratedStoryForDate, CURATED_STORIES } = require("../../../../../lib/story-engine-v2");
-      const pil = (pillarParam || (keywordParam === "RESET" ? "PIKIRAN" : keywordParam === "FOKUS" ? "TEKNOLOGI" : "TUBUH")).toUpperCase();
-      const curated = typeof getCuratedStoryForDate === "function" 
-        ? getCuratedStoryForDate(pil, campaignDate) 
+    // 1B. Jika ada topic, pillar, atau keyword langsung di searchParams
+    if (!dynamicStory && (topicParam || pillarParam || keywordParam)) {
+      const pil = resolvePillar(pillarParam, campaignDate);
+      const defaultKw = resolvePillarKeyword(pil, campaignDate);
+      const curated = typeof getCuratedStoryForDate === "function"
+        ? getCuratedStoryForDate(pil, campaignDate)
         : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
 
       dynamicStory = {
         topic: topicParam || curated.topic,
+        edukasi: curated.stories[1]?.text || "",
+        praktik: curated.stories[2]?.text || "",
+        bukti: curated.stories[3]?.text || "",
+        keyword: (keywordParam || defaultKw || curated.keyword || "RESET").toUpperCase(),
+        pillar: pil,
+        date: campaignDate,
+      };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // PRIORITAS 2 (Fallback Tanpa Parameter): Ambil dari Engine Dinamis Makassar On-The-Fly
+    // Mencegah pembacaan file disk kadaluarsa di Vercel Serverless
+    // ─────────────────────────────────────────────────────────────────────────────
+    if (!dynamicStory) {
+      // Cek naskah aktif hari ini jika tanggalnya persis sama
+      const activeDaily = typeof getActiveDailyStory === "function"
+        ? getActiveDailyStory(campaignDate)
+        : null;
+
+      if (activeDaily && Array.isArray(activeDaily.stories) && activeDaily.date === campaignDate) {
+        dynamicStory = {
+          topic: activeDaily.topic || "",
+          edukasi: activeDaily.stories.find((s: any) => (s.act || "").toUpperCase().includes("EDUKASI"))?.text || "",
+          praktik: activeDaily.stories.find((s: any) => (s.act || "").toUpperCase().includes("PRAKTIK"))?.text || "",
+          bukti: activeDaily.stories.find((s: any) => (s.act || "").toUpperCase().includes("BUKTI"))?.text || "",
+          keyword: (activeDaily.keyword || resolvePillarKeyword(activeDaily.pillar, campaignDate)).toUpperCase(),
+          pillar: (activeDaily.pillar || resolvePillar(null, campaignDate)).toUpperCase(),
+          date: activeDaily.date || campaignDate,
+        };
+      } else {
+        // Generate on-the-fly menggunakan generator engine resmi WITA
+        const onTheFly = await generateStoryV2({ date: campaignDate });
+        if (onTheFly && Array.isArray(onTheFly.stories)) {
+          dynamicStory = {
+            topic: onTheFly.topic || "",
+            edukasi: onTheFly.stories.find((s: any) => (s.act || "").toUpperCase().includes("EDUKASI"))?.text || "",
+            praktik: onTheFly.stories.find((s: any) => (s.act || "").toUpperCase().includes("PRAKTIK"))?.text || "",
+            bukti: onTheFly.stories.find((s: any) => (s.act || "").toUpperCase().includes("BUKTI"))?.text || "",
+            keyword: (onTheFly.keyword || resolvePillarKeyword(onTheFly.pillar, campaignDate)).toUpperCase(),
+            pillar: (onTheFly.pillar || resolvePillar(null, campaignDate)).toUpperCase(),
+            date: onTheFly.date || campaignDate,
+          };
+        }
+      }
+    }
+
+    // Safety guard
+    if (!dynamicStory) {
+      const pil = resolvePillar(null, campaignDate);
+      const curated = getCuratedStoryForDate(pil, campaignDate);
+      dynamicStory = {
+        topic: curated.topic,
         edukasi: curated.stories[1].text,
         praktik: curated.stories[2].text,
         bukti: curated.stories[3].text,
-        keyword: (keywordParam || curated.keyword || "RESET").toUpperCase(),
+        keyword: resolvePillarKeyword(pil, campaignDate),
         pillar: pil,
         date: campaignDate,
       };
@@ -193,14 +211,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 7. Streaming response binary PDF dengan headers resmi
+    const dateSlug = (campaignDate || new Date().toISOString().slice(0, 10)).replace(/[^0-9-]/g, "");
+
+    // 7. Streaming response binary PDF dengan headers resmi anti-cache
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Length": String(pdfBuffer.length),
-        "Content-Disposition": `inline; filename="${pdfFilename}"`,
-        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+        "Content-Disposition": `inline; filename="panduan-somatik-${dateSlug}.pdf"`,
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
       },
     });
   } catch (fatalErr) {

@@ -105,13 +105,32 @@ const PILLAR_CONFIGS: Record<PillarKey, PillarConfig> = {
 };
 
 /**
- * Menghitung default pilar berdasarkan kalender WITA
+ * Jadwal Resmi Mingguan Dokter Pikiran Makassar (WITA, UTC+8)
+ * Day 1 (Senin) -> TUBUH | LAMBUNG
+ * Day 2 (Selasa)-> PIKIRAN | RESET
+ * Day 3 (Rabu)  -> TEKNOLOGI | FOKUS
+ * Day 4 (Kamis) -> TUBUH | RELAKSASI
+ * Day 5 (Jumat) -> PIKIRAN | DAMAI
+ * Day 6 (Sabtu) -> TEKNOLOGI | FLOW
+ * Day 0 (Ahad)  -> TUBUH | PULIH
+ */
+const MAKASSAR_WEEKLY_MAP: Record<number, { pillar: PillarKey; keyword: string }> = {
+  1: { pillar: "TUBUH", keyword: "LAMBUNG" },
+  2: { pillar: "PIKIRAN", keyword: "RESET" },
+  3: { pillar: "TEKNOLOGI", keyword: "FOKUS" },
+  4: { pillar: "TUBUH", keyword: "RELAKSASI" },
+  5: { pillar: "PIKIRAN", keyword: "DAMAI" },
+  6: { pillar: "TEKNOLOGI", keyword: "FLOW" },
+  0: { pillar: "TUBUH", keyword: "PULIH" },
+};
+
+/**
+ * Menghitung default pilar berdasarkan kalender resmi WITA
  */
 function getDefaultPillar(): PillarKey {
-  const day = new Date().getDay();
-  if (day === 0 || day === 3) return "PIKIRAN";
-  if (day === 1 || day === 4) return "TUBUH";
-  return "TEKNOLOGI";
+  const nowMakassar = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Makassar" }));
+  const day = nowMakassar.getDay();
+  return MAKASSAR_WEEKLY_MAP[day]?.pillar || "TUBUH";
 }
 
 /**
@@ -183,13 +202,20 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
 
   const currentPillarConfig = useMemo(() => PILLAR_CONFIGS[selectedPillar], [selectedPillar]);
 
-  // Compute active PDF URL
+  // Compute active PDF URL dengan parameter dinamis lengkap
   const activePdfUrl = useMemo(() => {
     if (history?.pdfUrl && history.pillar === selectedPillar) {
       return history.pdfUrl;
     }
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return `${origin}/api/protocol/pdf?keyword=${currentPillarConfig.keyword}&pillar=${selectedPillar}`;
+    const todayDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Makassar",
+    }).format(new Date());
+
+    const activeKw = MAKASSAR_WEEKLY_MAP[new Date().getDay()]?.keyword || currentPillarConfig.keyword;
+    const topic = history?.topic || currentPillarConfig.title;
+
+    return `${origin}/api/protocol/pdf?date=${todayDate}&pillar=${selectedPillar}&keyword=${activeKw}&topic=${encodeURIComponent(topic)}`;
   }, [history, selectedPillar, currentPillarConfig]);
 
   // Copy PDF Link handler
