@@ -2,26 +2,30 @@ name: Dual-Scheduler Daily Slots 24h (Dokter Pikiran)
 
 on:
   schedule:
-    # 07:00 WITA (23:00 UTC) -> Story 1 (Hook Pagi)
+    # Slot 1 (07:00 WITA): cron '0 23 * * *' (23:00 UTC) -> Story 1 (Hook Pagi)
     - cron: '0 23 * * *'
-    # 08:00 WITA (00:00 UTC) -> Story 2 (Edukasi Skema)
-    - cron: '0 0 * * *'
-    # 13:00 WITA (05:00 UTC) -> Story 3 (Praktik Siang)
+    # Slot 2 (07:45 WITA): cron '45 23 * * *' (23:45 UTC) -> Story 2 (Edukasi Skema)
+    - cron: '45 23 * * *'
+    # Slot 3 (13:00 WITA): cron '0 5 * * *' (05:00 UTC) -> Story 3 (Praktik Siang)
     - cron: '0 5 * * *'
-    # 20:00 WITA (12:00 UTC) -> Story 4 (Kasus Terapi Malam)
+    # Slot 4 (20:00 WITA): cron '0 12 * * *' (12:00 UTC) -> Story 4 (Kasus Terapi Malam)
     - cron: '0 12 * * *'
-    # 21:00 WITA (13:00 UTC) -> Story 5 (Refleksi & PDF)
+    # Slot 5 (21:00 WITA): cron '0 13 * * *' (13:00 UTC) -> Story 5 (Refleksi & PDF)
     - cron: '0 13 * * *'
   workflow_dispatch:
     inputs:
       slot:
-        description: 'Nomor Slot (1 - 5) atau kosongkan untuk deteksi otomatis jam WITA'
+        description: 'Nomor Slot (1 - 5, auto) atau kosongkan untuk deteksi otomatis jam WITA'
         required: false
-        default: ''
+        default: 'auto'
       mode:
         description: 'Mode Pengiriman (single / all)'
         required: false
         default: 'single'
+      secret:
+        description: 'Secret Token (Default: DOKTERPIKIRAN2026)'
+        required: false
+        default: 'DOKTERPIKIRAN2026'
 
 jobs:
   dispatch-slot:
@@ -32,20 +36,21 @@ jobs:
     steps:
       - name: Trigger Real-time Slot Dispatcher Endpoint
         run: |
-          BASE_URL="${{ secrets.APP_URL || 'https://storymaker-chi.vercel.app' }}"
-          SLOT="${{ github.event.inputs.slot }}"
-          MODE="${{ github.event.inputs.mode }}"
+          BASE_URL="${{ secrets.APP_URL || 'https://storymaker-jet.vercel.app' }}"
+          SLOT="${{ github.event.inputs.slot || 'auto' }}"
+          MODE="${{ github.event.inputs.mode || 'single' }}"
+          SECRET="${{ github.event.inputs.secret || secrets.CRON_SECRET || 'DOKTERPIKIRAN2026' }}"
           
           # Bersihkan trailing slash
           CLEAN_URL="${BASE_URL%/}"
           
           TARGET_URL="$CLEAN_URL/api/cron/slot-dispatcher"
-          PARAMS=""
+          PARAMS="?secret=$SECRET"
           
           if [ "$MODE" = "all" ]; then
-            PARAMS="?mode=all"
+            PARAMS="${PARAMS}&mode=all"
           elif [ -n "$SLOT" ]; then
-            PARAMS="?slot=$SLOT"
+            PARAMS="${PARAMS}&slot=$SLOT"
           fi
           
           FINAL_URL="${TARGET_URL}${PARAMS}"

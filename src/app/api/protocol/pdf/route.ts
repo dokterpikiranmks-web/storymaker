@@ -19,9 +19,15 @@ export async function GET(req: NextRequest) {
     const payloadParam = searchParams.get("payload")?.trim();
     const campaignId = searchParams.get("campaignId")?.trim();
     const dateParam = searchParams.get("date")?.trim();
-    const keywordParam = searchParams.get("keyword")?.trim();
-    const pillarParam = searchParams.get("pillar")?.trim();
-    const topicParam = searchParams.get("topic")?.trim();
+    const topic = searchParams.get("topic")?.trim() || searchParams.get("t")?.trim();
+    const pillar = searchParams.get("pillar")?.trim() || searchParams.get("l")?.trim();
+    const keyword = searchParams.get("keyword")?.trim() || searchParams.get("k")?.trim();
+    const somaticStep1 = searchParams.get("step1")?.trim() || searchParams.get("s1")?.trim();
+    const somaticStep2 = searchParams.get("step2")?.trim() || searchParams.get("s2")?.trim();
+    const somaticStep3 = searchParams.get("step3")?.trim() || searchParams.get("s3")?.trim();
+    const edukasiParam = searchParams.get("edukasi")?.trim() || searchParams.get("e")?.trim();
+    const praktikParam = searchParams.get("praktik")?.trim() || searchParams.get("p")?.trim();
+    const buktiParam = searchParams.get("bukti")?.trim() || searchParams.get("b")?.trim();
     const wantsJson = searchParams.get("json") === "1" || searchParams.get("json") === "true";
     const wantsUpload = searchParams.get("upload") === "1" || searchParams.get("upload") === "true";
 
@@ -39,6 +45,27 @@ export async function GET(req: NextRequest) {
 
     let dynamicStory: DynamicStoryPdfData | null = null;
 
+    // Helper untuk membangun langkah somatik kustom jika step1..step3 tersedia
+    const customSomaticSteps = (somaticStep1 || somaticStep2 || somaticStep3)
+      ? [
+          {
+            step: 1,
+            title: "Langkah 1: Manuver Awal",
+            desc: somaticStep1 || "Renggangkan rahang, relaksasi otot wajah dan leher secara santai.",
+          },
+          {
+            step: 2,
+            title: "Langkah 2: Stimulasi Saraf",
+            desc: somaticStep2 || "Lakukan peregangan mikro dan atur napas tenang secara teratur.",
+          },
+          {
+            step: 3,
+            title: "Langkah 3: Pemulihan Otonom",
+            desc: somaticStep3 || "Rasakan sinyal aman masuk ke sistem saraf dan detak jantung melambat.",
+          },
+        ]
+      : undefined;
+
     // ─────────────────────────────────────────────────────────────────────────────
     // PRIORITAS 1: Ekstrak data langsung dari URL searchParams
     // ─────────────────────────────────────────────────────────────────────────────
@@ -55,20 +82,23 @@ export async function GET(req: NextRequest) {
         }
         const parsed = JSON.parse(decodedStr);
         if (parsed && typeof parsed === "object") {
-          const pil = resolvePillar(parsed.l || parsed.pillar || pillarParam, campaignDate);
+          const pil = resolvePillar(parsed.l || parsed.pillar || pillar, campaignDate);
           const defaultKw = resolvePillarKeyword(pil, campaignDate);
           const curatedFallback = typeof getCuratedStoryForDate === "function"
             ? getCuratedStoryForDate(pil, campaignDate)
             : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
 
+          const parsedSteps = parsed.steps || customSomaticSteps;
+
           dynamicStory = {
-            topic: parsed.t || parsed.topic || topicParam || curatedFallback.topic,
-            edukasi: parsed.e || parsed.edukasi || curatedFallback.stories[1]?.text || "",
-            praktik: parsed.p || parsed.praktik || curatedFallback.stories[2]?.text || "",
-            bukti: parsed.b || parsed.bukti || curatedFallback.stories[3]?.text || "",
-            keyword: (parsed.k || parsed.keyword || keywordParam || defaultKw).toUpperCase(),
+            topic: parsed.t || parsed.topic || topic || curatedFallback.topic,
+            edukasi: parsed.e || parsed.edukasi || edukasiParam || curatedFallback.stories[1]?.text || "",
+            praktik: parsed.p || parsed.praktik || praktikParam || curatedFallback.stories[2]?.text || "",
+            bukti: parsed.b || parsed.bukti || buktiParam || curatedFallback.stories[3]?.text || "",
+            keyword: (parsed.k || parsed.keyword || keyword || defaultKw).toUpperCase(),
             pillar: pil,
             date: campaignDate,
+            somaticSteps: parsedSteps,
           };
         }
       } catch (err) {
@@ -76,22 +106,23 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 1B. Jika ada topic, pillar, atau keyword langsung di searchParams
-    if (!dynamicStory && (topicParam || pillarParam || keywordParam)) {
-      const pil = resolvePillar(pillarParam, campaignDate);
+    // 1B. Jika ada topic, pillar, keyword, atau step di searchParams
+    if (!dynamicStory && (topic || pillar || keyword || customSomaticSteps)) {
+      const pil = resolvePillar(pillar, campaignDate);
       const defaultKw = resolvePillarKeyword(pil, campaignDate);
       const curated = typeof getCuratedStoryForDate === "function"
         ? getCuratedStoryForDate(pil, campaignDate)
         : (CURATED_STORIES[pil] || CURATED_STORIES.TUBUH);
 
       dynamicStory = {
-        topic: topicParam || curated.topic,
-        edukasi: curated.stories[1]?.text || "",
-        praktik: curated.stories[2]?.text || "",
-        bukti: curated.stories[3]?.text || "",
-        keyword: (keywordParam || defaultKw || curated.keyword || "RESET").toUpperCase(),
+        topic: topic || curated.topic,
+        edukasi: edukasiParam || curated.stories[1]?.text || "",
+        praktik: praktikParam || curated.stories[2]?.text || "",
+        bukti: buktiParam || curated.stories[3]?.text || "",
+        keyword: (keyword || defaultKw || curated.keyword || "RESET").toUpperCase(),
         pillar: pil,
         date: campaignDate,
+        somaticSteps: customSomaticSteps,
       };
     }
 
@@ -176,7 +207,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const activeKeyword = (dynamicStory.keyword || keywordParam || "RESET").trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
+    const activeKeyword = (dynamicStory.keyword || keyword || "RESET").trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
     const pdfFilename = `Panduan_${activeKeyword}_DokterPikiran_Makassar.pdf`;
 
     // 6. Generate binary PDF buffer
@@ -221,6 +252,8 @@ export async function GET(req: NextRequest) {
         "Content-Length": String(pdfBuffer.length),
         "Content-Disposition": `inline; filename="panduan-somatik-${dateSlug}.pdf"`,
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
       },
     });
   } catch (fatalErr) {

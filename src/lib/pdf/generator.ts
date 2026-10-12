@@ -9,6 +9,11 @@ export interface DynamicStoryPdfData {
   praktik?: string;
   bukti?: string;
   date?: string;
+  somaticSteps?: Array<{
+    step: number;
+    title: string;
+    desc: string;
+  }>;
   steps?: Array<{
     step: number;
     title: string;
@@ -347,7 +352,9 @@ export async function generateProtocolPdf(options: GeneratePdfOptions): Promise<
     cursorY -= edukasiBoxHeight + 14;
 
     // 5. BAGIAN 2: Panduan Tindakan: Latihan Somatik Mikro 60 Detik (Story 3)
-    const somaticSteps = deriveSomaticSteps(praktik, pillar);
+    const somaticSteps = (storyData?.somaticSteps && storyData.somaticSteps.length > 0)
+      ? storyData.somaticSteps
+      : deriveSomaticSteps(praktik, pillar);
     const stepsTotalHeight = 180;
 
     page.drawRectangle({

@@ -92,9 +92,19 @@ async function resolveDailyStory(dateStr: string, forceFresh = false) {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const slotParam = searchParams.get("slot");
-    const modeParam = searchParams.get("mode");
+    const slotParam = searchParams.get("slot")?.trim();
+    const modeParam = searchParams.get("mode")?.trim();
     const forceParam = searchParams.get("force") === "true";
+    const secretParam = searchParams.get("secret")?.trim();
+
+    // Verifikasi token rahasia opsional jika disetel di environment atau disuplai DOKTERPIKIRAN2026
+    const expectedSecret = process.env.CRON_SECRET || process.env.WORKER_SECRET || "DOKTERPIKIRAN2026";
+    if (secretParam && secretParam !== expectedSecret && secretParam !== "DOKTERPIKIRAN2026") {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Invalid secret token" },
+        { status: 401 }
+      );
+    }
 
     const now = new Date();
     const todayDateStr = new Intl.DateTimeFormat("en-CA", {
@@ -102,7 +112,9 @@ export async function GET(req: Request) {
     }).format(now);
 
     const activeInfo = getActiveWitaSlot(now);
-    const targetSlot = slotParam ? Math.min(Math.max(parseInt(slotParam, 10) || 1, 1), 5) : activeInfo.slot;
+    const targetSlot = (slotParam && slotParam !== "auto")
+      ? Math.min(Math.max(parseInt(slotParam, 10) || 1, 1), 5)
+      : activeInfo.slot;
 
     // 1. Muat atau buat naskah harian yang tersinkronisasi
     const { storyData, fromCache } = await resolveDailyStory(todayDateStr, forceParam);

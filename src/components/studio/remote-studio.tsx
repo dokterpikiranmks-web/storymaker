@@ -207,7 +207,9 @@ export function RemoteStudio({ authEnabled }: RemoteStudioProps) {
     if (history?.pdfUrl && history.pillar === selectedPillar) {
       return history.pdfUrl;
     }
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const origin = typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_BASE_URL || "https://storymaker-jet.vercel.app");
     const todayDate = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Makassar",
     }).format(new Date());

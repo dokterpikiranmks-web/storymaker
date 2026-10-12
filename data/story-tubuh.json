@@ -1,68 +1,87 @@
 {
   "success": true,
-  "date": "2026-10-08",
+  "date": "2026-10-12",
   "pillar": "TUBUH",
   "pillarTitle": "Gut-Brain, Sistem Saraf & Paradoks Tubuh",
-  "themeColor": "#1B2E24",
-  "accentColor": "#86EFAC",
-  "topic": "Relaxation-Induced Anxiety: Kenapa Saat Rebahan Tubuh Malah Makin Gelisah & Migrain?",
+  "themeColor": "#162621",
+  "accentColor": "#74A892",
+  "topic": "Napas Pendek & Sensasi Dada Terhimpit: Kenapa Menarik Napas Dalam Malah Bikin Sesak?",
   "keyword": "LAMBUNG",
   "source": "curated_fallback",
-  "model": "DokterPikiran-Curated-V2.3-Makassar",
+  "model": "DokterPikiran-Curated-V3.0-Makassar",
   "stories": [
     {
       "slide": 1,
       "time": "07:00",
       "act": "HOOK",
-      "text": "Niat santai dan rebahan, tapi dada malah berdebar dan asam lambung melilit?",
+      "text": "Dada terasa sesak lalu kamu tarik napas dalam-dalam? Itu justru bikin makin engap.",
       "visualGuide": {
-        "headline": "Relaxation Anxiety",
-        "palette": "Forest Sage & Mint",
-        "elements": "Visual minimalis paradoks tubuh yang gelisah saat istirahat"
+        "headline": "Paradoks Tarik Napas",
+        "badge": "🚨 ANOMALI PERNAPASAN"
       }
     },
     {
       "slide": 2,
       "time": "07:45",
       "act": "EDUKASI",
-      "text": "Saraf terbiasa siaga tinggi kronis. Penurunan hormon stres mendadak dibaca otak bawah sadar sebagai ancaman bahaya sebelum badai.",
+      "text": "Menarik napas berlebihan membuang CO2 terlalu cepat. Pembuluh menyempit dan otak merasa makin kekurangan udara.",
       "visualGuide": {
-        "headline": "Alarm Sebelum Badai",
-        "palette": "Forest Sage & Warm Linen",
-        "elements": "Highlight box penarikan hormon stres mendadak"
+        "headline": "Penyempitan Pembuluh",
+        "badge": "🔬 SKEMA SEBAB - AKIBAT",
+        "flowchart": [
+          "Panik Hirup Napas Cepat",
+          "Karbon Dioksida Drop",
+          "Pembuluh Darah Sempit"
+        ]
       }
     },
     {
       "slide": 3,
       "time": "13:00",
       "act": "PRAKTIK",
-      "text": "Physiological Sigh 60 Detik: Ambil dua tarikan napas pendek cepat lewat hidung, hembuskan satu tarikan panjang lewat mulut. Alveoli paru mekar seketika.",
+      "text": "Exhale Prolongation 60 Detik: Hirup pelan 2 detik lewat hidung, hembuskan lembut 6 detik lewat bibir.",
       "visualGuide": {
-        "headline": "Physiological Sigh",
-        "palette": "Sage Green & Sand",
-        "elements": "Langkah fisiologis 2 tarikan pendek dan 1 hembusan panjang lega"
+        "headline": "Exhale Prolongation 6s",
+        "badge": "⚡ PRAKTIK 60 DETIK",
+        "steps": [
+          {
+            "step": "01",
+            "action": "Hirup udara pelan 2 detik lewat hidung tanpa busung dada",
+            "target": "Hidung & Diafragma"
+          },
+          {
+            "step": "02",
+            "action": "Kerutkan bibir, hembuskan lembut 6 detik sampai paru kempis",
+            "target": "Bibir & Paru-paru"
+          },
+          {
+            "step": "03",
+            "action": "Ulangi 4 siklus. Rasakan rongga dada langsung terasa lega",
+            "target": "Keseimbangan Gas Darah"
+          }
+        ]
       }
     },
     {
       "slide": 4,
       "time": "20:00",
       "act": "BUKTI",
-      "text": "Catatan meja terapi Makassar: profesional yang selalu dispepsia tiap hari libur. Masalahnya bukan lambung, tapi sarafnya belum diajari bahwa hening itu aman.",
+      "text": "Klien klinik Batua Raya sering panik mengira serangan jantung. Begitu pola hembusannya diperpanjang, sesak dadanya lenyap tanpa obat penenang.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
-        "palette": "Deep Forest Muted",
-        "elements": "Kutipan refleksi psikosomatis dari ruang klinik Makassar"
+        "badge": "📋 REKAM MEDIS KLINIS",
+        "stamp": "TERVERIFIKASI SOMATIK • MAKASSAR"
       }
     },
     {
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Tenang bukan berarti kehilangan kendali. Beri izin tubuhmu menurunkan perisai malam ini. Mau panduan PDF Menjinakkan Cemas Saat Rehat? Balas story ini: LAMBUNG.",
+      "text": "Tubuhmu tidak kekurangan udara, ia hanya perlu berhenti bertarung melawan rasa sesak. Mau panduan lengkapnya? Balas story ini: LAMBUNG.",
       "visualGuide": {
-        "headline": "Izin untuk Rehat Aman",
-        "palette": "Night Forest & Soft Sand",
-        "elements": "Pesan penutup malam tenang dengan pemicu keyword LAMBUNG"
+        "headline": "Berhenti Bertarung Melawan Sesak",
+        "badge": "📄 PANDUAN POCKET PDF",
+        "booklet": "Protokol Atasi Sesak Dada Psikosomatis"
       }
     }
   ]

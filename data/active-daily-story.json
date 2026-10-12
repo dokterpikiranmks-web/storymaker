@@ -1,12 +1,12 @@
 {
   "success": true,
-  "date": "2026-10-11",
-  "pillar": "PIKIRAN",
-  "pillarTitle": "Bawah Sadar, Belief System & Suara Batin",
-  "themeColor": "#1E293B",
-  "accentColor": "#63B3ED",
-  "topic": "Beban Emosi Terpendam: Kenapa Masalah Batin Sering Lari ke Lambung & Dada?",
-  "keyword": "RESET",
+  "date": "2026-10-12",
+  "pillar": "TUBUH",
+  "pillarTitle": "Gut-Brain, Sistem Saraf & Paradoks Tubuh",
+  "themeColor": "#162621",
+  "accentColor": "#74A892",
+  "topic": "Napas Pendek & Sensasi Dada Terhimpit: Kenapa Menarik Napas Dalam Malah Bikin Sesak?",
+  "keyword": "LAMBUNG",
   "source": "curated_fallback",
   "model": "DokterPikiran-Curated-V3.0-Makassar",
   "stories": [
@@ -14,24 +14,24 @@
       "slide": 1,
       "time": "07:00",
       "act": "HOOK",
-      "text": "Sering nelan amarah dan perasaan sendiri? Jangan heran kalau lambung ikut meradang.",
+      "text": "Dada terasa sesak lalu kamu tarik napas dalam-dalam? Itu justru bikin makin engap.",
       "visualGuide": {
-        "headline": "Emosi Menjadi Perih",
-        "badge": "💡 EMOSI & LAMBUNG"
+        "headline": "Paradoks Tarik Napas",
+        "badge": "🚨 ANOMALI PERNAPASAN"
       }
     },
     {
       "slide": 2,
       "time": "07:45",
       "act": "EDUKASI",
-      "text": "Saluran cerna punya jutaan sel saraf. Saat emosi ditahan paksa, saraf enterik lambung yang menanggung bebannya.",
+      "text": "Menarik napas berlebihan membuang CO2 terlalu cepat. Pembuluh menyempit dan otak merasa makin kekurangan udara.",
       "visualGuide": {
-        "headline": "Beban Saraf Enterik",
+        "headline": "Penyempitan Pembuluh",
         "badge": "🔬 SKEMA SEBAB - AKIBAT",
         "flowchart": [
-          "Amarah Dipendam Paksa",
-          "Saraf Lambung Menegang",
-          "Asam Lambung & Begah Kambuh"
+          "Panik Hirup Napas Cepat",
+          "Karbon Dioksida Drop",
+          "Pembuluh Darah Sempit"
         ]
       }
     },
@@ -39,25 +39,25 @@
       "slide": 3,
       "time": "13:00",
       "act": "PRAKTIK",
-      "text": "Diaphragmatic Sigh 60 Detik: Letakkan tangan di ulu hati, ambil 2 napas pendek, hembuskan lega.",
+      "text": "Exhale Prolongation 60 Detik: Hirup pelan 2 detik lewat hidung, hembuskan lembut 6 detik lewat bibir.",
       "visualGuide": {
-        "headline": "Diaphragmatic Sigh",
+        "headline": "Exhale Prolongation 6s",
         "badge": "⚡ PRAKTIK 60 DETIK",
         "steps": [
           {
             "step": "01",
-            "action": "Letakkan tangan di perut atas tepat di bawah ulu hati",
-            "target": "Ulu Hati & Diafragma"
+            "action": "Hirup udara pelan 2 detik lewat hidung tanpa busung dada",
+            "target": "Hidung & Diafragma"
           },
           {
             "step": "02",
-            "action": "Tarik napas 2 kali pendek lewat hidung sampai perut ngembang",
-            "target": "Paru-paru & Perut"
+            "action": "Kerutkan bibir, hembuskan lembut 6 detik sampai paru kempis",
+            "target": "Bibir & Paru-paru"
           },
           {
             "step": "03",
-            "action": "Hembuskan panjang lewat mulut sambil rilekskan perut",
-            "target": "Saraf Enterik Tenang"
+            "action": "Ulangi 4 siklus. Rasakan rongga dada langsung terasa lega",
+            "target": "Keseimbangan Gas Darah"
           }
         ]
       }
@@ -66,7 +66,7 @@
       "slide": 4,
       "time": "20:00",
       "act": "BUKTI",
-      "text": "Klien di Makassar sembuh dari sakit maag menahun setelah berani melepaskan beban rasa bersalah yang dipendam belasan tahun.",
+      "text": "Klien klinik Batua Raya sering panik mengira serangan jantung. Begitu pola hembusannya diperpanjang, sesak dadanya lenyap tanpa obat penenang.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
         "badge": "📋 REKAM MEDIS KLINIS",
@@ -77,11 +77,11 @@
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Boleh kok merasa lelah dan rapuh. Istirahatkan bebanmu malam ini. Mau baca panduan lengkapnya? Balas story ini: RESET.",
+      "text": "Tubuhmu tidak kekurangan udara, ia hanya perlu berhenti bertarung melawan rasa sesak. Mau panduan lengkapnya? Balas story ini: LAMBUNG.",
       "visualGuide": {
-        "headline": "Izin Menjadi Manusia",
+        "headline": "Berhenti Bertarung Melawan Sesak",
         "badge": "📄 PANDUAN POCKET PDF",
-        "booklet": "Protokol Melepas Beban Emosi Terpendam"
+        "booklet": "Protokol Atasi Sesak Dada Psikosomatis"
       }
     }
   ]
