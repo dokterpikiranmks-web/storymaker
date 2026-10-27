@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Trigger Real-time Slot Dispatcher Endpoint
         run: |
-          BASE_URL="${{ secrets.APP_URL || 'https://storymaker-jet.vercel.app' }}"
+          BASE_URL="${{ secrets.APP_URL || 'https://storymaker-chi.vercel.app' }}"
           SLOT="${{ github.event.inputs.slot || 'auto' }}"
           MODE="${{ github.event.inputs.mode || 'single' }}"
           SECRET="${{ github.event.inputs.secret || secrets.CRON_SECRET || 'DOKTERPIKIRAN2026' }}"
