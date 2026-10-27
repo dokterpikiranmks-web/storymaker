@@ -396,10 +396,10 @@ function CuratedBackground({ category }: { category: BackgroundCategory }) {
 }
 
 /**
- * Dark Gradient Overlay — linear-gradient: rgba(10, 15, 13, 0.82)
- * Ensures 100% text, badge, and card legibility without glare over backgrounds.
+ * Luminous Atmospheric Gradient Overlay
+ * Creates deep, elegant contrast while allowing organic botanical & meridian art to glow through.
  */
-function DarkGradientOverlay() {
+function DarkGradientOverlay({ opacity = 0.55 }: { opacity?: number }) {
   return (
     <div
       style={{
@@ -409,7 +409,7 @@ function DarkGradientOverlay() {
         width: SLIDE_WIDTH,
         height: SLIDE_HEIGHT,
         backgroundImage:
-          "linear-gradient(180deg, rgba(10, 15, 13, 0.82) 0%, rgba(10, 15, 13, 0.85) 45%, rgba(10, 15, 13, 0.90) 80%, rgba(6, 10, 8, 0.96) 100%)",
+          `linear-gradient(180deg, rgba(6, 12, 10, ${opacity * 0.75}) 0%, rgba(6, 12, 10, ${opacity * 0.9}) 50%, rgba(4, 8, 7, ${opacity * 1.15}) 100%)`,
       }}
     />
   );
@@ -676,7 +676,8 @@ function Headline({
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Babak 1: Extracts 3 body symptoms and 1 afternoon teaser.
+ * Babak 1: Extracts 2-3 punchy checklist items dynamically from body text.
+ * No hardcoded neck fallbacks — extracts real user/AI content!
  */
 function parseChecklistContent(body: string, cta?: string | null): { items: string[]; teaser: string } {
   const clean = sanitize(body).replace(/\*/g, "");
@@ -685,9 +686,9 @@ function parseChecklistContent(body: string, cta?: string | null): { items: stri
   let teaser = "";
   const candidateItems: string[] = [];
 
-  // Look for teaser line mentioning siang, jam 12:30, solusi, etc.
+  // Look for teaser line mentioning siang, jam 12:30, solusi, dll.
   for (const line of lines) {
-    if (/siang|12[:.]30|jam 12|solusi|bocorkan|tunjukkan|nanti siang|janji/i.test(line)) {
+    if (/siang|12[:.]30|jam 12|solusi|bocorkan|tunjukkan|nanti siang|janji|tunggu/i.test(line)) {
       if (!teaser) teaser = line;
       continue;
     }
@@ -702,91 +703,161 @@ function parseChecklistContent(body: string, cta?: string | null): { items: stri
       for (const s of sentences) {
         if (/siang|12[:.]30|jam 12|solusi|bocorkan|tunjukkan/i.test(s)) {
           if (!teaser) teaser = s;
-        } else if (s.length > 8) {
-          candidateItems.push(s);
+        } else if (s.trim().length > 6) {
+          candidateItems.push(s.trim());
         }
       }
     }
   }
 
   if (!teaser && cta) teaser = cta;
-  if (!teaser) teaser = "Solusi titik saraf peredanya kita kupas tuntas siang ini jam 12:30.";
+  if (!teaser) teaser = "Solusi praktisnya kita kupas tuntas siang nanti jam 12:30.";
 
-  // Curate 3 high-impact checklist items
-  let items = candidateItems.slice(0, 3);
-  if (items.length < 3) {
-    const fallbacks = [
-      "Otot leher belakang mengeras kaku saat bangun tidur",
-      "Rahang bawah mengatup rapat tanpa disadari saat mikir",
-      "Napas terasa dangkal dan dada mengganjal berat",
-    ];
-    items = [...items, ...fallbacks].slice(0, 3);
+  // Filter and deduplicate items
+  let items = candidateItems.filter((it) => it.length > 5).slice(0, 3);
+
+  // If fewer than 2 items extracted, extract sub-clauses from body
+  if (items.length < 2) {
+    const rawClauses = clean
+      .split(/[,;:—\n]/)
+      .map((c) => c.trim())
+      .filter((c) => c.length > 10 && !/siang|12[:.]30/i.test(c));
+    items = [...items, ...rawClauses].slice(0, 3);
   }
 
-  // Format cleanly (truncate to 72 chars max per item for punchy impact)
+  // If still empty, use clean, empathetic self-checks matching any wellness topic
+  if (items.length === 0) {
+    items = [
+      "Pikiran terasa padat dan belum benar-benar rileks",
+      "Tubuh memberi sinyal lelah yang butuh didengarkan",
+      "Napas terasa dangkal dan butuh ruang tenang",
+    ];
+  }
+
   return {
-    items: items.map((it) => truncate(it.replace(/^[-*•\d.]+\s*/, ""), 72)),
+    items: items.map((it) => truncate(it.replace(/^[-*•\d.]+\s*/, ""), 75)),
     teaser: truncate(teaser, 110),
   };
 }
 
 /**
- * Babak 2: Extracts 3 somatic action cards (Action Verb, Instruction, Meridian Indicator).
+ * Babak 2: Extracts 3 somatic action cards dynamically (Action Verb, Instruction, Meridian/Tag Indicator).
+ * 100% dynamic parsing based on the actual AI/user text!
  */
 function parseActionStepsContent(body: string): Array<{ step: string; verb: string; instruction: string; meridian: string }> {
   const clean = sanitize(body).replace(/\*/g, "");
   const lines = clean.split("\n").map((l) => l.trim()).filter(Boolean);
 
-  // Default clinical somatic protocol
-  const defaults = [
-    {
-      step: "01",
-      verb: "TEKAN",
-      instruction: "Letakkan dua jempol di cekungan pangkal tengkorak leher belakang (GB-20) dan tekan lembut 30 detik.",
-      meridian: "Titik GB-20 • Cekungan Leher Belakang",
-    },
-    {
-      step: "02",
-      verb: "HEMBUSKAN",
-      instruction: "Tarik napas perlahan lewat hidung 4 detik, hembuskan panjang lewat mulut 8 detik seperti meniup lilin.",
-      meridian: "Rem Saraf Vagus • Jalur Napas Plong",
-    },
-    {
-      step: "03",
-      verb: "LEPASKAN",
-      instruction: "Turunkan kedua bahu santai dan rasakan ketegangan leher serta dada seketika rontok.",
-      meridian: "Meridian Trapezius • Dekompresi Saraf",
-    },
-  ];
+  const actionLines: string[] = [];
 
-  // Try extracting action verbs if user customized the steps
-  const verbs = ["TEKAN", "HEMBUSKAN", "LEPASKAN", "SENTUH", "TARIK NAPAS", "PUTAR", "RILEKS"];
-  const parsed: typeof defaults = [];
-
-  for (let i = 0; i < lines.length && parsed.length < 3; i++) {
-    const line = lines[i];
-    if (/sore|18[:.]45|jam 18|kabel emosi/i.test(line)) continue;
-
-    for (const v of verbs) {
-      if (line.toUpperCase().includes(v)) {
-        const stepNum = `0${parsed.length + 1}`;
-        const instruction = line.replace(new RegExp(`^.*${v}[:\\s-]*`, "i"), "").trim() || line;
-        parsed.push({
-          step: stepNum,
-          verb: v,
-          instruction: truncate(instruction, 90),
-          meridian: defaults[parsed.length]?.meridian ?? "Meridian Akupresur Terapi",
-        });
-        break;
+  for (const l of lines) {
+    if (/sore|18[:.]45|jam 18|kabel emosi|nanti malam/i.test(l) && actionLines.length >= 2) continue;
+    const bulletMatch = l.match(/^[-*•\d.]+\s*(.+)$/);
+    if (bulletMatch && bulletMatch[1]) {
+      actionLines.push(bulletMatch[1]);
+    } else {
+      const sentences = l.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 8);
+      for (const s of sentences) {
+        if (!/sore|18[:.]45|jam 18/i.test(s) || actionLines.length < 2) {
+          actionLines.push(s.trim());
+        }
       }
     }
   }
 
-  return parsed.length === 3 ? parsed : defaults;
+  const results: Array<{ step: string; verb: string; instruction: string; meridian: string }> = [];
+  const knownVerbs = [
+    "SEDUH", "MINUM", "TEKAN", "PIJAT", "TARIK", "HEMBUSKAN", "LEPASKAN",
+    "DUDUK", "PEJAMKAN", "LURUSKAN", "REGANGKAN", "SENTUH", "KOMPRES", "PENCET", "RILEKS"
+  ];
+
+  for (let i = 0; i < actionLines.length && results.length < 3; i++) {
+    const raw = actionLines[i];
+    let detectedVerb = "";
+
+    // Check for known verb
+    for (const v of knownVerbs) {
+      if (new RegExp(`\\b${v}\\b`, "i").test(raw)) {
+        detectedVerb = v;
+        break;
+      }
+    }
+
+    // Fallback verb: take first word if capital or action-oriented
+    if (!detectedVerb) {
+      const firstWord = raw.split(/\s+/)[0]?.toUpperCase().replace(/[^A-Z]/g, "") || "LANGKAH";
+      detectedVerb = firstWord.length >= 3 && firstWord.length <= 10 ? firstWord : "PRAKTIK";
+    }
+
+    // Determine category / meridian tag dynamically from content
+    let tag = "Praktik Relaksasi Mandiri";
+    const lower = raw.toLowerCase();
+    if (/seduh|rebus|kunyit|jahe|temulawak|rimpang|madu|herbal|teh|air panas|minum/.test(lower)) {
+      tag = "Formulasi Seduhan Herbal Dapur";
+    } else if (/napas|tarik|hembus|paru|diafragma|hidung|mulut|4-7-8|vagus/.test(lower)) {
+      tag = "Aktivasi Rem Alami Saraf Vagus";
+    } else if (/tekan|pijat|titik|jempol|meridian|gb-|pc-|cv-|ht-|gv-/.test(lower)) {
+      tag = "Titik Akupresur Somatik";
+    } else if (/bahu|leher|pinggang|otot|regang|duduk/.test(lower)) {
+      tag = "Pelepasan Ketegangan Fisik";
+    }
+
+    const cleanInst = raw.replace(new RegExp(`^.*${detectedVerb}[:\\s-]*`, "i"), "").trim() || raw;
+
+    results.push({
+      step: `0${results.length + 1}`,
+      verb: detectedVerb,
+      instruction: truncate(cleanInst, 95),
+      meridian: tag,
+    });
+  }
+
+  // Ensure at least 3 cards with sensible, context-aware steps if AI provided shorter text
+  if (results.length === 1) {
+    results.push({
+      step: "02",
+      verb: "ATUR NAPAS",
+      instruction: "Tarik napas perlahan lewat hidung 4 detik, lalu hembuskan panjang lewat mulut 6-8 detik.",
+      meridian: "Aktivasi Rem Alami Saraf Vagus",
+    });
+  }
+  if (results.length === 2) {
+    results.push({
+      step: "03",
+      verb: "LEPASKAN",
+      instruction: "Turunkan bahumu, kendurkan rahang bawah, dan biarkan ketegangan tubuh meleleh.",
+      meridian: "Pelepasan Ketegangan Fisik",
+    });
+  }
+  if (results.length === 0) {
+    results.push(
+      {
+        step: "01",
+        verb: "FOKUS",
+        instruction: "Duduk tegak santai, letakkan telapak tangan di dada atau area tubuh yang tegang.",
+        meridian: "Penyelarasan Tubuh & Pikiran",
+      },
+      {
+        step: "02",
+        verb: "HEMBUSKAN",
+        instruction: "Tarik napas lembut dan buang napas panjang perlahan hingga dada terasa lega.",
+        meridian: "Aktivasi Rem Alami Saraf Vagus",
+      },
+      {
+        step: "03",
+        verb: "LEPASKAN",
+        instruction: "Izinkan seluruh otot tubuh melepas beban dan rasakan kenyamanan mengalir.",
+        meridian: "Pelepasan Ketegangan Fisik",
+      }
+    );
+  }
+
+  return results.slice(0, 3);
 }
 
 /**
  * Babak 3: Extracts the Split Comparison (Yang Kamu Pikirkan vs Akar Masalah Saraf).
+ * Parses REAL patient symptoms, root causes, and recovery results from AI output!
  */
 function parseComparisonContent(body: string): {
   perceivedTitle: string;
@@ -796,35 +867,77 @@ function parseComparisonContent(body: string): {
   teaser: string;
 } {
   const clean = sanitize(body).replace(/\*/g, "");
-  let teaser = "Nanti malam jam 21:30 sebelum tidur, kita reset pikiran bawah sadarmu.";
+  let teaser = "Nanti malam jam 21:00 sebelum tidur, kita reset pikiran bawah sadarmu.";
 
   const lines = clean.split("\n").map((l) => l.trim()).filter(Boolean);
   for (const l of lines) {
-    if (/malam|21[:.]30|jam 21|sebelum tidur|reset/i.test(l)) {
+    if (/malam|21[:.]|jam 21|sebelum tidur|reset/i.test(l)) {
       teaser = l;
       break;
     }
   }
 
+  // Check if body has structured format: "Gejala: ... -> Temuan: ... -> Hasil: ..."
+  let rawPerceived: string[] = [];
+  let rawClinical: string[] = [];
+
+  if (clean.includes("->") || clean.includes("→")) {
+    const segments = clean.split(/->|→/).map((s) => s.trim()).filter(Boolean);
+    if (segments.length >= 2) {
+      rawPerceived.push(segments[0].replace(/^.*gejala\s*(pasien)?[:\s]*/i, "").trim());
+      rawClinical.push(segments[1].replace(/^.*temuan\s*(meja terapi)?[:\s]*/i, "").trim());
+      if (segments[2]) {
+        rawClinical.push(segments[2].replace(/^.*hasil\s*(pemulihan)?[:\s]*/i, "").trim());
+      }
+    }
+  }
+
+  // Fallback: split by sentences if no arrows
+  if (rawPerceived.length === 0 || rawClinical.length === 0) {
+    const sentences = clean
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 8 && !/malam|21[:.]|sebelum tidur/i.test(s));
+
+    if (sentences.length >= 2) {
+      rawPerceived.push(sentences[0]);
+      if (sentences.length >= 4) {
+        rawPerceived.push(sentences[1]);
+        rawClinical.push(sentences[2]);
+        rawClinical.push(sentences[3]);
+      } else {
+        rawClinical.push(sentences[1]);
+        if (sentences[2]) rawClinical.push(sentences[2]);
+      }
+    }
+  }
+
+  // Final fallback to clean, universal mind-body principles if text was very short
+  if (rawPerceived.length === 0) {
+    rawPerceived = [
+      "Menganggap keluhan fisik hanya lelah biasa atau salah posisi",
+      "Mencoba menahan rasa tak nyaman tanpa mencari akar masalah",
+    ];
+  }
+  if (rawClinical.length === 0) {
+    rawClinical = [
+      "Pikiran bawah sadar menyalakan alarm tegang secara terus-menerus",
+      "Setelah simpul emosi di-reset, tubuh kembali relaks dan napas plong",
+    ];
+  }
+
   return {
-    perceivedTitle: "YANG KAMU PIKIRKAN",
-    perceivedItems: [
-      "Mengira salah posisi tidur atau salah bantal",
-      "Pegal fisik biasa akibat kelamaan di depan laptop",
-      "Cukup dioles balsam atau dipijat sebentar",
-    ],
-    clinicalTitle: "AKAR MASALAH SARAF",
-    clinicalItems: [
-      "Pikiran bawah sadar menyalakan 'alarm bahaya' non-stop",
-      "Kabel saraf simpatik terkunci di mode tegang & siaga",
-      "Sistem tubuh butuh restart dari akar instruksi lama",
-    ],
+    perceivedTitle: "GEJALA DI PERMUKAAN",
+    perceivedItems: rawPerceived.slice(0, 2).map((it) => truncate(it, 80)),
+    clinicalTitle: "TEMUAN MEJA TERAPI",
+    clinicalItems: rawClinical.slice(0, 2).map((it) => truncate(it, 80)),
     teaser: truncate(teaser, 110),
   };
 }
 
 /**
- * Babak 4: Extracts Keyword, Document Title, and Preview Steps for Lead Magnet Card.
+ * Babak 4: Extracts Keyword, Document Title, and 3 Preview Steps for Lead Magnet Card.
+ * 100% dynamic based on topic & content!
  */
 function parseLeadMagnetContent(headline: string, body: string, cta?: string | null): {
   keyword: string;
@@ -833,41 +946,65 @@ function parseLeadMagnetContent(headline: string, body: string, cta?: string | n
 } {
   const fullText = `${cta || ""} ${headline} ${body}`;
 
-  // Extract keyword
+  // Extract keyword: prioritize words inside quotes or preceded by 'ketik'
   let keyword = "RESET";
   const kwMatch = fullText.match(/(?:ketik|keyword|kata kunci)\s+['"]?([A-Za-z0-9_-]{2,20})['"]?/i);
   if (kwMatch && kwMatch[1]) {
     keyword = kwMatch[1].toUpperCase();
-  } else if (/LEHER/i.test(fullText)) {
-    keyword = "LEHER";
   } else if (/LAMBUNG/i.test(fullText)) {
     keyword = "LAMBUNG";
-  } else if (/INSOMNIA/i.test(fullText)) {
+  } else if (/INSOMNIA|TIDUR/i.test(fullText)) {
     keyword = "INSOMNIA";
-  } else if (/FOKUS/i.test(fullText)) {
+  } else if (/FOKUS|ENERGI/i.test(fullText)) {
     keyword = "FOKUS";
+  } else if (/LEHER|POSTUR/i.test(fullText)) {
+    keyword = "LEHER";
   }
 
-  // Derive Document Title
-  let docTitle = "PROTOKOL RESET SARAF VAGUS";
-  if (/leher|tengkorak/i.test(fullText)) {
-    docTitle = "PROTOKOL RESET SARAF VAGUS & OTOT LEHER";
-  } else if (/lambung|begah|asam/i.test(fullText)) {
+  // Derive Document Title dynamically
+  let docTitle = `PANDUAN PRAKTIK SAKU & PROTOKOL ${keyword}`;
+  if (/lambung|begah|asam/i.test(fullText)) {
     docTitle = "PROTOKOL SOMATIK GUT-BRAIN & ASAM LAMBUNG";
   } else if (/tidur|insomnia|lelap/i.test(fullText)) {
-    docTitle = "PROTOKOL GELOMBANG THETA & TIDUR PULIH";
-  } else if (/otak|nge-hang|mikir/i.test(fullText)) {
+    docTitle = "PANDUAN GELOMBANG THETA & TIDUR NYENYAK";
+  } else if (/otak|nge-hang|mikir|fokus/i.test(fullText)) {
     docTitle = "PANDUAN DEKOMPRESI OVERTHINKING & FOKUS";
+  } else if (/leher|bahu|punggung/i.test(fullText)) {
+    docTitle = "PROTOKOL RELAKSASI SARAF VAGUS & OTOT LEHER";
+  }
+
+  // Derive 3 structured preview steps dynamically
+  let steps: string[] = [];
+  if (keyword === "LAMBUNG") {
+    steps = [
+      "01 • Titik Akupresur Perikardium PC-6 & Ulu Hati",
+      "02 • Formulasi Seduhan Kunyit, Temulawak & Madu Hangat",
+      "03 • Sugesti Relaksasi Gut-Brain & Pelepasan Cemas",
+    ];
+  } else if (keyword === "INSOMNIA" || keyword === "TIDUR") {
+    steps = [
+      "01 • Titik Akupresur Shenmen HT-7 Pergelangan Tangan",
+      "02 • Seduhan Bunga Telang / Kamomil & Sedikit Pala",
+      "03 • Sugesti Gelombang Alpha-Theta Sebelum Lelap",
+    ];
+  } else if (keyword === "FOKUS" || keyword === "ENERGI") {
+    steps = [
+      "01 • Titik Akupresur Baihui GV-20 Puncak Kepala",
+      "02 • Formulasi Rimpang Jahe & Perasan Lemon Hangat",
+      "03 • Dekompresi Mental & Reset Otak Kebanyakan Mikir",
+    ];
+  } else {
+    steps = [
+      `01 • Titik Akupresur Somatik Pereda Ketegangan ${keyword}`,
+      "02 • Formulasi Seduhan Rimpang Alami & Pola Napas 4-7-8",
+      "03 • Sugesti Pelepasan Beban Bawah Sadar Sebelum Tidur",
+    ];
   }
 
   return {
     keyword,
     documentTitle: docTitle,
-    steps: [
-      "01 • Titik Akupresur Meridian Leher Belakang (GB-20)",
-      "02 • Rem Darurat Saraf Vagus: Pola Nafas 4-7-8",
-      "03 • Sugesti Pelepasan Gelombang Theta Bawah Sadar",
-    ],
+    steps,
   };
 }
 

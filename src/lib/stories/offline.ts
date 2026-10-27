@@ -26,83 +26,104 @@ type Builder = (t: string, p: PersonaSettings) => Omit<GeneratedAct, "act" | "vi
 
 const TEMPLATES: Record<ActType, Builder[]> = {
   ACT_1_HOOK: [
+    (t) => {
+      const lower = t.toLowerCase();
+      let symptom = "pikiran terasa padat dan tubuh mulai mengirim sinyal lelah";
+      if (/lambung|maag|begah|gerd/.test(lower)) symptom = "perut mulai terasa begah dan asam lambung naik saat kepikiran";
+      else if (/tidur|insomnia|lelap/.test(lower)) symptom = "mata lelah tapi pikiran justru berputar kencang tanpa henti";
+      else if (/leher|bahu|kaku|pegal/.test(lower)) symptom = "otot leher belakang dan rahang bawah mengatup kaku";
+      else if (/fokus|otak|mikir|hang/.test(lower)) symptom = "otak terasa nge-hang kebanyakan mikir hal yang belum terjadi";
+
+      return {
+        headline: `Saat kamu merasa *lelah dengan* ${t}`,
+        body_text: `Perhatikan sinyal tubuh pagi ini: saat kamu mencoba tetap produktif, ${symptom}.\n\nTubuhmu tidak sedang rusak, ia hanya memberi sinyal butuh ruang istirahat sejenak. Siang nanti jam 12:30 ada teknik fisik sederhana peredanya.`,
+        call_to_action: "Luangkan waktu 1 menit siang nanti jam 12:30.",
+        caption: `Pagi ini mari jujur soal ${t}.\n\nYang sering kita anggap masalah pikiran atau mental, sebetulnya adalah alarm alami tubuh yang belum sempat kita dengarkan.\n\nSiang nanti jam 12:30 aku bagikan cara mudah merilisnya. Selamat beraktivitas 🌿\n\n#mindbody #kesehatantubuh #kesadaranpagi`,
+        technique: "Empathetic pattern interrupt + morning body awareness",
+        key_element: "Self-check pagi: mendengarkan alarm tubuh, tease tips siang 12:30.",
+      };
+    },
     (t) => ({
-      headline: `Yang kamu lawan *bukan* ${t}`,
-      body_text:
-        "Perhatikan pagi ini: saat pikiran bilang \"aku baik-baik saja\", otot leher belakang dan rahangmu justru mengeras kaku.\n\nSiang nanti jam 12:30, saya tunjukkan 1 titik saraf di leher yang kalau ditekan 30 detik langsung bikin nafas enteng.",
-      call_to_action: "Tunggu panduannya siang nanti jam 12:30.",
-      caption: `Pagi ini aku mau jujur soal ${t}.\n\nYang kita kira masalah otak kebanyakan mikir, seringkali adalah sinyal tubuh yang belum sempat kita dengarkan. Otot leher belakang kaku mengunci alarm siaga tubuh.\n\nSiang nanti jam 12:30 aku tunjukkan titik peredanya. Pantau terus ya 🌿\n\n#totoksaraf #remalami #kesehatantubuh`,
-      technique: "Open loop + jembatan siang (retention hook)",
-      key_element: "Hook pagi: tubuh melapor lebih dulu, janji teknik titik leher jam 12:30.",
-    }),
-    (t) => ({
-      headline: `Makin dipikirkan, *otak makin nge-hang*`,
-      body_text: `Ini paradoks yang sering kulihat di meja terapi soal ${t}. Otak yang dipaksa mencari jalan keluar justru terkunci kelelahan.\n\nSiang nanti jam 12:30, saya tunjukkan 1 titik saraf di leher yang kalau ditekan 30 detik langsung bikin nafas enteng.`,
-      call_to_action: "Jawabannya siang nanti jam 12:30.",
-      caption: `Pernah merasa makin dipikirkan, kepala makin berat seperti diikat? Itu tanda rem darurat alami tubuhmu butuh diaktifkan.\n\nSolusinya ada di tubuh, bukan debat di kepala.\n\nSiang ini jam 12:30 aku bocorkan titiknya 👀\n\n#otakngehang #remdarurat #relaksasi`,
-      technique: "Pattern interrupt + curiosity gap",
-      key_element: "Hook pagi: otak nge-hang, janji titik leher jam 12:30.",
+      headline: `Bukan dipaksa, tapi *didengarkan perlahan*`,
+      body_text: `Soal ${t}: makin kita lawan dengan debat di kepala, tubuh justru makin tegang mengunci.\n\nSolusinya seringkali bukan mencari argumen baru, melainkan menenangkan sinyal tubuh fisik terlebih dahulu. Siang nanti ada panduan praktisnya.`,
+      call_to_action: "Simak panduan fisiknya siang jam 12:30.",
+      caption: `Pernah merasa makin dipikirkan, dada malah makin sesak dan kepala makin berat?\n\nItu bukti tubuhmu butuh istirahat dari mode siaga.\n\nSiang ini jam 12:30 kita bahas cara meredakannya secara fisik ✨\n\n#relaksasipagi #kesehatantubuh #kebijakandiri`,
+      technique: "Mind-body somatic insight",
+      key_element: "Kesadaran tubuh: tubuh merespons sebelum logika, panduan siang jam 12:30.",
     }),
   ],
   ACT_2_SOMATIC: [
+    (t) => {
+      const lower = t.toLowerCase();
+      let verb1 = "TEKAN";
+      let step1 = "Letakkan jempol di cekungan pangkal leher (GB-20) atau pergelangan tangan (PC-6) lembut 30 detik.";
+      let herb = "Seduh rimpang jahe atau kunyit hangat 200ml tertutup 7 menit.";
+      if (/lambung|maag|begah|gerd/.test(lower)) {
+        verb1 = "SENTUH";
+        step1 = "Tekan lembut titik PC-6 (3 jari di atas lipatan pergelangan tangan dalam) selama 40 detik.";
+        herb = "Seduh kunyit parut + temulawak + sedikit madu dengan 200ml air hangat.";
+      } else if (/tidur|insomnia/.test(lower)) {
+        verb1 = "PIJAT";
+        step1 = "Pijat lembut titik Shenmen HT-7 di lekukan pergelangan tangan sejajar kelingking.";
+        herb = "Seduhan bunga telang / kamomil hangat dengan aroma pala.";
+      }
+
+      return {
+        headline: `Lakukan ini 30 detik: *tubuh langsung enteng*`,
+        body_text: `${verb1}: ${step1} Padukan dengan ${herb}\n\nPerhatikan bagaimana napasmu seketika lebih dalam dan rasa tegang perlahan luruh.`,
+        call_to_action: "Coba praktikkan sekarang di mejamu.",
+        caption: `Untuk meredakan ketegangan ${t}:\n\nCukup beri waktu 30 detik untuk tubuhmu. Titik akupresur dipadu seduhan alami hangat akan mengirim sinyal aman ke seluruh saraf.\n\nBagaimana pengalaman pasien dengan keluhan ini? Sore nanti jam 18:45 kita kupas ceritanya 🌿\n\n#titiksomatik #herbaldapur #relaksasikerja`,
+        technique: "Actionable micro-somatic release + kitchen herbalism",
+        key_element: "Teknik siang: titik akupresur terarah + seduhan herbal hangat, ajakan coba langsung.",
+      };
+    },
     () => ({
-      headline: `Tekan titik ini, *nafas langsung enteng*`,
+      headline: `Pola napas & seduhan: *rem alami tubuh*`,
       body_text:
-        "Sesuai janji tadi pagi: tekan lembut cekungan pangkal tengkorak leher (titik GB-20) 30 detik. Lengkapi dengan seduhan rimpang hangat 200ml tertutup.\n\nTapi kenapa leher bisa sekaku ini padahal nggak angkat beban? Jawabannya ada di 'kabel emosi' meja terapi sore nanti.",
-      call_to_action: "Coba sekarang, lalu tunggu sore jam 18:45.",
+        "Tarik napas lewat hidung 4 detik, lalu hembuskan panjang lewat mulut 8 detik seperti meniup lilin. Lengkapi dengan segelas air hangat rimpang tertutup.\n\nHembusan napas panjang adalah saklar alami tubuh untuk menurunkan denyut stres.",
+      call_to_action: "Lakukan 3 kali siklus napas sekarang.",
       caption:
-        "Sesuai janji tadi pagi 🙏\n\nTitik GB-20 di leher belakang langsung menyalakan rem darurat alami tubuh (saraf vagus). Dipadu seduhan rimpang hangat tertutup, tubuh seketika rileks.\n\nPenasaran temuan meja terapi sore nanti jam 18:45? Kita kupas tuntas ✨\n\n#totokleher #herbalmedis #remdarurat",
-      technique: "Somatic release + herbal klinis + jembatan sore",
-      key_element: "Teknik siang: menyapa pagi, tekan titik leher GB-20 & seduhan herbal, lempar hook sore.",
-    }),
-    (t) => ({
-      headline: `Sesuai janji pagi: *rem darurat tubuh*`,
-      body_text: `Untuk ${t}, kita mulai dari fisik: tekan lembut titik leher belakang sambil buang napas perlahan. Minum seduhan herbal hangat 200ml tertutup.\n\nTapi kenapa keluhan ini menahun? Temuan meja terapi sore jam 18:45 akan membuka mata Anda.`,
-      call_to_action: "Praktikkan sekarang, kita sambung sore nanti.",
-      caption:
-        "Sesuai janji tadi pagi, ini rahasianya.\n\nPikiran cemas tidak bisa didebat dengan logika, tapi tubuh bisa ditenangkan lewat rem alami dan seduhan herbal teruji.\n\nBagaimana akar masalahnya di meja terapi? Sore nanti jam 18:45 kita bahas 🌿\n\n#remalami #leherkaku #sarafvagus",
-      technique: "Bottom-up regulation + herbal + open loop sore",
-      key_element: "Teknik siang: menyapa pagi, panduan napas & herbal, lempar hook sore.",
+        "Saat otak mulai penuh di tengah hari, jangan debat dengan pikiran cemas.\n\nCukup perlambat hembusan napasmu dan minum air hangat. Biarkan rem alami tubuhmu bekerja memulihkan ketenangan 🍵\n\n#remalami #napaspanjang #kesehatanalami",
+      technique: "Vagus nerve breathwork + thermal regulation",
+      key_element: "Teknik siang: pernapasan buang panjang 4-8 + air hangat rimpang.",
     }),
   ],
   ACT_3_CLINICAL_AI: [
     (t) => ({
-      headline: `Kasus meja terapi: *akar masalah saraf*`,
-      body_text: `Melanjutkan bahasan siang tadi. Gejala Pasien: Leher kaku & keluhan ${t} menahun. -> Temuan Meja Terapi: Saraf simpatik terkunci instruksi lama. -> Hasil Pemulihan: Totok meridian membuat otot lemas seketika dan napas plong dalam 15 menit.\n\nNanti malam jam 21:30, kita reset pikiran bawah sadarmu.`,
-      call_to_action: "Siapkan dirimu malam ini jam 21:30.",
-      caption:
-        "Melanjutkan titik leher tadi siang...\n\nBukti nyata di meja terapi: tubuh kita kaku tegang karena pikiran bawah sadar masih menjalankan instruksi lama yang usang.\n\nMalam ini jam 21:30 kita reset bersama sebelum tidur 🌙\n\n#kasusterapi #instruksilama #resetbawahsadar",
-      technique: "Social proof meja terapi + jembatan malam",
-      key_element: "Koneksi sore: bukti sosial meja terapi (Gejala -> Temuan -> Hasil), lempar hook malam.",
+      headline: `Kisah meja terapi: *akar masalah ${t}*`,
+      body_text: `Gejala Pasien: Keluhan ${t} berulang dan merasa lelah fisik berkepanjangan. -> Temuan Meja Terapi: Saraf bawah sadar terkunci di alarm siaga akibat pola instruksi lama. -> Hasil Pemulihan: Setelah titik saraf diselaraskan dan emosi dilepas, napas plong dan otot seketika relaks dalam 15 menit.`,
+      call_to_action: "Tunggu refleksi malam nanti jam 21:00.",
+      caption: `Banyak orang mengira ${t} hanya soal fisik semata.\n\nNamun di meja terapi, sering terungkap bahwa tubuh kita hanya sedang menjalankan perintah lama bawah sadar yang belum sempat di-update.\n\nNanti malam jam 21:00 ada panduan sebelum tidur untukmu 🌙\n\n#kisahterapi #akaralam #pemulihandiri`,
+      technique: "Clinical social proof (Gejala -> Temuan -> Hasil)",
+      key_element: "Kisah meja terapi: menghubungkan gejala fisik dengan instruksi emosi bawah sadar.",
     }),
     (t) => ({
-      headline: `Di meja terapi, kita *restart sistem*`,
-      body_text: `Melanjutkan bahasan siang. Gejala Pasien: Ketegangan ${t} berbulan-bulan. -> Temuan Meja Terapi: Kabel saraf bawah sadar korslet akibat alarm kerjaan. -> Hasil Pemulihan: Penyelarasan totok saraf & sugesti membuat tubuh enteng seketika.\n\nNanti malam jam 21:30 kita tuntaskan sebelum tidur.`,
-      call_to_action: "Tunggu panduannya malam ini jam 21:30.",
-      caption:
-        "Melanjutkan siang tadi...\n\nKita tidak perlu mendebat kecemasan di kepala. Yang kita lakukan di meja terapi adalah merestart sistem dari akar: memutus instruksi lama yang bikin tubuh mengunci.\n\nMalam ini jam 21:30 ada panduan relaksasi tidur untukmu 💤\n\n#terapisaraf #restartotak #ketenanganmalam",
-      technique: "Social proof meja terapi + metafora restart sistem",
-      key_element: "Koneksi sore: bukti sosial meja terapi, analogi restart otak, hook malam jam 21:30.",
+      headline: `Yang dirasa fisik, *akarnya di bawah sadar*`,
+      body_text: `Di meja terapi, kasus ${t} seringkali berakar dari ketegangan emosi yang dipendam bertahun-tahun. Tubuh yang dipaksa bertahan akhirnya mengunci sinyal tegang.\n\nKetika titik saraf dirilis dan pikiran diberi rasa aman, kesembuhan alami tubuh bekerja jauh lebih cepat.`,
+      call_to_action: "Simak rangkuman malam ini jam 21:00.",
+      caption: `Tubuh kita tidak pernah berbohong soal ${t}.\n\nApa yang kita tahan di hati dan kepala, tubuh yang menanggung bebannya. Meja terapi mengajarkan kita pentingnya memberi sinyal aman pada diri sendiri.\n\nMalam ini kita istirahatkan bersama ya 💤\n\n#bawahsadar #pemulihansaraf #kesehatansejati`,
+      technique: "Human storytelling + mind-body connection",
+      key_element: "Refleksi meja terapi: tubuh menanggung beban emosi, pentingnya rasa aman alami.",
     }),
   ],
   ACT_4_ANCHOR: [
-    (_t, p) => ({
+    (t, p) => ({
       headline: `Malam ini, *izinkan tubuhmu* beristirahat`,
       body_text:
-        `Dari leher kaku pagi, totok siang, sampai temuan meja terapi sore... malam ini sentuh dadamu. Izinkan bahumu melepas semua beban.\n\nKetik '${p.ctaKeyword}' untuk PDF gratis. Tersisa 2 slot praktek totok saraf / hipnoterapi klinik WITA pekan ini.`,
-      call_to_action: `KETIK '${p.ctaKeyword}' untuk panduan lengkap PDF`,
-      caption: `Dari leher kaku tadi pagi, totok tadi siang, sampai temuan meja terapi tadi sore... sekarang saatnya tubuhmu pulih sepenuhnya.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk modul PDF gratisnya 🌙\n\n📌 Bagi yang membutuhkan penanganan tatap muka, tersisa 2 slot praktek totok saraf / hipnoterapi untuk klinik WITA pekan ini.\n\n#tidurnyenyak #afirmasitidur #totoksaraf #hipnoterapi`,
-      technique: "Rangkuman seharian + afirmasi tidur + Soft-Selling Dual CTA",
-      key_element: "Sugesti malam: merangkum seharian, afirmasi dada, dual CTA (klaim PDF + kelangkaan slot klinik).",
+        `Hari ini kamu sudah berjuang luar biasa menghadapi ${t}. Malam ini sentuh dadamu, hembuskan napas panjang, dan lepaskan seluruh beban.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk mendapatkan modul PDF panduan lengkapnya secara gratis.`,
+      call_to_action: `KETIK '${p.ctaKeyword}' di chat WhatsApp`,
+      caption: `Tuntaskan hari ini dengan penuh kelembutan pada diri sendiri.\n\nKamu berhak atas tidur yang nyenyak dan pemulihan tubuh yang utuh 🌙\n\nKetik '${p.ctaKeyword}' di WhatsApp saya untuk menerima dokumen modul PDF panduan praktisnya secara gratis ya 🙏\n\n#tidurnyenyak #afirmasimalam #pemulihandiri #dokterpikiran`,
+      technique: "Restful anchoring + elegant Lead Magnet CTA",
+      key_element: "Sugesti malam: afirmasi ketenangan dada, pelepasan beban, klaim PDF gratis via keyword WhatsApp.",
     }),
-    (_t, p) => ({
+    (t, p) => ({
       headline: `Sentuh dadamu. *Hari ini sudah tuntas.*`,
       body_text:
-        `Dari leher kaku tadi pagi sampai akar saraf tadi sore: sentuh dadamu, izinkan pikiran beristirahat damai.\n\nKetik '${p.ctaKeyword}' untuk PDF gratis. Khusus jadwal klinik WITA tersisa 2 slot praktek tatap muka pekan ini.`,
-      call_to_action: `KETIK '${p.ctaKeyword}' di WA untuk panduan PDF`,
-      caption: `Dari leher kaku tadi pagi sampai akar saraf tadi sore...\n\nMalam ini tubuhmu berhak atas kedamaian utuh.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk dokumen panduan PDF lengkapnya 🤍\n\n📌 Tersisa 2 slot praktek sesi tatap muka (totok saraf / hipnoterapi) untuk klinik WITA pekan ini.\n\n#pemulihantubuh #afirmasimalam #totoksaraf #hipnoterapi`,
-      technique: "Rangkuman narasi + anchoring damai + Soft-Selling Dual CTA",
-      key_element: "Sugesti malam: merangkum seharian, afirmasi dada, dual CTA (klaim PDF + slot klinik).",
+        `Soal ${t} dan semua urusan hari ini: cukupkan sampai di sini. Biarkan sel-sel tubuhmu memperbaiki diri saat kamu tidur lelap malam ini.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk menerima modul PDF panduan mandiri gratis.`,
+      call_to_action: `KETIK '${p.ctaKeyword}' di WhatsApp untuk PDF`,
+      caption: `Sentuh dadamu dan bisikkan dalam hati: 'Hari ini sudah tuntas. Malam ini aku beristirahat damai.' 🤍\n\nUntuk panduan langkah lengkapnya, silakan ketik '${p.ctaKeyword}' di WhatsApp untuk menerima e-book PDF ringkasnya.\n\nSelamat tidur lelap teman-teman ✨\n\n#tidurlelap #afirmasidiri #ketenanganmalam #modulgratis`,
+      technique: "Heart-centered anchoring + ethical Lead Magnet CTA",
+      key_element: "Sugesti malam: sentuh dada, penyelesaian hari, ajakan chat ramah minta PDF gratis.",
     }),
   ],
 };
@@ -117,36 +138,63 @@ export function buildDefaultLeadMagnetProtocol(topicPhrase: string): LeadMagnetP
   const upper = topicPhrase.toUpperCase();
   let keyword = "RESET";
   if (upper.includes("ENERGI") || upper.includes("LESU") || upper.includes("LELAH")) keyword = "ENERGI";
-  else if (upper.includes("LAMBUNG") || upper.includes("BEGAH") || upper.includes("GERD")) keyword = "LAMBUNG";
-  else if (upper.includes("POSTUR") || upper.includes("TULANG") || upper.includes("PUNGGUNG")) keyword = "POSTUR";
-  else if (upper.includes("FOKUS") || upper.includes("MIKIR") || upper.includes("OTAK")) keyword = "FOKUS";
-  else if (upper.includes("TIDUR") || upper.includes("INSOMNIA")) keyword = "INSOMNIA";
+  else if (upper.includes("LAMBUNG") || upper.includes("BEGAH") || upper.includes("GERD") || upper.includes("MAAG")) keyword = "LAMBUNG";
+  else if (upper.includes("POSTUR") || upper.includes("TULANG") || upper.includes("PUNGGUNG") || upper.includes("BAHU")) keyword = "POSTUR";
+  else if (upper.includes("FOKUS") || upper.includes("MIKIR") || upper.includes("OTAK") || upper.includes("HANG")) keyword = "FOKUS";
+  else if (upper.includes("TIDUR") || upper.includes("INSOMNIA") || upper.includes("LELAP")) keyword = "INSOMNIA";
   else if (upper.includes("TERAPI") || upper.includes("DETOKS")) keyword = "TERAPI";
   else if (upper.includes("LEHER") || upper.includes("BELIKAT")) keyword = "LEHER";
   else if (upper.includes("MIGRAIN") || upper.includes("KEPALA")) keyword = "MIGRAIN";
 
+  let step1Title = "Titik Akupresur Somatik Terarah";
+  let step1Action = "Tekan lembut titik meridian tubuh terkait selama 45–60 detik sambil bernapas perlahan.";
+  let step1Mech = "Melancarkan sirkulasi energi meridian dan menenangkan sistem alarm tubuh.";
+
+  let step2Title = "Formulasi Seduhan Herbal Dapur & Pola Napas";
+  let step2Action = "Seduh rimpang alami hangat (200ml) tertutup 7 menit dipadu hembusan napas panjang.";
+  let step2Mech = "Minyak atsiri alami meredakan radang dan mengaktifkan rem darurat saraf vagus.";
+
+  if (keyword === "LAMBUNG") {
+    step1Title = "Titik Akupresur PC-6 & CV-12 Ulu Hati";
+    step1Action = "Tekan lembut titik 3 jari di atas lipatan pergelangan tangan dalam selama 60 detik.";
+    step1Mech = "Menormalkan motilitas lambung dan menurunkan ketegangan gut-brain axis.";
+    step2Title = "Seduhan Kunyit, Temulawak & Madu Hangat";
+    step2Action = "Seduh irisan kunyit dan temulawak dengan 200ml air panas 80°C, tutup 7 menit, tambahkan madu murni.";
+    step2Mech = "Kurkuminoid melapisi mukosa lambung dan meredakan peradangan asam lambung.";
+  } else if (keyword === "INSOMNIA") {
+    step1Title = "Titik Shenmen HT-7 Pergelangan Tangan";
+    step1Action = "Pijat lembut titik lekukan pergelangan tangan sejajar jari kelingking selama 60 detik.";
+    step1Mech = "Menstimulasi pelepasan neurotransmiter relaksasi alami dan menurunkan denyut jantung.";
+    step2Title = "Seduhan Telang / Kamomil & Aroma Pala";
+    step2Action = "Seduh bunga telang atau kamomil dengan air hangat, beri sejumput kecil bubuk pala sebelum tidur.";
+    step2Mech = "Memicu aktivasi reseptor GABA alami untuk membawa otak ke frekuensi gelombang tidur pulih.";
+  } else if (keyword === "FOKUS" || keyword === "ENERGI") {
+    step1Title = "Titik Baihui GV-20 Puncak Kepala";
+    step1Action = "Tekan lembut titik puncak kepala sejajar daun telinga selama 30 detik.";
+    step1Mech = "Membuka sumbatan mikrosirkulasi darah ke korteks otak dan mengurai kabut pikiran.";
+    step2Title = "Seduhan Jahe Hangat & Perasan Lemon";
+    step2Action = "Seduh jahe geprek dengan 200ml air hangat, beri sedikit perasan lemon dan madu.";
+    step2Mech = "Gingerol meningkatkan oksigenasi seluler dan menyegarkan energi tanpa lonjakan kafein berlebih.";
+  }
+
   return {
     keyword,
-    title: `Panduan Saku Reset Somatik & Saraf Vagus: ${topicPhrase}`,
-    target_issue: `Meredakan otot leher kaku, rem darurat tubuh, dan overthinking terkait ${topicPhrase}`,
+    title: `Panduan Saku Pemulihan Mandiri & Protokol: ${topicPhrase}`,
+    target_issue: `Membantu meredakan ketegangan fisik, mengurai stres, dan memulihkan vitalitas alami terkait ${topicPhrase}`,
     steps: [
       {
         step: 1,
-        title: "Titik GB-20 Leher: Pelepasan Ketegangan Suboksipital",
-        action:
-          "Letakkan kedua jempol di cekungan pangkal tengkorak belakang leher (titik batas antara kepala dan leher). Berikan tekanan lembut mengarah ke atas selama 60 detik sambil memejamkan mata dan bernapas perlahan.",
+        title: step1Title,
+        action: step1Action,
         duration: "60 detik",
-        mechanism:
-          "Mengendurkan otot leher belakang yang tegang kaku, melancarkan aliran darah ke otak, dan mematikan alarm siaga tubuh.",
+        mechanism: step1Mech,
       },
       {
         step: 2,
-        title: "Latihan Napas Diafragma 4-7-8: Rem Darurat Saraf Vagus",
-        action:
-          "Tarik napas lembut lewat hidung 4 detik, tahan napas santai 7 detik, lalu hembuskan perlahan lewat mulut seperti meniup lilin selama 8 detik. Ulangi 4 hingga 5 siklus.",
+        title: step2Title,
+        action: step2Action,
         duration: "60 detik",
-        mechanism:
-          "Hembusan napas yang panjang merangsang saraf vagus (rem alami tubuh) untuk menurunkan denyut jantung dan memicu rasa tenang seketika.",
+        mechanism: step2Mech,
       },
       {
         step: 3,
@@ -158,7 +206,7 @@ export function buildDefaultLeadMagnetProtocol(topicPhrase: string): LeadMagnetP
           "Menanamkan rasa aman di pikiran bawah sadar dan memindahkan gelombang otak ke status Alpha tenang untuk tidur lelap berkualitas.",
       },
     ],
-    pdf_summary: `Protokol klinis 3 langkah mandiri untuk meredakan ketegangan leher, mengaktifkan rem darurat alami tubuh, dan menenangkan pikiran dalam waktu 3 menit.`,
+    pdf_summary: `Protokol ringkas 3 langkah praktis pemulihan mandiri untuk keluhan ${topicPhrase}. Panduan saku berbasis totok saraf akupresur, seduhan herbal dapur aman, dan relaksasi bawah sadar.`,
   };
 }
 
