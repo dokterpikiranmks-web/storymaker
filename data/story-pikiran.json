@@ -1,11 +1,11 @@
 {
   "success": true,
-  "date": "2026-10-11",
+  "date": "2026-10-27",
   "pillar": "PIKIRAN",
   "pillarTitle": "Bawah Sadar, Belief System & Suara Batin",
   "themeColor": "#1E293B",
   "accentColor": "#63B3ED",
-  "topic": "Beban Emosi Terpendam: Kenapa Masalah Batin Sering Lari ke Lambung & Dada?",
+  "topic": "Subvocal Rumination: Suara Batin Overthinking Sebenarnya Gerakan Fisik Lidah",
   "keyword": "RESET",
   "source": "curated_fallback",
   "model": "DokterPikiran-Curated-V3.0-Makassar",
@@ -14,24 +14,24 @@
       "slide": 1,
       "time": "07:00",
       "act": "HOOK",
-      "text": "Sering nelan amarah dan perasaan sendiri? Jangan heran kalau lambung ikut meradang.",
+      "text": "Kepalamu berisik bukan karena pikiranmu rusak, tapi otot lidahmu lagi gerak tanpa sadar.",
       "visualGuide": {
-        "headline": "Emosi Menjadi Perih",
-        "badge": "💡 EMOSI & LAMBUNG"
+        "headline": "Gerakan Mikro Lidah",
+        "badge": "💡 SUARA BATIN OVERTHINKING"
       }
     },
     {
       "slide": 2,
       "time": "07:45",
       "act": "EDUKASI",
-      "text": "Saluran cerna punya jutaan sel saraf. Saat emosi ditahan paksa, saraf enterik lambung yang menanggung bebannya.",
+      "text": "Setiap overthinking di kepala sebenarnya menggerakkan pita suara dan lidah secara mikro tanpa suara keluar.",
       "visualGuide": {
-        "headline": "Beban Saraf Enterik",
+        "headline": "Loop Pita Suara Batin",
         "badge": "🔬 SKEMA SEBAB - AKIBAT",
         "flowchart": [
-          "Amarah Dipendam Paksa",
-          "Saraf Lambung Menegang",
-          "Asam Lambung & Begah Kambuh"
+          "Kekhawatiran Muncul",
+          "Gerak Mikro Pita Suara",
+          "Overthinking Berputar Nonstop"
         ]
       }
     },
@@ -39,25 +39,25 @@
       "slide": 3,
       "time": "13:00",
       "act": "PRAKTIK",
-      "text": "Diaphragmatic Sigh 60 Detik: Letakkan tangan di ulu hati, ambil 2 napas pendek, hembuskan lega.",
+      "text": "Trigeminal Jaw Release 60 Detik: Renggangkan rahang, tempelkan lidah ke langit-langit mulut.",
       "visualGuide": {
-        "headline": "Diaphragmatic Sigh",
+        "headline": "Trigeminal Jaw Release",
         "badge": "⚡ PRAKTIK 60 DETIK",
         "steps": [
           {
             "step": "01",
-            "action": "Letakkan tangan di perut atas tepat di bawah ulu hati",
-            "target": "Ulu Hati & Diafragma"
+            "action": "Buka mulut sedikit agar gigi atas dan bawah tidak rapat",
+            "target": "Rahang & Sendi Mulut"
           },
           {
             "step": "02",
-            "action": "Tarik napas 2 kali pendek lewat hidung sampai perut ngembang",
-            "target": "Paru-paru & Perut"
+            "action": "Tempelkan ujung lidah rileks ke langit-langit mulut atas",
+            "target": "Otot Lidah & Laring"
           },
           {
             "step": "03",
-            "action": "Hembuskan panjang lewat mulut sambil rilekskan perut",
-            "target": "Saraf Enterik Tenang"
+            "action": "Tahan 30 detik. Rasakan suara berisik di kepala langsung senyap",
+            "target": "Pita Suara Hening"
           }
         ]
       }
@@ -66,10 +66,10 @@
       "slide": 4,
       "time": "20:00",
       "act": "BUKTI",
-      "text": "Klien di Makassar sembuh dari sakit maag menahun setelah berani melepaskan beban rasa bersalah yang dipendam belasan tahun.",
+      "text": "Sebagai praktisi dan solo developer di Makassar: begitu gerakan mikro lidah dihentikan, loop overthinking di kepala mati otomatis seperti kabel dicabut.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
-        "badge": "📋 REKAM MEDIS KLINIS",
+        "badge": "📋 CATATAN MEJA TERAPI",
         "stamp": "TERVERIFIKASI SOMATIK • MAKASSAR"
       }
     },
@@ -77,11 +77,10 @@
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Boleh kok merasa lelah dan rapuh. Istirahatkan bebanmu malam ini. Mau baca panduan lengkapnya? Balas story ini: RESET.",
+      "text": "Kepalamu layak istirahat dari suara batin yang melelahkan malam ini. Balas status ini kalau mau ngobrol santai: RESET.",
       "visualGuide": {
-        "headline": "Izin Menjadi Manusia",
-        "badge": "📄 PANDUAN POCKET PDF",
-        "booklet": "Protokol Melepas Beban Emosi Terpendam"
+        "headline": "Hentikan Suara di Kepala",
+        "badge": "🌙 CATATAN REFLEKSI MALAM"
       }
     }
   ]

@@ -1,6 +1,6 @@
 {
   "success": true,
-  "date": "2026-10-12",
+  "date": "2026-10-27",
   "pillar": "TUBUH",
   "pillarTitle": "Gut-Brain, Sistem Saraf & Paradoks Tubuh",
   "themeColor": "#162621",
@@ -69,7 +69,7 @@
       "text": "Klien klinik Batua Raya sering panik mengira serangan jantung. Begitu pola hembusannya diperpanjang, sesak dadanya lenyap tanpa obat penenang.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
-        "badge": "📋 REKAM MEDIS KLINIS",
+        "badge": "📋 CATATAN MEJA TERAPI",
         "stamp": "TERVERIFIKASI SOMATIK • MAKASSAR"
       }
     },
@@ -77,11 +77,10 @@
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Tubuhmu tidak kekurangan udara, ia hanya perlu berhenti bertarung melawan rasa sesak. Mau panduan lengkapnya? Balas story ini: LAMBUNG.",
+      "text": "Tubuhmu tidak kekurangan udara, ia hanya perlu berhenti bertarung melawan rasa sesak. Balas status ini kalau mau cerita: LAMBUNG.",
       "visualGuide": {
         "headline": "Berhenti Bertarung Melawan Sesak",
-        "badge": "📄 PANDUAN POCKET PDF",
-        "booklet": "Protokol Atasi Sesak Dada Psikosomatis"
+        "badge": "🌙 CATATAN REFLEKSI MALAM"
       }
     }
   ]

@@ -107,23 +107,23 @@ const TEMPLATES: Record<ActType, Builder[]> = {
     }),
   ],
   ACT_4_ANCHOR: [
-    (t, p) => ({
+    (t) => ({
       headline: `Malam ini, *izinkan tubuhmu* beristirahat`,
       body_text:
-        `Hari ini kamu sudah berjuang luar biasa menghadapi ${t}. Malam ini sentuh dadamu, hembuskan napas panjang, dan lepaskan seluruh beban.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk mendapatkan modul PDF panduan lengkapnya secara gratis.`,
-      call_to_action: `KETIK '${p.ctaKeyword}' di chat WhatsApp`,
-      caption: `Tuntaskan hari ini dengan penuh kelembutan pada diri sendiri.\n\nKamu berhak atas tidur yang nyenyak dan pemulihan tubuh yang utuh 🌙\n\nKetik '${p.ctaKeyword}' di WhatsApp saya untuk menerima dokumen modul PDF panduan praktisnya secara gratis ya 🙏\n\n#tidurnyenyak #afirmasimalam #pemulihandiri #dokterpikiran`,
-      technique: "Restful anchoring + elegant Lead Magnet CTA",
-      key_element: "Sugesti malam: afirmasi ketenangan dada, pelepasan beban, klaim PDF gratis via keyword WhatsApp.",
+        `Hari ini kamu sudah berjuang luar biasa menghadapi ${t}. Malam ini sentuh dadamu, hembuskan napas panjang, dan lepaskan seluruh beban.\n\nCoba ceritakan di chat: bagian tubuh mana yang paling sering terasa kaku atau lelah hari ini?`,
+      call_to_action: "Balas status ini untuk curhat santai",
+      caption: `Tuntaskan hari ini dengan penuh kelembutan pada diri sendiri.\n\nKamu berhak atas tidur yang nyenyak dan pemulihan tubuh yang utuh 🌙\n\nCoba balas status ini: apa yang paling bikin tubuhmu tegang hari ini? Mari ngobrol santai ya 🙏\n\n#tidurnyenyak #afirmasimalam #pemulihandiri #dokterpikiran`,
+      technique: "Restful anchoring + conversation starter",
+      key_element: "Sugesti malam: afirmasi ketenangan dada, pelepasan beban, ajakan ramah membalas status chat WA.",
     }),
-    (t, p) => ({
+    (t) => ({
       headline: `Sentuh dadamu. *Hari ini sudah tuntas.*`,
       body_text:
-        `Soal ${t} dan semua urusan hari ini: cukupkan sampai di sini. Biarkan sel-sel tubuhmu memperbaiki diri saat kamu tidur lelap malam ini.\n\nKetik '${p.ctaKeyword}' di WhatsApp untuk menerima modul PDF panduan mandiri gratis.`,
-      call_to_action: `KETIK '${p.ctaKeyword}' di WhatsApp untuk PDF`,
-      caption: `Sentuh dadamu dan bisikkan dalam hati: 'Hari ini sudah tuntas. Malam ini aku beristirahat damai.' 🤍\n\nUntuk panduan langkah lengkapnya, silakan ketik '${p.ctaKeyword}' di WhatsApp untuk menerima e-book PDF ringkasnya.\n\nSelamat tidur lelap teman-teman ✨\n\n#tidurlelap #afirmasidiri #ketenanganmalam #modulgratis`,
-      technique: "Heart-centered anchoring + ethical Lead Magnet CTA",
-      key_element: "Sugesti malam: sentuh dada, penyelesaian hari, ajakan chat ramah minta PDF gratis.",
+        `Soal ${t} dan semua urusan hari ini: cukupkan sampai di sini. Biarkan sel-sel tubuhmu memperbaiki diri saat kamu tidur lelap malam ini.\n\nKamu tidak sendirian. Balas chat ini kapan saja kalau butuh teman bercerita.`,
+      call_to_action: "Balas status ini jika butuh teman cerita",
+      caption: `Sentuh dadamu dan bisikkan dalam hati: 'Hari ini sudah tuntas. Malam ini aku beristirahat damai.' 🤍\n\nKalau ada ganjalan di hati atau ketegangan fisik yang belum reda, pintu chat saya selalu terbuka untuk ngobrol santai.\n\nSelamat tidur lelap teman-teman ✨\n\n#tidurlelap #afirmasidiri #ketenanganmalam #dokterpikiran`,
+      technique: "Heart-centered anchoring + empathetic connection",
+      key_element: "Sugesti malam: sentuh dada, penyelesaian hari, ajakan chat ramah tanpa syarat.",
     }),
   ],
 };

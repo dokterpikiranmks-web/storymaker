@@ -1,12 +1,12 @@
 {
   "success": true,
-  "date": "2026-10-12",
-  "pillar": "TUBUH",
-  "pillarTitle": "Gut-Brain, Sistem Saraf & Paradoks Tubuh",
-  "themeColor": "#162621",
-  "accentColor": "#74A892",
-  "topic": "Napas Pendek & Sensasi Dada Terhimpit: Kenapa Menarik Napas Dalam Malah Bikin Sesak?",
-  "keyword": "LAMBUNG",
+  "date": "2026-10-27",
+  "pillar": "TEKNOLOGI",
+  "pillarTitle": "Kelelahan Mental, Fokus & Pikiran Berisik",
+  "themeColor": "#121214",
+  "accentColor": "#E2B774",
+  "topic": "Lelah Scroll HP: Kenapa Buka Medsos Seharian Bikin Badan Lebih Lemas dari Kerja Fisik?",
+  "keyword": "FOKUS",
   "source": "curated_fallback",
   "model": "DokterPikiran-Curated-V3.0-Makassar",
   "stories": [
@@ -14,24 +14,24 @@
       "slide": 1,
       "time": "07:00",
       "act": "HOOK",
-      "text": "Dada terasa sesak lalu kamu tarik napas dalam-dalam? Itu justru bikin makin engap.",
+      "text": "Rebahan seharian scroll video pendek tapi badan malah lemas nggak bertenaga?",
       "visualGuide": {
-        "headline": "Paradoks Tarik Napas",
-        "badge": "🚨 ANOMALI PERNAPASAN"
+        "headline": "Lelah Tanpa Gerak",
+        "badge": "⚡ CRASH ENERGI"
       }
     },
     {
       "slide": 2,
       "time": "07:45",
       "act": "EDUKASI",
-      "text": "Menarik napas berlebihan membuang CO2 terlalu cepat. Pembuluh menyempit dan otak merasa makin kekurangan udara.",
+      "text": "Tiap swipe layar memicu rangsangan instan beruntun. Begitu berhenti, otak membanting level energi ke titik terendah.",
       "visualGuide": {
-        "headline": "Penyempitan Pembuluh",
+        "headline": "Baterai Mental Anjlok",
         "badge": "🔬 SKEMA SEBAB - AKIBAT",
         "flowchart": [
-          "Panik Hirup Napas Cepat",
-          "Karbon Dioksida Drop",
-          "Pembuluh Darah Sempit"
+          "Swipe Konten Cepat",
+          "Rangsangan Berlebih",
+          "Energi Mental Anjlok Drop"
         ]
       }
     },
@@ -39,25 +39,25 @@
       "slide": 3,
       "time": "13:00",
       "act": "PRAKTIK",
-      "text": "Exhale Prolongation 60 Detik: Hirup pelan 2 detik lewat hidung, hembuskan lembut 6 detik lewat bibir.",
+      "text": "Screen Fast Reset 60 Detik: Balik layar ponsel ke bawah, pandang titik terjauh di luar jendela selama 60 detik.",
       "visualGuide": {
-        "headline": "Exhale Prolongation 6s",
+        "headline": "Screen Fast Reset 60s",
         "badge": "⚡ PRAKTIK 60 DETIK",
         "steps": [
           {
             "step": "01",
-            "action": "Hirup udara pelan 2 detik lewat hidung tanpa busung dada",
-            "target": "Hidung & Diafragma"
+            "action": "Balik layar ponsel ke bawah atau simpan di balik bantal",
+            "target": "Batas Visual Layar"
           },
           {
             "step": "02",
-            "action": "Kerutkan bibir, hembuskan lembut 6 detik sampai paru kempis",
-            "target": "Bibir & Paru-paru"
+            "action": "Tatap titik terjauh di luar jendela selama 60 detik santai",
+            "target": "Otot Mata Rileks"
           },
           {
             "step": "03",
-            "action": "Ulangi 4 siklus. Rasakan rongga dada langsung terasa lega",
-            "target": "Keseimbangan Gas Darah"
+            "action": "Tarik napas panjang lewat hidung, rasakan ketenangan kembali",
+            "target": "Reseptor Dopamin Pulih"
           }
         ]
       }
@@ -66,10 +66,10 @@
       "slide": 4,
       "time": "20:00",
       "act": "BUKTI",
-      "text": "Klien klinik Batua Raya sering panik mengira serangan jantung. Begitu pola hembusannya diperpanjang, sesak dadanya lenyap tanpa obat penenang.",
+      "text": "Di meja terapi Makassar, pecandu gadget yang merasa burnout pulih energinya drastis hanya dengan jeda visual tanpa layar sebelum tidur.",
       "visualGuide": {
         "headline": "Catatan Meja Terapi Makassar",
-        "badge": "📋 REKAM MEDIS KLINIS",
+        "badge": "📋 CATATAN MEJA TERAPI",
         "stamp": "TERVERIFIKASI SOMATIK • MAKASSAR"
       }
     },
@@ -77,11 +77,10 @@
       "slide": 5,
       "time": "21:00",
       "act": "CTA HALUS",
-      "text": "Tubuhmu tidak kekurangan udara, ia hanya perlu berhenti bertarung melawan rasa sesak. Mau panduan lengkapnya? Balas story ini: LAMBUNG.",
+      "text": "Jauhkan layar sejenak malam ini dan biarkan matamu istirahat alami. Balas status ini kalau mau ngobrol: FOKUS.",
       "visualGuide": {
-        "headline": "Berhenti Bertarung Melawan Sesak",
-        "badge": "📄 PANDUAN POCKET PDF",
-        "booklet": "Protokol Atasi Sesak Dada Psikosomatis"
+        "headline": "Ketenangan Alami Malam Hari",
+        "badge": "🌙 CATATAN REFLEKSI MALAM"
       }
     }
   ]

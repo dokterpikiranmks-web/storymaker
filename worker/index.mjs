@@ -832,52 +832,23 @@ async function startWorker() {
               continue;
             }
 
-            // ── KATEGORI 2: Materi & Panduan Kesehatan ('lambung', 'gerd', 'maag') ──
-            if (['lambung', 'gerd', 'maag'].includes(matchedKw)) {
-              console.log(`📖 [HEALTH CAMPAIGN] Mengirim modul panduan lambung/GERD ke ${remoteJid}`);
-              const topicTitle = "Pemulihan Lambung & Regulasi GERD/Psikosomatis";
-              const safeKey = "Lambung_GERD";
+            // ── KATEGORI 2: Respon Meja Terapi & Curhat Personal ('lambung', 'reset', 'fokus', dll) ──
+            const storyKeywords = ['lambung', 'gerd', 'maag', 'reset', 'fokus', 'damai', 'relaksasi', 'flow', 'pulih'];
+            if (storyKeywords.includes(matchedKw)) {
+              console.log(`💬 [WARKOP CHAT TRIGGER] Membalas curhat status WA "${matchedKw}" ke ${remoteJid}`);
 
-              // Kirim pesan teks pendahuluan edukatif
+              const conversationalReply = `${greeting}\n\n` +
+                `Terima kasih sudah menyempatkan balas status saya tadi. 🙏\n\n` +
+                `Keluhan seperti asam lambung naik, dada sesak, leher kaku, atau pikiran yang susah istirahat itu sebenarnya alarm biologis tubuh yang lagi minta diperhatikan, bukan karena tubuh kita lemah.\n\n` +
+                `Kalau boleh tahu, saat ini apa yang paling mengganjal yang Anda rasakan? Apakah lebih ke fisik (perut perih/begah/leher tegang) atau pikiran yang rasanya berisik terus?\n\n` +
+                `Cerita santai saja ya sesama teman, saya senang mendengarnya. Semoga obrolan kita bisa saling meringankan.`;
+
               try {
-                await sock.sendMessage(remoteJid, {
-                  text: `${greeting}\n\nBerikut panduan saku praktis terkait ${topicTitle} yang Anda minta. Silakan pelajari dan terapkan langkah penanganan mandirinya.`
-                });
-                console.log(`✅ [INBOUND SENT] Pesan teks pendahuluan berhasil dikirim ke ${remoteJid}`);
+                await sock.sendMessage(remoteJid, { text: conversationalReply });
+                console.log(`✅ [CONVERSATIONAL REPLY SENT] Pesan hangat terkirim ke ${remoteJid}`);
+                addLeadToNurturing(remoteJid, senderName);
               } catch (err) {
-                console.error(`❌ Gagal kirim teks inbound:`, err);
-              }
-
-              // Ambil dan kirim file PDF materi kesehatan lambung
-              try {
-                const baseUrl = CONFIG.storyMakerUrl || 'https://storymaker-jet.vercel.app';
-                let pdfUrl = `${baseUrl}/api/protocol/pdf?topic=lambung`;
-
-                const matchedCampaign = await findCampaignByKeyword(matchedKw);
-                if (matchedCampaign?.id) {
-                  pdfUrl = `${baseUrl}/api/protocol/pdf?campaignId=${encodeURIComponent(matchedCampaign.id)}`;
-                }
-
-                const pdfRes = await fetch(pdfUrl, {
-                  headers: { 'x-worker-secret': CONFIG.workerSecret || '' },
-                  signal: AbortSignal.timeout(20_000),
-                });
-
-                if (pdfRes.ok) {
-                  const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-                  await sock.sendMessage(remoteJid, {
-                    document: pdfBuffer,
-                    mimetype: 'application/pdf',
-                    fileName: `Panduan_Kesehatan_${safeKey}_DokterPikiran.pdf`,
-                    caption: `📄 Panduan Saku: ${topicTitle} (PDF)`
-                  });
-                  console.log(`✅ [PDF SENT] File PDF Panduan_Kesehatan_${safeKey}_DokterPikiran.pdf berhasil dikirim ke ${remoteJid}`);
-                  addLeadToNurturing(remoteJid, senderName);
-                } else {
-                  console.warn(`⚠️ Respons PDF HTTP ${pdfRes.status} dari server`);
-                }
-              } catch (pdfErr) {
-                console.error(`⚠️ Gagal kirim PDF dokumen lambung:`, pdfErr?.message || pdfErr);
+                console.error(`❌ Gagal kirim balasan curhat:`, err);
               }
               continue;
             }
