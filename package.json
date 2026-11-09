@@ -1,18 +1,12 @@
 {
-  "name": "nextjs-postgresql-template",
+  "name": "dokter-pikiran-engine",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "postinstall": "node -e \"const fs=require('fs'); if(fs.existsSync('./scripts/copy-fonts.mjs')) require('child_process').execSync('node scripts/copy-fonts.mjs', {stdio:'inherit'})\"",
-    "worker": "node worker/index.mjs",
-    "worker:wa": "npm --prefix worker start",
-    "generate:today": "node scripts/generate-today.mjs",
-    "generate:telegram": "node scripts/trigger-telegram.js",
-    "slot:dispatch": "node scripts/test-slot.js"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

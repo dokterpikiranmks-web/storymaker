@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export default function GlobalError({
   error,
@@ -26,26 +25,28 @@ export default function GlobalError({
           <p className="mt-2 text-sm text-slate-400">
             {error.message && !error.message.includes("digest")
               ? error.message
-              : "Koneksi ke database atau service backend sedang tidak tersedia. Pastikan konfigurasi environment sudah lengkap."}
+              : "Terjadi kesalahan sistem. Silakan muat ulang halaman."}
           </p>
           {error.digest && (
-            <p className="mt-2 font-mono text-xs text-slate-500">Error Digest: {error.digest}</p>
+            <p className="mt-2 font-mono text-xs text-slate-500">Digest: {error.digest}</p>
           )}
         </div>
         <div className="pt-2 flex justify-center gap-3">
-          <Button
+          <button
+            type="button"
             onClick={() => reset()}
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition"
           >
             <RotateCcw className="h-4 w-4" />
             Coba Lagi
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={() => (window.location.href = "/")}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white"
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition"
           >
             Kembali ke Beranda
-          </Button>
+          </button>
         </div>
       </div>
     </div>

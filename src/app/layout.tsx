@@ -32,9 +32,9 @@ const serif = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Remote Studio V2 · Dokter Pikiran Makassar",
+  title: "Dokter Pikiran Makassar",
   description:
-    "Remote Studio V2 Dokter Pikiran Makassar — Siaran 5 Slide WhatsApp Story 9:16 & PDF Panduan Klinis via Telegram Engine V2.",
+    "Personal Branding Engine Dokter Pikiran Makassar — Konten edukasi pikiran, tubuh, dan jiwa dengan bahasa membumi dan visual elegan.",
 };
 
 export const viewport: Viewport = {
