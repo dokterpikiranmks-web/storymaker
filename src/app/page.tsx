@@ -25,6 +25,7 @@ import {
   Moon,
   Sun,
   Flame,
+  Send,
 } from "lucide-react";
 import { WEEKLY_CONTENT_MATRIX, getStoryForSlot, parseDayIndex } from "@/lib/content-matrix";
 import { detectBannedSlang, calculateStoryWordCount, validateStoryDraft } from "@/lib/ahmad-persona";
@@ -126,6 +127,10 @@ export default function StudioCockpitPage() {
   const [renderDuration, setRenderDuration] = useState<number | null>(null);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"editor" | "psychology">("editor");
+
+  // Telegram dispatch state
+  const [isDispatching, setIsDispatching] = useState<boolean>(false);
+  const [dispatchStatus, setDispatchStatus] = useState<{ success: boolean; message: string } | null>(null);
 
   // Load initial draft whenever day or slot changes
   useEffect(() => {
@@ -266,6 +271,43 @@ export default function StudioCockpitPage() {
     navigator.clipboard.writeText(lines.join("\n"));
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2500);
+  };
+
+  // Human-in-the-loop Telegram Dispatch
+  const handleDispatchTelegram = async () => {
+    if (!currentDraft) return;
+    setIsDispatching(true);
+    setDispatchStatus(null);
+    try {
+      const response = await fetch("/api/dispatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draft: currentDraft,
+          mode: visualMode,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setDispatchStatus({
+          success: true,
+          message: data.message || "Story berhasil dikirim ke Telegram!",
+        });
+      } else {
+        setDispatchStatus({
+          success: false,
+          message: data.error || "Gagal mengirim ke Telegram.",
+        });
+      }
+    } catch (err: any) {
+      setDispatchStatus({
+        success: false,
+        message: err.message || "Terjadi kesalahan jaringan saat mengirim.",
+      });
+    } finally {
+      setIsDispatching(false);
+      setTimeout(() => setDispatchStatus(null), 5000);
+    }
   };
 
   const activeSlotObj = SLOTS.find((s) => s.slot === selectedSlot) || SLOTS[0];
@@ -508,6 +550,43 @@ export default function StudioCockpitPage() {
                   )}
                 </button>
               </div>
+
+              {/* Single-Click Telegram Dispatch */}
+              <button
+                onClick={handleDispatchTelegram}
+                disabled={isDispatching || !previewImage}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-semibold text-xs transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+              >
+                {isDispatching ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Mengirim ke Telegram...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Setujui & Kirim ke Telegram</span>
+                  </>
+                )}
+              </button>
+
+              {/* Dispatch Feedback Toast */}
+              {dispatchStatus && (
+                <div
+                  className={`p-3 rounded-xl border text-xs flex items-center gap-2 transition-all ${
+                    dispatchStatus.success
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                      : "bg-red-500/10 border-red-500/30 text-red-300"
+                  }`}
+                >
+                  {dispatchStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-400" />
+                  )}
+                  <span className="leading-tight">{dispatchStatus.message}</span>
+                </div>
+              )}
             </div>
           </div>
 
